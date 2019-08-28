@@ -7,7 +7,12 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map5, string)
-import Table
+import Table exposing (Column)
+
+
+baseExpoUrl : String
+baseExpoUrl =
+    "https://www.researchcatalogue.net/profile/show-exposition?exposition="
 
 
 
@@ -21,6 +26,17 @@ type alias Research =
     , created : String
     , author : String
     }
+
+
+type alias ExpoLink =
+    { title : String
+    , url : String
+    }
+
+
+hyperlink : ExpoLink -> Html msg
+hyperlink link =
+    a [ href link.url ] [ text link.title ]
 
 
 decodeResearch : Decoder (List Research)
@@ -157,6 +173,15 @@ update msg model =
             ( { model | viewType = newType }, Cmd.none )
 
 
+makeLink : Research -> ExpoLink
+makeLink research =
+    let
+        link =
+            baseExpoUrl ++ String.fromInt (.id research)
+    in
+    ExpoLink (.title research) link
+
+
 config : Table.Config Research Msg
 config =
     Table.config
@@ -164,7 +189,7 @@ config =
         , toMsg = SetTableState
         , columns =
             [ Table.intColumn "Id" .id
-            , Table.stringColumn "Title" .title
+            , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
             , Table.stringColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join " " << .keywords)
@@ -266,6 +291,21 @@ viewMeta research =
             ]
     in
     table [] <| List.map renderField fields
+
+
+linkColumn : String -> (data -> ExpoLink) -> Column data msg
+linkColumn name toLink =
+    Table.veryCustomColumn
+        { name = name
+        , viewData = \data -> viewLink (toLink data)
+        , sorter = Table.increasingBy (.title << toLink)
+        }
+
+
+viewLink : ExpoLink -> Table.HtmlDetails msg
+viewLink link =
+    Table.HtmlDetails []
+        [ hyperlink link ]
 
 
 
