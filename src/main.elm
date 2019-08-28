@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map5, string)
+import Table
 
 
 
@@ -59,10 +60,32 @@ test =
 -- MODEL
 
 
-type Model
-    = Failure String
-    | Loading
-    | Success KeywordDict
+type LoadingStatus
+    = Failure String Loading Success
+
+
+type ViewType
+    = TableView
+    | KeywordView
+
+
+type alias Model =
+    { researchList : List Research
+    , keywordDict : KeywordDict
+    , viewType : ViewType
+    , tableState : Table.State
+    , query : String
+    }
+
+
+emptyModel : Model
+emptyModel =
+    { researchList = []
+    , keywordDict = emptyKeywords
+    , viewType = TableView
+    , tableState = Table.initialSort "title"
+    , query = ""
+    }
 
 
 init : () -> ( Model, Cmd Msg )
@@ -77,18 +100,27 @@ init _ =
 type Msg
     = Go
     | GotList (Result Http.Error (List Research))
+    | SetQuery String
+    | SetTableState Table.State
+    | SetViewType ViewType
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Go ->
-            ( Loading, getResearch )
+            ( { model | loadingStatus = Loading }, getResearch )
 
         GotList result ->
             case result of
                 Ok list ->
-                    ( Success <| fillKeywordsDict list, Cmd.none )
+                    ( { model
+                        | loadingStatus = Success
+                        , researchList = list
+                        , keywordDict = fillKeywordsDict list
+                      }
+                    , Cmd.none
+                    )
 
                 Err err ->
                     let
@@ -109,7 +141,31 @@ update msg model =
                                 Http.BadBody string ->
                                     Failure <| "body of improper format" ++ string
                     in
-                    ( message, Cmd.none )
+                    ( { model | loadingStatus = message }, Cmd.none )
+
+                SetQuery newQuery ->
+                    ( { model | query = newQuery }, Cmd.none )
+
+                SetTableState newState ->
+                    ( { model | tableState = newState }, Cmd.none )
+
+                SetViewType newType ->
+                    ( { model | viewType = newType }, Cmd.none )
+
+
+config : Table.Config Research Msg
+config =
+    Table.config
+        { toId = .id
+        , toMsg = SetTableState
+        , columns =
+            [ Table.intCollumn "Id" .id
+            , Table.stringColumn "Title" .title
+            , Table.stringColumn "Author" .author
+            , Table.stringColumn "Created" .created
+            , Table.stringColumn "Keywords" (List.join " " << .keywords)
+            ]
+        }
 
 
 
@@ -133,15 +189,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ h2 [] [ text "KC master research" ]
-        , viewResearchList model
-        ]
-
-
-viewResearchList : Model -> Html Msg
-viewResearchList model =
-    case model of
+    case model.loadingStatus of
         Failure details ->
             div []
                 [ text <| "Could not load the list -> " ++ details
@@ -149,17 +197,42 @@ viewResearchList model =
                 ]
 
         Loading ->
-            text "Loading..."
+            h1 [] [ text "Loading..."]
 
-        Success dict ->
-            let
-                list =
-                    List.concat <| values dict
-            in
+        Success -> viewResearch model
+
+viewResearch : Model -> Html Msg
+viewResearch model = 
+    case model.viewType of
+
+        TableView ->
             div []
-                [ button [ onClick Go, style "display" "block" ] [ text "More Please!" ]
-                , div [] <| List.map viewMeta list
+                [ h1 [ id "KC-portal-research" ] [ text "KC master research" ]
+                , viewResearchList model
                 ]
+
+        KeywordView ->
+            viewKeywords model
+
+viewKeywords : Model -> Html Msg
+viewKeywords model =
+    div [] [text "nothing to see folks.."]
+
+
+viewResearchList : Model -> Html Msg
+viewResearchList model =
+
+            let
+                lowerQuery =
+                    String.toLower model.query
+
+                acceptableResearch =
+                    List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
+            
+            div []
+                [ h1 [] [ text "list view" ]
+                      , input [ placeholder "Search by Author", onInput SetQuery ]
+                      , Table.view config model.tableState acceptableResearch ]
 
 
 applyValue : a -> List (a -> b) -> List b
@@ -186,7 +259,7 @@ viewMeta research =
             , ( research.author, "author" )
             ]
     in
-    div [] <| List.map renderField fields
+    table [] <| List.map renderField fields
 
 
 
