@@ -1,4 +1,4 @@
-module Main exposing (Model(..), Msg(..), Research, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
+module Main exposing (Model, Msg(..), Research, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
 
 import Browser
 import Dict exposing (..)
@@ -61,7 +61,9 @@ test =
 
 
 type LoadingStatus
-    = Failure String Loading Success
+    = Failure String
+    | Loading
+    | Success
 
 
 type ViewType
@@ -75,6 +77,7 @@ type alias Model =
     , viewType : ViewType
     , tableState : Table.State
     , query : String
+    , loadingStatus : LoadingStatus
     }
 
 
@@ -85,12 +88,13 @@ emptyModel =
     , viewType = TableView
     , tableState = Table.initialSort "title"
     , query = ""
+    , loadingStatus = Loading
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Loading, getResearch )
+    ( emptyModel, getResearch )
 
 
 
@@ -143,27 +147,27 @@ update msg model =
                     in
                     ( { model | loadingStatus = message }, Cmd.none )
 
-                SetQuery newQuery ->
-                    ( { model | query = newQuery }, Cmd.none )
+        SetQuery newQuery ->
+            ( { model | query = newQuery }, Cmd.none )
 
-                SetTableState newState ->
-                    ( { model | tableState = newState }, Cmd.none )
+        SetTableState newState ->
+            ( { model | tableState = newState }, Cmd.none )
 
-                SetViewType newType ->
-                    ( { model | viewType = newType }, Cmd.none )
+        SetViewType newType ->
+            ( { model | viewType = newType }, Cmd.none )
 
 
 config : Table.Config Research Msg
 config =
     Table.config
-        { toId = .id
+        { toId = String.fromInt << .id
         , toMsg = SetTableState
         , columns =
-            [ Table.intCollumn "Id" .id
+            [ Table.intColumn "Id" .id
             , Table.stringColumn "Title" .title
             , Table.stringColumn "Author" .author
             , Table.stringColumn "Created" .created
-            , Table.stringColumn "Keywords" (List.join " " << .keywords)
+            , Table.stringColumn "Keywords" (String.join " " << .keywords)
             ]
         }
 
@@ -197,14 +201,15 @@ view model =
                 ]
 
         Loading ->
-            h1 [] [ text "Loading..."]
+            h1 [] [ text "Loading..." ]
 
-        Success -> viewResearch model
+        Success ->
+            viewResearch model
+
 
 viewResearch : Model -> Html Msg
-viewResearch model = 
+viewResearch model =
     case model.viewType of
-
         TableView ->
             div []
                 [ h1 [ id "KC-portal-research" ] [ text "KC master research" ]
@@ -214,25 +219,26 @@ viewResearch model =
         KeywordView ->
             viewKeywords model
 
+
 viewKeywords : Model -> Html Msg
 viewKeywords model =
-    div [] [text "nothing to see folks.."]
+    div [] [ text "nothing to see folks.." ]
 
 
 viewResearchList : Model -> Html Msg
 viewResearchList model =
+    let
+        lowerQuery =
+            String.toLower model.query
 
-            let
-                lowerQuery =
-                    String.toLower model.query
-
-                acceptableResearch =
-                    List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
-            
-            div []
-                [ h1 [] [ text "list view" ]
-                      , input [ placeholder "Search by Author", onInput SetQuery ]
-                      , Table.view config model.tableState acceptableResearch ]
+        acceptableResearch =
+            List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
+    in
+    div []
+        [ h1 [] [ text "list view" ]
+        , input [ placeholder "Search by Author", onInput SetQuery ] []
+        , Table.view config model.tableState acceptableResearch
+        ]
 
 
 applyValue : a -> List (a -> b) -> List b
