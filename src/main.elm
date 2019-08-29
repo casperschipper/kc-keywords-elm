@@ -8,6 +8,7 @@ import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map5, string)
 import Table exposing (Column)
+import Util exposing (zip, zipWith)
 
 
 baseExpoUrl : String
@@ -194,8 +195,20 @@ config =
             , Table.stringColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join " " << .keywords)
             ]
+        , customization = { defaultCustomization | thead = makeHead }
         }
 
+oneToOne : List (a -> b) -> List a -> List b
+        
+makeHead : Int -> List ( String, Status, Attribute msg ) -> HtmlDetails msg
+makeHead head =
+    let
+        oneHead width title status attrs =
+            span [(style "width" width) :: attrs ] [text title]
+
+       
+    in
+        
 
 
 -- type Error
@@ -236,10 +249,9 @@ viewResearch : Model -> Html Msg
 viewResearch model =
     case model.viewType of
         TableView ->
-            div []
-                [ h1 [ id "KC-portal-research" ] [ text "KC master research" ]
-                , viewResearchList model
-                ]
+            div [ class "container" ]
+                (h1 [ id "KC-portal-research" ] [ text "KC master research" ])
+                :: viewResearchList model
 
         KeywordView ->
             viewKeywords model
@@ -250,7 +262,7 @@ viewKeywords model =
     div [] [ text "nothing to see folks.." ]
 
 
-viewResearchList : Model -> Html Msg
+viewResearchList : Model -> List (Html Msg)
 viewResearchList model =
     let
         lowerQuery =
@@ -259,11 +271,15 @@ viewResearchList model =
         acceptableResearch =
             List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
     in
-    div []
+    [ div [ class "row" ]
         [ h1 [] [ text "list view" ]
         , input [ placeholder "Search by Author", onInput SetQuery ] []
-        , Table.view config model.tableState acceptableResearch
         ]
+    , div
+        [ class "row" ]
+        [ Table.view config model.tableState acceptableResearch
+        ]
+    ]
 
 
 applyValue : a -> List (a -> b) -> List b
