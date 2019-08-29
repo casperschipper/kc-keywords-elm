@@ -195,20 +195,8 @@ config =
             , Table.stringColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join " " << .keywords)
             ]
-        , customization = { defaultCustomization | thead = makeHead }
         }
 
-oneToOne : List (a -> b) -> List a -> List b
-        
-makeHead : Int -> List ( String, Status, Attribute msg ) -> HtmlDetails msg
-makeHead head =
-    let
-        oneHead width title status attrs =
-            span [(style "width" width) :: attrs ] [text title]
-
-       
-    in
-        
 
 
 -- type Error
@@ -249,9 +237,9 @@ viewResearch : Model -> Html Msg
 viewResearch model =
     case model.viewType of
         TableView ->
-            div [ class "container" ]
-                (h1 [ id "KC-portal-research" ] [ text "KC master research" ])
-                :: viewResearchList model
+            div [ class "container" ] <|
+                h1 [ id "KC-portal-research" ] [ text "KC master research" ]
+                    :: viewResearchList model
 
         KeywordView ->
             viewKeywords model
