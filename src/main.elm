@@ -1,5 +1,7 @@
 module Main exposing (Model, Msg(..), Research, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
 
+import Bootstrap.Button as Button
+import Bootstrap.ButtonGroup as ButtonGroup
 import Browser
 import Dict exposing (..)
 import Html exposing (..)
@@ -7,7 +9,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map5, string)
-import Table exposing (Column)
+import Table exposing (Column, defaultCustomizations)
 import Util exposing (zip, zipWith)
 
 
@@ -29,15 +31,44 @@ type alias Research =
     }
 
 
-type alias ExpoLink =
+type alias LinkInfo =
     { title : String
     , url : String
     }
 
 
-hyperlink : ExpoLink -> Html msg
+type Link
+    = ResearchLink LinkInfo
+    | KeywordLink LinkInfo
+
+
+hyperlink : Link -> Html Msg
 hyperlink link =
+    case link of
+        ResearchLink l ->
+            viewResearchLink l
+
+        KeywordLink l ->
+            viewKeywordLink l
+
+
+viewResearchLink : LinkInfo -> Html Msg
+viewResearchLink link =
     a [ href link.url ] [ text link.title ]
+
+
+viewKeywordLink : LinkInfo -> Html Msg
+viewKeywordLink keyword =
+    a
+        [ class "keyword"
+        , href keyword.url
+        ]
+        [ text keyword.title ]
+
+
+keyToLinkInfo : String -> Link
+keyToLinkInfo key =
+    KeywordLink <| LinkInfo key ("#" ++ keywordLink key)
 
 
 decodeResearch : Decoder (List Research)
@@ -66,11 +97,6 @@ main =
         , subscriptions = subscriptions
         , view = view
         }
-
-
-test : String
-test =
-    """[{"id":409098,"type":"exposition","title":"LA COURANTE FRAN\\u00c7OISE. Historically informed performance of the French Courante for harpsichord during the second half of the seventeenth century following the criteria obtained from the Baroque Dance.","keywords":["Courante","Harpsichord","Dance","France","Clavecin","seventeenth centrury","baroque","Suite","Proportio sesquialtera","historically informed performance","Historical treatises","Chambonni\\u00e8res","Louis Couperin","d'Anglebert"],"created":"28/11/2017","status":"published","doi":{"id":null,"url":null},"published":"15/08/2019","published_in":[{"id":6,"name":"KC Research Portal","name_short":"KC Research Portal"}],"issue":{"id":479587,"number":"1","title":"Master Research Projects"},"author":{"id":394894,"name":"Diego Ruenes Rubiales"},"coauthors":[]}]"""
 
 
 
@@ -174,27 +200,44 @@ update msg model =
             ( { model | viewType = newType }, Cmd.none )
 
 
-makeLink : Research -> ExpoLink
+makeLink : Research -> Link
 makeLink research =
     let
         link =
             baseExpoUrl ++ String.fromInt (.id research)
     in
-    ExpoLink (.title research) link
+    ResearchLink <| LinkInfo (.title research) link
+
+
+
+-- config : Table.Config Research Msg
+-- config =
+--     Table.config
+--         { toId = String.fromInt << .id
+--         , toMsg = SetTableState
+--         , columns =
+--             [ Table.intColumn "Id" .id
+--             , linkColumn "Title" makeLink
+--             , Table.stringColumn "Author" .author
+--             , createdColumn "Created" .created
+--             , Table.stringColumn "Keywords" (String.join " " << .keywords)
+--             ]
+--         }
 
 
 config : Table.Config Research Msg
 config =
-    Table.config
+    Table.customConfig
         { toId = String.fromInt << .id
         , toMsg = SetTableState
         , columns =
             [ Table.intColumn "Id" .id
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
-            , Table.stringColumn "Created" .created
+            , createdColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join " " << .keywords)
             ]
+        , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
         }
 
 
@@ -235,19 +278,43 @@ view model =
 
 viewResearch : Model -> Html Msg
 viewResearch model =
-    case model.viewType of
-        TableView ->
-            div [ class "container" ] <|
-                h1 [ id "KC-portal-research" ] [ text "KC master research" ]
-                    :: viewResearchList model
+    let
+        radioSwitch =
+            div [ class "row" ]
+                [ ButtonGroup.radioButtonGroup []
+                    [ ButtonGroup.radioButton
+                        (model.viewType == TableView)
+                        [ Button.primary, Button.onClick <| SetViewType TableView ]
+                        [ text "list view" ]
+                    , ButtonGroup.radioButton
+                        (model.viewType == KeywordView)
+                        [ Button.primary, Button.onClick <| SetViewType KeywordView ]
+                        [ text "keyword view" ]
+                    ]
+                ]
 
-        KeywordView ->
-            viewKeywords model
+        content =
+            case model.viewType of
+                TableView ->
+                    div [ class "row" ]
+                        [ h1 [ id "KC-portal-research" ]
+                            [ text "KC master research" ]
+                        , div
+                            []
+                            (viewResearchList
+                                model
+                            )
+                        ]
+
+                KeywordView ->
+                    div [] [ viewKeywords model ]
+    in
+    div [ class "container" ] [ radioSwitch, content ]
 
 
 viewKeywords : Model -> Html Msg
 viewKeywords model =
-    div [] [ text "nothing to see folks.." ]
+    renderKeywords model.keywordDict
 
 
 viewResearchList : Model -> List (Html Msg)
@@ -260,11 +327,13 @@ viewResearchList model =
             List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
     in
     [ div [ class "row" ]
-        [ h1 [] [ text "list view" ]
-        , input [ placeholder "Search by Author", onInput SetQuery ] []
+        [ div
+            [ class "col-sm-6" ]
+            [ h1 [] [ text "list view" ] ]
+        , div [ class "col-sm-6" ] [ input [ class "form-control", placeholder "Search by Author", onInput SetQuery ] [] ]
         ]
     , div
-        [ class "row" ]
+        [ class "table-responsive" ]
         [ Table.view config model.tableState acceptableResearch
         ]
     ]
@@ -294,19 +363,32 @@ viewMeta research =
             , ( research.author, "author" )
             ]
     in
-    table [] <| List.map renderField fields
+    table [ class "table" ] <| List.map renderField fields
 
 
-linkColumn : String -> (data -> ExpoLink) -> Column data msg
+createdColumn : String -> (data -> String) -> Column data msg
+createdColumn name toCreated =
+    let
+        sortableDateString =
+            String.split "/" >> List.reverse >> String.join "/"
+    in
+    Table.customColumn
+        { name = name
+        , viewData = \data -> toCreated data
+        , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
+        }
+
+
+linkColumn : String -> (data -> Link) -> Column data msg
 linkColumn name toLink =
     Table.veryCustomColumn
         { name = name
         , viewData = \data -> viewLink (toLink data)
-        , sorter = Table.increasingBy (.title << toLink)
+        , sorter = Table.increasingBy <| .id
         }
 
 
-viewLink : ExpoLink -> Table.HtmlDetails msg
+viewLink : Link -> Table.HtmlDetails Msg
 viewLink link =
     Table.HtmlDetails []
         [ hyperlink link ]
@@ -335,6 +417,60 @@ type alias KeywordDict =
 emptyKeywords : KeywordDict
 emptyKeywords =
     Dict.empty
+
+
+keywordLink : String -> String
+keywordLink keyword =
+    String.replace " " "-" keyword
+
+
+renderKeywords : KeywordDict -> Html Msg
+renderKeywords dict =
+    let
+        sortedKeys : List String
+        sortedKeys =
+            List.sort (keys dict)
+
+        viewKey =
+            hyperlink << keyToLinkInfo
+    in
+    div [ id "keyword-list" ] <|
+        List.singleton <|
+            researchByKeywordList
+                sortedKeys
+                dict
+
+
+researchByKeywordList : List String -> KeywordDict -> Html Msg
+researchByKeywordList sortedKeys dict =
+    let
+        renderRecord : Maybe (List Research) -> Html Msg
+        renderRecord research =
+            case research of
+                Just [] ->
+                    span [] [ text "empty keyword" ]
+
+                Just list ->
+                    div [] <| List.map (hyperlink << makeLink) list
+
+                Nothing ->
+                    span [] []
+
+        renderKey =
+            hyperlink << keyToLinkInfo
+
+        renderKeyWithResearch key =
+            div [ id <| keywordLink key ]
+                [ h3 [] [ text key ]
+                , a [ href "#keywords" ] [ text "return" ]
+                , renderRecord (get key dict)
+                ]
+    in
+    div [ class "row" ] <|
+        List.concat
+            [ List.map renderKey sortedKeys
+            , List.map renderKeyWithResearch sortedKeys
+            ]
 
 
 fillKeywordsDict : List Research -> KeywordDict
