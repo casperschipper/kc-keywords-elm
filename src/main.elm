@@ -2,6 +2,7 @@ module Main exposing (Model, Msg(..), Research, decodeResearch, getResearch, ini
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
+import Bootstrap.Form as Form
 import Browser
 import Dict exposing (..)
 import Html exposing (..)
@@ -9,8 +10,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map5, string)
+import Random
 import Table exposing (Column, defaultCustomizations)
-import Util exposing (zip, zipWith)
+import Util exposing (RGBColor, hexColor, stringToColor, zip, zipWith)
 
 
 baseExpoUrl : String
@@ -54,7 +56,11 @@ hyperlink link =
 
 viewResearchLink : LinkInfo -> Html Msg
 viewResearchLink link =
-    a [ href link.url ] [ text link.title ]
+    a
+        [ href link.url
+        , target "_blank"
+        ]
+        [ text link.title ]
 
 
 viewKeywordLink : LinkInfo -> Html Msg
@@ -62,6 +68,7 @@ viewKeywordLink keyword =
     a
         [ class "keyword"
         , href keyword.url
+        , style "color" <| hexColor <| stringToColor keyword.title
         ]
         [ text keyword.title ]
 
@@ -128,7 +135,7 @@ emptyModel : Model
 emptyModel =
     { researchList = []
     , keywordDict = emptyKeywords
-    , viewType = TableView
+    , viewType = KeywordView
     , tableState = Table.initialSort "title"
     , query = ""
     , loadingStatus = Loading
@@ -150,6 +157,11 @@ type Msg
     | SetQuery String
     | SetTableState Table.State
     | SetViewType ViewType
+
+
+
+-- | GenColor
+-- | NewColor
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -207,6 +219,21 @@ makeLink research =
             baseExpoUrl ++ String.fromInt (.id research)
     in
     ResearchLink <| LinkInfo (.title research) link
+
+
+linkToUrl : Link -> String
+linkToUrl link =
+    case link of
+        ResearchLink info ->
+            info.url
+
+        KeywordLink info ->
+            info.url
+
+
+viewAuthor : Research -> Html Msg
+viewAuthor research =
+    span [ class "author" ] [ text <| .author research ]
 
 
 
@@ -280,7 +307,7 @@ viewResearch : Model -> Html Msg
 viewResearch model =
     let
         radioSwitch =
-            div [ class "row" ]
+            div []
                 [ ButtonGroup.radioButtonGroup []
                     [ ButtonGroup.radioButton
                         (model.viewType == TableView)
@@ -296,20 +323,21 @@ viewResearch model =
         content =
             case model.viewType of
                 TableView ->
-                    div [ class "row" ]
-                        [ h1 [ id "KC-portal-research" ]
-                            [ text "KC master research" ]
-                        , div
-                            []
-                            (viewResearchList
-                                model
-                            )
-                        ]
+                    div
+                        []
+                        (viewResearchList model)
 
                 KeywordView ->
-                    div [] [ viewKeywords model ]
+                    div [ id "keywords" ]
+                        [ h1 [] [ text "by keywords" ]
+                        , viewKeywords model
+                        ]
     in
-    div [ class "container" ] [ radioSwitch, content ]
+    div [ id "top", class "container" ]
+        [ h1 [] [ text "KC Master Research" ]
+        , radioSwitch
+        , content
+        ]
 
 
 viewKeywords : Model -> Html Msg
@@ -326,11 +354,16 @@ viewResearchList model =
         acceptableResearch =
             List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
     in
-    [ div [ class "row" ]
-        [ div
-            [ class "col-sm-6" ]
-            [ h1 [] [ text "list view" ] ]
-        , div [ class "col-sm-6" ] [ input [ class "form-control", placeholder "Search by Author", onInput SetQuery ] [] ]
+    [ Form.form [ class "form-inline" ]
+        [ Form.group []
+            [ input
+                [ class "form-control"
+                , placeholder "Search by Author"
+                , onInput SetQuery
+                , style "margin" ".5rem 0"
+                ]
+                []
+            ]
         ]
     , div
         [ class "table-responsive" ]
@@ -344,17 +377,23 @@ applyValue value list =
     List.map (\f -> f value) list
 
 
+renderField : ( String, String ) -> Html Msg
+renderField ( value, name ) =
+    label
+        []
+        [ text name
+        , p [] [ text value ]
+        ]
+
+
+labelField : ( String, Html Msg ) -> Html Msg
+labelField ( name, content ) =
+    label [] [ text name, content ]
+
+
 viewMeta : Research -> Html Msg
 viewMeta research =
     let
-        renderField : ( String, String ) -> Html Msg
-        renderField ( value, name ) =
-            label
-                []
-                [ text name
-                , p [] [ text value ]
-                ]
-
         fields =
             [ ( String.fromInt research.id, "id" )
             , ( research.title, "title" )
@@ -363,7 +402,15 @@ viewMeta research =
             , ( research.author, "author" )
             ]
     in
-    table [ class "table" ] <| List.map renderField fields
+    div [] <| List.map renderField fields
+
+
+viewShortMeta : Research -> Html Msg
+viewShortMeta research =
+    li [ class "short-meta" ]
+        [ a [ href <| (linkToUrl << makeLink) research, target "_blank" ] [ text <| .title research ]
+        , h5 [] [ text <| .author research ]
+        ]
 
 
 createdColumn : String -> (data -> String) -> Column data msg
@@ -379,12 +426,22 @@ createdColumn name toCreated =
         }
 
 
-linkColumn : String -> (data -> Link) -> Column data msg
+getTitle : Link -> String
+getTitle l =
+    case l of
+        ResearchLink i ->
+            i.title
+
+        KeywordLink i ->
+            i.title
+
+
+linkColumn : String -> (data -> Link) -> Column data Msg
 linkColumn name toLink =
     Table.veryCustomColumn
         { name = name
-        , viewData = \data -> viewLink (toLink data)
-        , sorter = Table.increasingBy <| .id
+        , viewData = viewLink << toLink
+        , sorter = Table.increasingOrDecreasingBy <| getTitle << toLink
         }
 
 
@@ -434,39 +491,105 @@ renderKeywords dict =
         viewKey =
             hyperlink << keyToLinkInfo
     in
-    div [ id "keyword-list" ] <|
+    div [] <|
         List.singleton <|
             researchByKeywordList
                 sortedKeys
                 dict
 
 
+headerForSize : Int -> List (Html.Attribute Msg) -> List (Html.Html Msg) -> Html.Html Msg
+headerForSize count =
+    case count of
+        1 ->
+            h5
+
+        2 ->
+            h4
+
+        3 ->
+            h3
+
+        4 ->
+            h2
+
+        _ ->
+            h1
+
+
+scaleLink : Int -> List (Html.Attribute Msg) -> Html Msg -> Html Msg
+scaleLink amount attrs html =
+    case amount of
+        5 ->
+            h1 attrs [ html ]
+
+        4 ->
+            h2 attrs [ html ]
+
+        3 ->
+            h3 attrs [ html ]
+
+        2 ->
+            h4 attrs [ html ]
+
+        _ ->
+            h5 attrs [ html ]
+
+
 researchByKeywordList : List String -> KeywordDict -> Html Msg
 researchByKeywordList sortedKeys dict =
     let
-        renderRecord : Maybe (List Research) -> Html Msg
-        renderRecord research =
+        renderRecord : String -> Maybe (List Research) -> Html Msg
+        renderRecord key research =
             case research of
                 Just [] ->
                     span [] [ text "empty keyword" ]
 
                 Just list ->
-                    div [] <| List.map (hyperlink << makeLink) list
+                    let
+                        number =
+                            List.length list
+                    in
+                    div [ id <| keywordLink key ]
+                        [ headerForSize number [ class "keyword-header" ] [ text key ]
+                        , a
+                            [ class "back-to-top"
+                            , href "#top"
+                            , title "back to top"
+                            ]
+                            [ text "back to top" ]
+                        , ul [ class "research-for-keyword" ] <|
+                            List.map viewShortMeta list
+                        ]
 
                 Nothing ->
                     span [] []
 
-        renderKey =
-            hyperlink << keyToLinkInfo
+        renderKey key =
+            let
+                list =
+                    get key dict
+
+                n =
+                    case list of
+                        Just [] ->
+                            0
+
+                        Just l ->
+                            List.length l
+
+                        Nothing ->
+                            0
+
+                mkLink =
+                    scaleLink n [ class "keywordlink" ] << hyperlink << keyToLinkInfo
+            in
+            mkLink key
 
         renderKeyWithResearch key =
-            div [ id <| keywordLink key ]
-                [ h3 [] [ text key ]
-                , a [ href "#keywords" ] [ text "return" ]
-                , renderRecord (get key dict)
-                ]
+            renderRecord key (get key dict)
     in
-    div [ class "row" ] <|
+    div [] <|
         List.concat
             [ List.map renderKey sortedKeys
             , List.map renderKeyWithResearch sortedKeys

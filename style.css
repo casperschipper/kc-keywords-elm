@@ -1,3 +1,39 @@
 .keyword {
-    margin: 10px 0px;
+    /* t r b l */
+    margin: 0px 25px 0px 0px;
 }
+
+.back-to-top {
+    font-size: 8px;
+}
+
+#keywords {
+    text-align: justify;
+}
+
+.keywordlink {
+    display: inline;
+}
+
+h5.keywordlink a {
+    font-size: 0.7em;
+}
+
+h4.keywordlink a {
+    font-size: 0.75em;
+}
+
+h3.keywordlink a {
+    font-size: 1em;
+}
+
+h2.keywordlink a {
+    font-size: 1.25em;
+}
+
+h1.keywordlink a {
+    font-size: 1.5em;
+}
+
+
+
