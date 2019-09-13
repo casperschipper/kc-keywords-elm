@@ -4485,8 +4485,8 @@ function _Browser_load(url)
 		}
 	}));
 }
+var author$project$Main$KeywordView = {$: 'KeywordView'};
 var author$project$Main$Loading = {$: 'Loading'};
-var author$project$Main$TableView = {$: 'TableView'};
 var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var author$project$Main$emptyKeywords = elm$core$Dict$empty;
@@ -4584,7 +4584,7 @@ var author$project$Main$emptyModel = {
 	query: '',
 	researchList: _List_Nil,
 	tableState: billstclair$elm_sortable_table$Table$initialSort('title'),
-	viewType: author$project$Main$TableView
+	viewType: author$project$Main$KeywordView
 };
 var author$project$Main$GotList = function (a) {
 	return {$: 'GotList', a: a};
@@ -6007,10 +6007,10 @@ var author$project$Main$update = F2(
 		}
 	});
 var author$project$Main$Go = {$: 'Go'};
-var author$project$Main$KeywordView = {$: 'KeywordView'};
 var author$project$Main$SetViewType = function (a) {
 	return {$: 'SetViewType', a: a};
 };
+var author$project$Main$TableView = {$: 'TableView'};
 var elm$core$List$map = F2(
 	function (f, xs) {
 		return A3(
@@ -6289,20 +6289,6 @@ var elm$html$Html$h2 = _VirtualDom_node('h2');
 var elm$html$Html$h3 = _VirtualDom_node('h3');
 var elm$html$Html$h4 = _VirtualDom_node('h4');
 var elm$html$Html$h5 = _VirtualDom_node('h5');
-var author$project$Main$headerForSize = function (count) {
-	switch (count) {
-		case 1:
-			return elm$html$Html$h5;
-		case 2:
-			return elm$html$Html$h4;
-		case 3:
-			return elm$html$Html$h3;
-		case 4:
-			return elm$html$Html$h2;
-		default:
-			return elm$html$Html$h1;
-	}
-};
 var author$project$Main$scaleLink = F3(
 	function (amount, attrs, html) {
 		switch (amount) {
@@ -6449,9 +6435,8 @@ var author$project$Main$researchByKeywordList = F2(
 								]),
 							_List_fromArray(
 								[
-									A3(
-									author$project$Main$headerForSize,
-									number,
+									A2(
+									elm$html$Html$h5,
 									_List_fromArray(
 										[
 											elm$html$Html$Attributes$class('keyword-header')
@@ -7592,7 +7577,14 @@ var author$project$Main$viewResearch = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('KC Master Research')
+						elm$html$Html$text('research results overview')
+					])),
+				A2(
+				elm$html$Html$h3,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('Royal Conservatoire in The Hague')
 					])),
 				radioSwitch,
 				content

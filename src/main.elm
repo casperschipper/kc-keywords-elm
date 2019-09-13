@@ -334,7 +334,8 @@ viewResearch model =
                         ]
     in
     div [ id "top", class "container" ]
-        [ h1 [] [ text "KC Master Research" ]
+        [ h1 [] [ text "research results overview" ]
+        , h3 [] [ text "Royal Conservatoire in The Hague" ]
         , radioSwitch
         , content
         ]
@@ -409,7 +410,7 @@ viewShortMeta : Research -> Html Msg
 viewShortMeta research =
     li [ class "short-meta" ]
         [ a [ href <| (linkToUrl << makeLink) research, target "_blank" ] [ text <| .title research ]
-        , h5 [] [ text <| .author research ]
+        , span [class "author-name"] [ text <| .author research ]
         ]
 
 
@@ -551,7 +552,7 @@ researchByKeywordList sortedKeys dict =
                             List.length list
                     in
                     div [ id <| keywordLink key ]
-                        [ headerForSize number [ class "keyword-header" ] [ text key ]
+                        [ h5 [ class "keyword-header" ] [ text key ]
                         , a
                             [ class "back-to-top"
                             , href "#top"

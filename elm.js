@@ -6289,20 +6289,6 @@ var elm$html$Html$h2 = _VirtualDom_node('h2');
 var elm$html$Html$h3 = _VirtualDom_node('h3');
 var elm$html$Html$h4 = _VirtualDom_node('h4');
 var elm$html$Html$h5 = _VirtualDom_node('h5');
-var author$project$Main$headerForSize = function (count) {
-	switch (count) {
-		case 1:
-			return elm$html$Html$h5;
-		case 2:
-			return elm$html$Html$h4;
-		case 3:
-			return elm$html$Html$h3;
-		case 4:
-			return elm$html$Html$h2;
-		default:
-			return elm$html$Html$h1;
-	}
-};
 var author$project$Main$scaleLink = F3(
 	function (amount, attrs, html) {
 		switch (amount) {
@@ -6372,6 +6358,7 @@ var elm$core$Basics$composeL = F3(
 			f(x));
 	});
 var elm$html$Html$li = _VirtualDom_node('li');
+var elm$html$Html$span = _VirtualDom_node('span');
 var author$project$Main$viewShortMeta = function (research) {
 	return A2(
 		elm$html$Html$li,
@@ -6397,8 +6384,11 @@ var author$project$Main$viewShortMeta = function (research) {
 						}(research))
 					])),
 				A2(
-				elm$html$Html$h5,
-				_List_Nil,
+				elm$html$Html$span,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('author-name')
+					]),
 				_List_fromArray(
 					[
 						elm$html$Html$text(
@@ -6420,7 +6410,6 @@ var elm$core$List$concat = function (lists) {
 	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
 };
 var elm$html$Html$div = _VirtualDom_node('div');
-var elm$html$Html$span = _VirtualDom_node('span');
 var elm$html$Html$ul = _VirtualDom_node('ul');
 var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
 var elm$html$Html$Attributes$title = elm$html$Html$Attributes$stringProperty('title');
@@ -6449,9 +6438,8 @@ var author$project$Main$researchByKeywordList = F2(
 								]),
 							_List_fromArray(
 								[
-									A3(
-									author$project$Main$headerForSize,
-									number,
+									A2(
+									elm$html$Html$h5,
 									_List_fromArray(
 										[
 											elm$html$Html$Attributes$class('keyword-header')
@@ -7578,7 +7566,14 @@ var author$project$Main$viewResearch = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('KC Master Research')
+						elm$html$Html$text('research results overview')
+					])),
+				A2(
+				elm$html$Html$h3,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('Royal Conservatoire in The Hague')
 					])),
 				radioSwitch,
 				content

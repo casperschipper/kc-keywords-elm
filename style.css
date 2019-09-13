@@ -3,6 +3,16 @@
     margin: 0px 25px 0px 0px;
 }
 
+.author-name {
+    font-size: 0.9em;
+    font-weight: regular;
+    display: block;
+}
+
+li {
+    list-style-type: none;
+}
+
 .back-to-top {
     font-size: 8px;
 }
@@ -34,6 +44,3 @@ h2.keywordlink a {
 h1.keywordlink a {
     font-size: 1.5em;
 }
-
-
-
