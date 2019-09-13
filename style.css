@@ -8,11 +8,11 @@
 }
 
 #keywords {
-    text-align: justify;
+    text-align: left;
 }
 
 .keywordlink {
-    display: inline;
+    display: inline-block;
 }
 
 h5.keywordlink a {
