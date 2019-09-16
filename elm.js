@@ -6410,6 +6410,7 @@ var elm$core$List$concat = function (lists) {
 	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
 };
 var elm$html$Html$div = _VirtualDom_node('div');
+var elm$html$Html$hr = _VirtualDom_node('hr');
 var elm$html$Html$ul = _VirtualDom_node('ul');
 var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
 var elm$html$Html$Attributes$title = elm$html$Html$Attributes$stringProperty('title');
@@ -6515,7 +6516,20 @@ var author$project$Main$researchByKeywordList = F2(
 				_List_fromArray(
 					[
 						A2(elm$core$List$map, renderKey, sortedKeys),
-						A2(elm$core$List$map, renderKeyWithResearch, sortedKeys)
+						_List_fromArray(
+						[
+							A2(elm$html$Html$hr, _List_Nil, _List_Nil)
+						]),
+						_List_fromArray(
+						[
+							A2(
+							elm$html$Html$div,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$class('keyword-research-list')
+								]),
+							A2(elm$core$List$map, renderKeyWithResearch, sortedKeys))
+						])
 					])));
 	});
 var elm$core$List$singleton = function (value) {
@@ -7541,13 +7555,6 @@ var author$project$Main$viewResearch = function (model) {
 					]),
 				_List_fromArray(
 					[
-						A2(
-						elm$html$Html$h1,
-						_List_Nil,
-						_List_fromArray(
-							[
-								elm$html$Html$text('by keywords')
-							])),
 						author$project$Main$viewKeywords(model)
 					]));
 		}
@@ -7566,10 +7573,10 @@ var author$project$Main$viewResearch = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('research results overview')
+						elm$html$Html$text('research results')
 					])),
 				A2(
-				elm$html$Html$h3,
+				elm$html$Html$h4,
 				_List_Nil,
 				_List_fromArray(
 					[

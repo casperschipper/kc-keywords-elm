@@ -329,13 +329,11 @@ viewResearch model =
 
                 KeywordView ->
                     div [ id "keywords" ]
-                        [ h1 [] [ text "by keywords" ]
-                        , viewKeywords model
-                        ]
+                        [ viewKeywords model ]
     in
     div [ id "top", class "container" ]
-        [ h1 [] [ text "research results overview" ]
-        , h3 [] [ text "Royal Conservatoire in The Hague" ]
+        [ h1 [] [ text "research results" ]
+        , h4 [] [ text "Royal Conservatoire in The Hague" ]
         , radioSwitch
         , content
         ]
@@ -410,7 +408,7 @@ viewShortMeta : Research -> Html Msg
 viewShortMeta research =
     li [ class "short-meta" ]
         [ a [ href <| (linkToUrl << makeLink) research, target "_blank" ] [ text <| .title research ]
-        , span [class "author-name"] [ text <| .author research ]
+        , span [ class "author-name" ] [ text <| .author research ]
         ]
 
 
@@ -593,7 +591,8 @@ researchByKeywordList sortedKeys dict =
     div [] <|
         List.concat
             [ List.map renderKey sortedKeys
-            , List.map renderKeyWithResearch sortedKeys
+            , [ hr [] [] ]
+            , [ div [ class "keyword-research-list" ] <| List.map renderKeyWithResearch sortedKeys ]
             ]
 
 
