@@ -7573,7 +7573,7 @@ var author$project$Main$viewResearch = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('research results')
+						elm$html$Html$text('Research Results')
 					])),
 				A2(
 				elm$html$Html$h4,

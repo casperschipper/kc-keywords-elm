@@ -332,7 +332,7 @@ viewResearch model =
                         [ viewKeywords model ]
     in
     div [ id "top", class "container" ]
-        [ h1 [] [ text "research results" ]
+        [ h1 [] [ text "Research Results" ]
         , h4 [] [ text "Royal Conservatoire in The Hague" ]
         , radioSwitch
         , content
