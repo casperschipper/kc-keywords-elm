@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), Research, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
+module Main exposing (Model, Msg(..), Research, capitalize, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
@@ -332,8 +332,10 @@ viewResearch model =
                         [ viewKeywords model ]
     in
     div [ id "top", class "container" ]
-        [ h1 [] [ text "Research Results" ]
-        , h4 [] [ text "Royal Conservatoire in The Hague" ]
+        [ div [ class "headers" ]
+            [ h1 [] [ text "Research Results" ]
+            , h4 [] [ text "Royal Conservatoire in The Hague" ]
+            ]
         , radioSwitch
         , content
         ]
@@ -596,17 +598,33 @@ researchByKeywordList sortedKeys dict =
             ]
 
 
+capitalize : String -> String
+capitalize string =
+    let
+        head =
+            String.left 1 string
+
+        tail =
+            String.dropLeft 1 string
+    in
+    String.append (String.toUpper head) tail
+
+
 fillKeywordsDict : List Research -> KeywordDict
 fillKeywordsDict research =
     let
         updateKey : Research -> String -> KeywordDict -> KeywordDict
         updateKey res key dct =
-            case get key dct of
+            let
+                capitalizedKey =
+                    capitalize key
+            in
+            case get capitalizedKey dct of
                 Just v ->
-                    insert key (res :: v) dct
+                    insert capitalizedKey (res :: v) dct
 
                 Nothing ->
-                    insert key [ res ] dct
+                    insert capitalizedKey [ res ] dct
 
         updateDict : Research -> KeywordDict -> KeywordDict
         updateDict res dict =

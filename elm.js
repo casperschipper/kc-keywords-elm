@@ -5903,21 +5903,46 @@ var author$project$Main$Failure = function (a) {
 	return {$: 0, a: a};
 };
 var author$project$Main$Success = {$: 2};
+var elm$core$String$append = _String_append;
+var elm$core$String$length = _String_length;
+var elm$core$String$slice = _String_slice;
+var elm$core$String$dropLeft = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3(
+			elm$core$String$slice,
+			n,
+			elm$core$String$length(string),
+			string);
+	});
+var elm$core$String$left = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
+	});
+var elm$core$String$toUpper = _String_toUpper;
+var author$project$Main$capitalize = function (string) {
+	var tail = A2(elm$core$String$dropLeft, 1, string);
+	var head = A2(elm$core$String$left, 1, string);
+	return A2(
+		elm$core$String$append,
+		elm$core$String$toUpper(head),
+		tail);
+};
 var author$project$Main$fillKeywordsDict = function (research) {
 	var updateKey = F3(
 		function (res, key, dct) {
-			var _n0 = A2(elm$core$Dict$get, key, dct);
+			var capitalizedKey = author$project$Main$capitalize(key);
+			var _n0 = A2(elm$core$Dict$get, capitalizedKey, dct);
 			if (!_n0.$) {
 				var v = _n0.a;
 				return A3(
 					elm$core$Dict$insert,
-					key,
+					capitalizedKey,
 					A2(elm$core$List$cons, res, v),
 					dct);
 			} else {
 				return A3(
 					elm$core$Dict$insert,
-					key,
+					capitalizedKey,
 					_List_fromArray(
 						[res]),
 					dct);
@@ -7569,18 +7594,27 @@ var author$project$Main$viewResearch = function (model) {
 		_List_fromArray(
 			[
 				A2(
-				elm$html$Html$h1,
-				_List_Nil,
+				elm$html$Html$div,
 				_List_fromArray(
 					[
-						elm$html$Html$text('Research Results')
-					])),
-				A2(
-				elm$html$Html$h4,
-				_List_Nil,
+						elm$html$Html$Attributes$class('headers')
+					]),
 				_List_fromArray(
 					[
-						elm$html$Html$text('Royal Conservatoire in The Hague')
+						A2(
+						elm$html$Html$h1,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('Research Results')
+							])),
+						A2(
+						elm$html$Html$h4,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('Royal Conservatoire in The Hague')
+							]))
 					])),
 				radioSwitch,
 				content
@@ -7693,26 +7727,12 @@ var elm$core$Task$perform = F2(
 		return elm$core$Task$command(
 			A2(elm$core$Task$map, toMessage, task));
 	});
-var elm$core$String$length = _String_length;
-var elm$core$String$slice = _String_slice;
-var elm$core$String$dropLeft = F2(
-	function (n, string) {
-		return (n < 1) ? string : A3(
-			elm$core$String$slice,
-			n,
-			elm$core$String$length(string),
-			string);
-	});
 var elm$core$String$startsWith = _String_startsWith;
 var elm$url$Url$Http = 0;
 var elm$url$Url$Https = 1;
 var elm$core$String$isEmpty = function (string) {
 	return string === '';
 };
-var elm$core$String$left = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
-	});
 var elm$core$String$toInt = _String_toInt;
 var elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
