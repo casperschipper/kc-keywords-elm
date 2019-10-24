@@ -1,0 +1,80 @@
+@font-face {
+    font-family: MarrSans-Regular-Web;
+    src: url(lib/MarrSans-Regular-Web.woff2);
+}
+
+@font-face {
+    font-family: MarrSansCondensed-Semibold-Web;
+    src: url(lib/MarrSansCondensed-Semibold-Web.woff2);
+}
+
+.keyword {
+    /* t r b l */
+    margin: 0px 25px 0px 0px;
+}
+
+.author-name {
+    font-size: 0.9em;
+    font-weight: regular;
+    display: block;
+}
+
+.keyword-research-list {
+    margin-top:5em;
+}
+
+li {
+    list-style-type: none;
+}
+
+.back-to-top {
+    font-size: 8px;
+}
+
+#keywords {
+    text-align: left;
+}
+
+.keywordlink {
+    display: inline-block;
+}
+
+h5.keywordlink a {
+    font-size: 0.7em;
+}
+
+h4.keywordlink a {
+    font-size: 0.75em;
+}
+
+h3.keywordlink a {
+    font-size: 1em;
+}
+
+h2.keywordlink a {
+    font-size: 1.25em;
+}
+
+h1.keywordlink a {
+    font-size: 1.5em;
+}
+
+.headers h1 {
+    font-family: MarrSansCondensed-Semibold-Web;
+    font-size: 4em;
+}
+
+.headers h4 {
+    font-size: 3em;
+    font-family: MarrSansCondensed-Semibold-Web;
+}
+
+.headers {
+    margin-bottom: 2em;
+}
+
+#keywords h1,h2,h3,h4,h5 {
+    font-family: sans-serif;
+}
+
+

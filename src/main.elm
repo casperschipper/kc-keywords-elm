@@ -44,6 +44,31 @@ type Link
     | KeywordLink LinkInfo
 
 
+teacherTag : String
+teacherTag =
+    "Research by teachers of the Royal Conservatoire"
+
+
+allTags : List String
+allTags =
+    [ teacherTag ]
+
+
+isTag : String -> Bool
+isTag =
+    Util.flip List.member allTags
+
+
+excludeTags : List String -> List String
+excludeTags =
+    List.filter (not << isTag)
+
+
+isTeacherResearch : Research -> Bool
+isTeacherResearch research =
+    List.member teacherTag research.keywords
+
+
 hyperlink : Link -> Html Msg
 hyperlink link =
     case link of
@@ -128,6 +153,7 @@ type alias Model =
     , tableState : Table.State
     , query : String
     , loadingStatus : LoadingStatus
+    , teacherFilter : Bool
     }
 
 
@@ -139,6 +165,7 @@ emptyModel =
     , tableState = Table.initialSort "title"
     , query = ""
     , loadingStatus = Loading
+    , teacherFilter = False
     }
 
 
@@ -157,6 +184,7 @@ type Msg
     | SetQuery String
     | SetTableState Table.State
     | SetViewType ViewType
+    | SetTeacherFilter Bool
 
 
 
@@ -210,6 +238,27 @@ update msg model =
 
         SetViewType newType ->
             ( { model | viewType = newType }, Cmd.none )
+
+        SetTeacherFilter bool ->
+            ( { model | teacherFilter = bool }, Cmd.none )
+
+
+
+-- type alias ResearchData a =
+--     { a
+--         | researchList : List Research
+--         , keywordDict : KeywordDict
+--     }
+-- applyTeacherFilter : ResearchData a -> ResearchData a
+-- applyTeacherFilter data =
+--     let
+--         dictFilter key value =
+--             isTeacherResearch value
+--     in
+--     { data
+--         | researchList = List.filter data.researchList isTeacherResearch
+--         , keywordDict = Dict.filter dictFilter data.keywordDict
+--     }
 
 
 makeLink : Research -> Link
@@ -307,7 +356,7 @@ viewResearch : Model -> Html Msg
 viewResearch model =
     let
         radioSwitch =
-            div []
+            div [ class "mb-1" ]
                 [ ButtonGroup.radioButtonGroup []
                     [ ButtonGroup.radioButton
                         (model.viewType == TableView)
@@ -320,16 +369,51 @@ viewResearch model =
                     ]
                 ]
 
+        teacherFilterSwitch =
+            label []
+                [ text "filter by:"
+                , div [ class "mb-1" ]
+                    [ ButtonGroup.radioButtonGroup []
+                        [ ButtonGroup.radioButton
+                            (not
+                                model.teacherFilter
+                            )
+                            [ Button.light, Button.onClick <| SetTeacherFilter False ]
+                            [ text "All research" ]
+                        , ButtonGroup.radioButton
+                            model.teacherFilter
+                            [ Button.light, Button.onClick <| SetTeacherFilter True ]
+                            [ text "Research by teachers" ]
+                        ]
+                    ]
+                ]
+
         content =
             case model.viewType of
                 TableView ->
+                    let
+                        filtered =
+                            if model.teacherFilter then
+                                List.filter isTeacherResearch model.researchList
+
+                            else
+                                model.researchList
+                    in
                     div
                         []
-                        (viewResearchList model)
+                        (viewResearchList model.tableState model.query filtered)
 
                 KeywordView ->
+                    let
+                        filtered =
+                            if model.teacherFilter then
+                                Dict.filter (\key value -> List.any isTeacherResearch value) model.keywordDict
+
+                            else
+                                model.keywordDict
+                    in
                     div [ id "keywords" ]
-                        [ viewKeywords model ]
+                        [ renderKeywords filtered ]
     in
     div [ id "top", class "container" ]
         [ div [ class "headers" ]
@@ -337,23 +421,19 @@ viewResearch model =
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
         , radioSwitch
+        , teacherFilterSwitch
         , content
         ]
 
 
-viewKeywords : Model -> Html Msg
-viewKeywords model =
-    renderKeywords model.keywordDict
-
-
-viewResearchList : Model -> List (Html Msg)
-viewResearchList model =
+viewResearchList : Table.State -> String -> List Research -> List (Html Msg)
+viewResearchList tableState query researchList =
     let
         lowerQuery =
-            String.toLower model.query
+            String.toLower query
 
         acceptableResearch =
-            List.filter (String.contains lowerQuery << String.toLower << .author) model.researchList
+            List.filter (String.contains lowerQuery << String.toLower << .author) researchList
     in
     [ Form.form [ class "form-inline" ]
         [ Form.group []
@@ -368,7 +448,7 @@ viewResearchList model =
         ]
     , div
         [ class "table-responsive" ]
-        [ Table.view config model.tableState acceptableResearch
+        [ Table.view config tableState acceptableResearch
         ]
     ]
 
@@ -495,7 +575,7 @@ renderKeywords dict =
     div [] <|
         List.singleton <|
             researchByKeywordList
-                sortedKeys
+                (excludeTags sortedKeys)
                 dict
 
 
@@ -533,8 +613,11 @@ scaleLink amount attrs html =
         2 ->
             h4 attrs [ html ]
 
-        _ ->
+        1 ->
             h5 attrs [ html ]
+
+        _ ->
+            h1 attrs [ html ]
 
 
 researchByKeywordList : List String -> KeywordDict -> Html Msg

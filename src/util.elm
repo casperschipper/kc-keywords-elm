@@ -1,6 +1,11 @@
-module Util exposing (RGBColor, hexColor, stringToColor, zip, zipWith)
+module Util exposing (RGBColor, flip, hexColor, stringToColor, zip, zipWith)
 
 import Hex
+
+
+flip : (a -> b -> c) -> b -> a -> c
+flip f x y =
+    f y x
 
 
 zip : List a -> List b -> List ( a, b )

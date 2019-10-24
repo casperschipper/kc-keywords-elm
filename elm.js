@@ -519,11 +519,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.cu.at === region.cK.at)
+	if (region.cv.aw === region.cL.aw)
 	{
-		return 'on line ' + region.cu.at;
+		return 'on line ' + region.cv.aw;
 	}
-	return 'on lines ' + region.cu.at + ' through ' + region.cK.at;
+	return 'on lines ' + region.cv.aw + ' through ' + region.cL.aw;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.dF,
-		impl.dT,
-		impl.dP,
+		impl.dG,
+		impl.dU,
+		impl.dQ,
 		function() { return function() {} }
 	);
 });
@@ -2321,25 +2321,25 @@ var _Http_toTask = F3(function(router, toTask, request)
 	return _Scheduler_binding(function(callback)
 	{
 		function done(response) {
-			callback(toTask(request.dy.a(response)));
+			callback(toTask(request.dz.a(response)));
 		}
 
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener('error', function() { done(elm$http$Http$NetworkError_); });
 		xhr.addEventListener('timeout', function() { done(elm$http$Http$Timeout_); });
-		xhr.addEventListener('load', function() { done(_Http_toResponse(request.dy.b, xhr)); });
+		xhr.addEventListener('load', function() { done(_Http_toResponse(request.dz.b, xhr)); });
 		elm$core$Maybe$isJust(request.o) && _Http_track(router, xhr, request.o.a);
 
 		try {
-			xhr.open(request.l, request.ac, true);
+			xhr.open(request.l, request.ad, true);
 		} catch (e) {
-			return done(elm$http$Http$BadUrl_(request.ac));
+			return done(elm$http$Http$BadUrl_(request.ad));
 		}
 
 		_Http_configureRequest(xhr, request);
 
-		request.dr.a && xhr.setRequestHeader('Content-Type', request.dr.a);
-		xhr.send(request.dr.b);
+		request.ds.a && xhr.setRequestHeader('Content-Type', request.ds.a);
+		xhr.send(request.ds.b);
 
 		return function() { xhr.c = true; xhr.abort(); };
 	});
@@ -2355,8 +2355,8 @@ function _Http_configureRequest(xhr, request)
 		xhr.setRequestHeader(headers.a.a, headers.a.b);
 	}
 	xhr.timeout = request.m.a || 0;
-	xhr.responseType = request.dy.d;
-	xhr.withCredentials = request.M;
+	xhr.responseType = request.dz.d;
+	xhr.withCredentials = request.N;
 }
 
 
@@ -2377,9 +2377,9 @@ function _Http_toResponse(toBody, xhr)
 function _Http_toMetadata(xhr)
 {
 	return {
-		ac: xhr.responseURL,
-		de: xhr.status,
-		dO: xhr.statusText,
+		ad: xhr.responseURL,
+		df: xhr.status,
+		dP: xhr.statusText,
 		g: _Http_parseHeaders(xhr.getAllResponseHeaders())
 	};
 }
@@ -2475,15 +2475,15 @@ function _Http_track(router, xhr, tracker)
 	xhr.upload.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
 		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Sending({
-			dM: event.loaded,
-			ct: event.total
+			dN: event.loaded,
+			cu: event.total
 		}))));
 	});
 	xhr.addEventListener('progress', function(event) {
 		if (xhr.c) { return; }
 		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Receiving({
-			dK: event.loaded,
-			ct: event.lengthComputable ? elm$core$Maybe$Just(event.total) : elm$core$Maybe$Nothing
+			dL: event.loaded,
+			cu: event.lengthComputable ? elm$core$Maybe$Just(event.total) : elm$core$Maybe$Nothing
 		}))));
 	});
 }
@@ -2835,8 +2835,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		y: func(record.y),
-		cw: record.cw,
-		cp: record.cp
+		cx: record.cx,
+		cq: record.cq
 	}
 });
 
@@ -3105,10 +3105,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.y;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.cw;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.cx;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.cp) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.cq) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -4058,11 +4058,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.dF,
-		impl.dT,
-		impl.dP,
+		impl.dG,
+		impl.dU,
+		impl.dQ,
 		function(sendToApp, initialModel) {
-			var view = impl.dU;
+			var view = impl.dV;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -4094,12 +4094,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.dF,
-		impl.dT,
-		impl.dP,
+		impl.dG,
+		impl.dU,
+		impl.dQ,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.ay && impl.ay(sendToApp)
-			var view = impl.dU;
+			var divertHrefToApp = impl.aC && impl.aC(sendToApp)
+			var view = impl.dV;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -4107,7 +4107,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.dr);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.ds);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
@@ -4168,12 +4168,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.dH;
-	var onUrlRequest = impl.dI;
+	var onUrlChange = impl.dI;
+	var onUrlRequest = impl.dJ;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		ay: function(sendToApp)
+		aC: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4189,9 +4189,9 @@ function _Browser_application(impl)
 					var next = elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.c5 === next.c5
-							&& curr.cN === next.cN
-							&& curr.c1.a === next.c1.a
+							&& curr.c6 === next.c6
+							&& curr.cO === next.cO
+							&& curr.c2.a === next.c2.a
 						)
 							? elm$browser$Browser$Internal(next)
 							: elm$browser$Browser$External(href)
@@ -4199,13 +4199,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		dF: function(flags)
+		dG: function(flags)
 		{
-			return A3(impl.dF, flags, _Browser_getUrl(), key);
+			return A3(impl.dG, flags, _Browser_getUrl(), key);
 		},
+		dV: impl.dV,
 		dU: impl.dU,
-		dT: impl.dT,
-		dP: impl.dP
+		dQ: impl.dQ
 	});
 }
 
@@ -4271,17 +4271,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { dC: 'hidden', ds: 'visibilitychange' }
+		? { dD: 'hidden', dt: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { dC: 'mozHidden', ds: 'mozvisibilitychange' }
+		? { dD: 'mozHidden', dt: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { dC: 'msHidden', ds: 'msvisibilitychange' }
+		? { dD: 'msHidden', dt: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { dC: 'webkitHidden', ds: 'webkitvisibilitychange' }
-		: { dC: 'hidden', ds: 'visibilitychange' };
+		? { dD: 'webkitHidden', dt: 'webkitvisibilitychange' }
+		: { dD: 'hidden', dt: 'visibilitychange' };
 }
 
 
@@ -4362,12 +4362,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		db: _Browser_getScene(),
-		$7: {
-			b5: _Browser_window.pageXOffset,
-			b6: _Browser_window.pageYOffset,
-			af: _Browser_doc.documentElement.clientWidth,
-			T: _Browser_doc.documentElement.clientHeight
+		dc: _Browser_getScene(),
+		dp: {
+			b6: _Browser_window.pageXOffset,
+			b7: _Browser_window.pageYOffset,
+			ag: _Browser_doc.documentElement.clientWidth,
+			U: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4377,8 +4377,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		af: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		T: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		ag: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		U: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4401,15 +4401,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			db: {
-				af: node.scrollWidth,
-				T: node.scrollHeight
+			dc: {
+				ag: node.scrollWidth,
+				U: node.scrollHeight
 			},
-			$7: {
-				b5: node.scrollLeft,
-				b6: node.scrollTop,
-				af: node.clientWidth,
-				T: node.clientHeight
+			dp: {
+				b6: node.scrollLeft,
+				b7: node.scrollTop,
+				ag: node.clientWidth,
+				U: node.clientHeight
 			}
 		};
 	});
@@ -4439,18 +4439,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			db: _Browser_getScene(),
-			$7: {
-				b5: x,
-				b6: y,
-				af: _Browser_doc.documentElement.clientWidth,
-				T: _Browser_doc.documentElement.clientHeight
+			dc: _Browser_getScene(),
+			dp: {
+				b6: x,
+				b7: y,
+				ag: _Browser_doc.documentElement.clientWidth,
+				U: _Browser_doc.documentElement.clientHeight
 			},
-			dx: {
-				b5: x + rect.left,
-				b6: y + rect.top,
-				af: rect.width,
-				T: rect.height
+			dy: {
+				b6: x + rect.left,
+				b7: y + rect.top,
+				ag: rect.width,
+				U: rect.height
 			}
 		};
 	});
@@ -4579,19 +4579,20 @@ var elm$core$Set$toList = function (_n0) {
 	return elm$core$Dict$keys(dict);
 };
 var author$project$Main$emptyModel = {
-	bf: author$project$Main$emptyKeywords,
-	Y: author$project$Main$Loading,
-	bM: '',
-	bO: _List_Nil,
-	bV: billstclair$elm_sortable_table$Table$initialSort('title'),
-	ae: 1
+	at: author$project$Main$emptyKeywords,
+	Z: author$project$Main$Loading,
+	bO: '',
+	aB: _List_Nil,
+	bW: billstclair$elm_sortable_table$Table$initialSort('title'),
+	J: false,
+	af: 1
 };
 var author$project$Main$GotList = function (a) {
 	return {$: 1, a: a};
 };
 var author$project$Main$Research = F5(
 	function (id, title, keywords, created, author) {
-		return {Q: author, cb: created, ao: id, bg: keywords, r: title};
+		return {R: author, cc: created, ap: id, au: keywords, r: title};
 	});
 var elm$core$Basics$apL = F2(
 	function (f, x) {
@@ -5611,7 +5612,7 @@ var elm$http$Http$resolve = F2(
 			case 3:
 				var metadata = response.a;
 				return elm$core$Result$Err(
-					elm$http$Http$BadStatus(metadata.de));
+					elm$http$Http$BadStatus(metadata.df));
 			default:
 				var body = response.b;
 				return A2(
@@ -5641,7 +5642,7 @@ var elm$http$Http$Request = function (a) {
 var elm$core$Task$succeed = _Scheduler_succeed;
 var elm$http$Http$State = F2(
 	function (reqs, subs) {
-		return {c7: reqs, df: subs};
+		return {c8: reqs, dg: subs};
 	});
 var elm$http$Http$init = elm$core$Task$succeed(
 	A2(elm$http$Http$State, elm$core$Dict$empty, _List_Nil));
@@ -5716,7 +5717,7 @@ var elm$http$Http$onEffects = F4(
 				return elm$core$Task$succeed(
 					A2(elm$http$Http$State, reqs, subs));
 			},
-			A3(elm$http$Http$updateReqs, router, cmds, state.c7));
+			A3(elm$http$Http$updateReqs, router, cmds, state.c8));
 	});
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
@@ -5836,7 +5837,7 @@ var elm$http$Http$onSelfMsg = F3(
 				A2(
 					elm$core$List$filterMap,
 					A3(elm$http$Http$maybeSend, router, tracker, progress),
-					state.df)));
+					state.dg)));
 	});
 var elm$http$Http$Cancel = function (a) {
 	return {$: 0, a: a};
@@ -5850,14 +5851,14 @@ var elm$http$Http$cmdMap = F2(
 			var r = cmd.a;
 			return elm$http$Http$Request(
 				{
-					M: r.M,
-					dr: r.dr,
-					dy: A2(_Http_mapExpect, func, r.dy),
+					N: r.N,
+					ds: r.ds,
+					dz: A2(_Http_mapExpect, func, r.dz),
 					g: r.g,
 					l: r.l,
 					m: r.m,
 					o: r.o,
-					ac: r.ac
+					ad: r.ad
 				});
 		}
 	});
@@ -5880,16 +5881,16 @@ var elm$http$Http$subscription = _Platform_leaf('Http');
 var elm$http$Http$request = function (r) {
 	return elm$http$Http$command(
 		elm$http$Http$Request(
-			{M: false, dr: r.dr, dy: r.dy, g: r.g, l: r.l, m: r.m, o: r.o, ac: r.ac}));
+			{N: false, ds: r.ds, dz: r.dz, g: r.g, l: r.l, m: r.m, o: r.o, ad: r.ad}));
 };
 var elm$http$Http$get = function (r) {
 	return elm$http$Http$request(
-		{dr: elm$http$Http$emptyBody, dy: r.dy, g: _List_Nil, l: 'GET', m: elm$core$Maybe$Nothing, o: elm$core$Maybe$Nothing, ac: r.ac});
+		{ds: elm$http$Http$emptyBody, dz: r.dz, g: _List_Nil, l: 'GET', m: elm$core$Maybe$Nothing, o: elm$core$Maybe$Nothing, ad: r.ad});
 };
 var author$project$Main$getResearch = elm$http$Http$get(
 	{
-		dy: A2(elm$http$Http$expectJson, author$project$Main$GotList, author$project$Main$decodeResearch),
-		ac: 'data/KCdate_26_Aug_2019.json'
+		dz: A2(elm$http$Http$expectJson, author$project$Main$GotList, author$project$Main$decodeResearch),
+		ad: 'data/KCdate_26_Aug_2019.json'
 	});
 var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(author$project$Main$emptyModel, author$project$Main$getResearch);
@@ -5954,7 +5955,7 @@ var author$project$Main$fillKeywordsDict = function (research) {
 				elm$core$List$foldr,
 				updateKey(res),
 				dict,
-				res.bg);
+				res.au);
 		});
 	return A3(elm$core$List$foldr, updateDict, author$project$Main$emptyKeywords, research);
 };
@@ -5967,7 +5968,7 @@ var author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{Y: author$project$Main$Loading}),
+						{Z: author$project$Main$Loading}),
 					author$project$Main$getResearch);
 			case 1:
 				var result = msg.a;
@@ -5977,9 +5978,9 @@ var author$project$Main$update = F2(
 						_Utils_update(
 							model,
 							{
-								bf: author$project$Main$fillKeywordsDict(list),
-								Y: author$project$Main$Success,
-								bO: list
+								at: author$project$Main$fillKeywordsDict(list),
+								Z: author$project$Main$Success,
+								aB: list
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
@@ -6005,7 +6006,7 @@ var author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{Y: message}),
+							{Z: message}),
 						elm$core$Platform$Cmd$none);
 				}
 			case 2:
@@ -6013,29 +6014,99 @@ var author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{bM: newQuery}),
+						{bO: newQuery}),
 					elm$core$Platform$Cmd$none);
 			case 3:
 				var newState = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{bV: newState}),
+						{bW: newState}),
 					elm$core$Platform$Cmd$none);
-			default:
+			case 4:
 				var newType = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{ae: newType}),
+						{af: newType}),
+					elm$core$Platform$Cmd$none);
+			default:
+				var bool = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{J: bool}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Main$Go = {$: 0};
+var author$project$Main$SetTeacherFilter = function (a) {
+	return {$: 5, a: a};
+};
 var author$project$Main$SetViewType = function (a) {
 	return {$: 4, a: a};
 };
 var author$project$Main$TableView = 0;
+var author$project$Main$teacherTag = 'Research by teachers of the Royal Conservatoire';
+var elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var author$project$Main$isTeacherResearch = function (research) {
+	return A2(elm$core$List$member, author$project$Main$teacherTag, research.au);
+};
+var author$project$Main$allTags = _List_fromArray(
+	[author$project$Main$teacherTag]);
+var author$project$Util$flip = F3(
+	function (f, x, y) {
+		return A2(f, y, x);
+	});
+var author$project$Main$isTag = A2(author$project$Util$flip, elm$core$List$member, author$project$Main$allTags);
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$core$Basics$not = _Basics_not;
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var author$project$Main$excludeTags = elm$core$List$filter(
+	A2(elm$core$Basics$composeL, elm$core$Basics$not, author$project$Main$isTag));
 var elm$core$List$map = F2(
 	function (f, xs) {
 		return A3(
@@ -6250,7 +6321,7 @@ var author$project$Main$viewKeywordLink = function (keyword) {
 		_List_fromArray(
 			[
 				elm$html$Html$Attributes$class('keyword'),
-				elm$html$Html$Attributes$href(keyword.ac),
+				elm$html$Html$Attributes$href(keyword.ad),
 				A2(
 				elm$html$Html$Attributes$style,
 				'color',
@@ -6268,7 +6339,7 @@ var author$project$Main$viewResearchLink = function (link) {
 		elm$html$Html$a,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$href(link.ac),
+				elm$html$Html$Attributes$href(link.ad),
 				elm$html$Html$Attributes$target('_blank')
 			]),
 		_List_fromArray(
@@ -6290,7 +6361,7 @@ var author$project$Main$KeywordLink = function (a) {
 };
 var author$project$Main$LinkInfo = F2(
 	function (title, url) {
-		return {r: title, ac: url};
+		return {r: title, ad: url};
 	});
 var elm$core$String$replace = F3(
 	function (before, after, string) {
@@ -6341,9 +6412,15 @@ var author$project$Main$scaleLink = F3(
 					attrs,
 					_List_fromArray(
 						[html]));
-			default:
+			case 1:
 				return A2(
 					elm$html$Html$h5,
+					attrs,
+					_List_fromArray(
+						[html]));
+			default:
+				return A2(
+					elm$html$Html$h1,
 					attrs,
 					_List_fromArray(
 						[html]));
@@ -6352,10 +6429,10 @@ var author$project$Main$scaleLink = F3(
 var author$project$Main$linkToUrl = function (link) {
 	if (!link.$) {
 		var info = link.a;
-		return info.ac;
+		return info.ad;
 	} else {
 		var info = link.a;
-		return info.ac;
+		return info.ad;
 	}
 };
 var author$project$Main$ResearchLink = function (a) {
@@ -6367,7 +6444,7 @@ var author$project$Main$makeLink = function (research) {
 		author$project$Main$baseExpoUrl,
 		elm$core$String$fromInt(
 			function ($) {
-				return $.ao;
+				return $.ap;
 			}(research)));
 	return author$project$Main$ResearchLink(
 		A2(
@@ -6377,11 +6454,6 @@ var author$project$Main$makeLink = function (research) {
 			}(research),
 			link));
 };
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var elm$html$Html$li = _VirtualDom_node('li');
 var elm$html$Html$span = _VirtualDom_node('span');
 var author$project$Main$viewShortMeta = function (research) {
@@ -6418,7 +6490,7 @@ var author$project$Main$viewShortMeta = function (research) {
 					[
 						elm$html$Html$text(
 						function ($) {
-							return $.Q;
+							return $.R;
 						}(research))
 					]))
 			]));
@@ -6573,10 +6645,10 @@ var author$project$Main$renderKeywords = function (dict) {
 		elm$html$Html$div,
 		_List_Nil,
 		elm$core$List$singleton(
-			A2(author$project$Main$researchByKeywordList, sortedKeys, dict)));
-};
-var author$project$Main$viewKeywords = function (model) {
-	return author$project$Main$renderKeywords(model.bf);
+			A2(
+				author$project$Main$researchByKeywordList,
+				author$project$Main$excludeTags(sortedKeys),
+				dict)));
 };
 var author$project$Main$SetQuery = function (a) {
 	return {$: 2, a: a};
@@ -6587,11 +6659,11 @@ var author$project$Main$SetTableState = function (a) {
 var billstclair$elm_sortable_table$Table$Column = elm$core$Basics$identity;
 var billstclair$elm_sortable_table$Table$ColumnData = F3(
 	function (name, viewData, sorter) {
-		return {cX: name, dd: sorter, dn: viewData};
+		return {cY: name, de: sorter, $7: viewData};
 	});
 var billstclair$elm_sortable_table$Table$HtmlDetails = F2(
 	function (attributes, children) {
-		return {ah: attributes, aj: children};
+		return {ai: attributes, ak: children};
 	});
 var billstclair$elm_sortable_table$Table$textDetails = function (str) {
 	return A2(
@@ -6603,9 +6675,9 @@ var billstclair$elm_sortable_table$Table$textDetails = function (str) {
 			]));
 };
 var billstclair$elm_sortable_table$Table$customColumn = function (_n0) {
-	var name = _n0.cX;
-	var viewData = _n0.dn;
-	var sorter = _n0.dd;
+	var name = _n0.cY;
+	var viewData = _n0.$7;
+	var sorter = _n0.de;
 	return A3(
 		billstclair$elm_sortable_table$Table$ColumnData,
 		name,
@@ -6630,10 +6702,10 @@ var author$project$Main$createdColumn = F2(
 				elm$core$String$join('/')));
 		return billstclair$elm_sortable_table$Table$customColumn(
 			{
-				cX: name,
-				dd: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
+				cY: name,
+				de: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
 					A2(elm$core$Basics$composeL, sortableDateString, toCreated)),
-				dn: function (data) {
+				$7: function (data) {
 					return toCreated(data);
 				}
 			});
@@ -6661,29 +6733,29 @@ var author$project$Main$linkColumn = F2(
 	function (name, toLink) {
 		return billstclair$elm_sortable_table$Table$veryCustomColumn(
 			{
-				cX: name,
-				dd: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
+				cY: name,
+				de: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
 					A2(elm$core$Basics$composeL, author$project$Main$getTitle, toLink)),
-				dn: A2(elm$core$Basics$composeL, author$project$Main$viewLink, toLink)
+				$7: A2(elm$core$Basics$composeL, author$project$Main$viewLink, toLink)
 			});
 	});
 var billstclair$elm_sortable_table$Table$Config = elm$core$Basics$identity;
 var billstclair$elm_sortable_table$Table$customConfig = function (_n0) {
-	var toId = _n0.dR;
-	var toMsg = _n0.dS;
-	var columns = _n0.dt;
-	var customizations = _n0.dw;
+	var toId = _n0.dS;
+	var toMsg = _n0.dT;
+	var columns = _n0.du;
+	var customizations = _n0.dx;
 	return {
-		dt: A2(
+		du: A2(
 			elm$core$List$map,
 			function (_n1) {
 				var cData = _n1;
 				return cData;
 			},
 			columns),
-		dw: customizations,
-		dR: toId,
-		dS: toMsg
+		dx: customizations,
+		dS: toId,
+		dT: toMsg
 	};
 };
 var billstclair$elm_sortable_table$Table$simpleRowAttrs = function (_n0) {
@@ -6771,13 +6843,13 @@ var billstclair$elm_sortable_table$Table$simpleThead = function (headers) {
 		_List_Nil,
 		A2(elm$core$List$map, billstclair$elm_sortable_table$Table$simpleTheadHelp, headers));
 };
-var billstclair$elm_sortable_table$Table$defaultCustomizations = {b9: elm$core$Maybe$Nothing, cs: billstclair$elm_sortable_table$Table$simpleRowAttrs, dQ: _List_Nil, cz: _List_Nil, cA: elm$core$Maybe$Nothing, cB: billstclair$elm_sortable_table$Table$simpleThead};
+var billstclair$elm_sortable_table$Table$defaultCustomizations = {ca: elm$core$Maybe$Nothing, ct: billstclair$elm_sortable_table$Table$simpleRowAttrs, dR: _List_Nil, cA: _List_Nil, cB: elm$core$Maybe$Nothing, cC: billstclair$elm_sortable_table$Table$simpleThead};
 var billstclair$elm_sortable_table$Table$intColumn = F2(
 	function (name, toInt) {
 		return {
-			cX: name,
-			dd: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(toInt),
-			dn: A2(
+			cY: name,
+			de: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(toInt),
+			$7: A2(
 				elm$core$Basics$composeL,
 				A2(elm$core$Basics$composeL, billstclair$elm_sortable_table$Table$textDetails, elm$core$String$fromInt),
 				toInt)
@@ -6786,33 +6858,33 @@ var billstclair$elm_sortable_table$Table$intColumn = F2(
 var billstclair$elm_sortable_table$Table$stringColumn = F2(
 	function (name, toStr) {
 		return {
-			cX: name,
-			dd: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(toStr),
-			dn: A2(elm$core$Basics$composeL, billstclair$elm_sortable_table$Table$textDetails, toStr)
+			cY: name,
+			de: billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(toStr),
+			$7: A2(elm$core$Basics$composeL, billstclair$elm_sortable_table$Table$textDetails, toStr)
 		};
 	});
 var author$project$Main$config = billstclair$elm_sortable_table$Table$customConfig(
 	{
-		dt: _List_fromArray(
+		du: _List_fromArray(
 			[
 				A2(
 				billstclair$elm_sortable_table$Table$intColumn,
 				'Id',
 				function ($) {
-					return $.ao;
+					return $.ap;
 				}),
 				A2(author$project$Main$linkColumn, 'Title', author$project$Main$makeLink),
 				A2(
 				billstclair$elm_sortable_table$Table$stringColumn,
 				'Author',
 				function ($) {
-					return $.Q;
+					return $.R;
 				}),
 				A2(
 				author$project$Main$createdColumn,
 				'Created',
 				function ($) {
-					return $.cb;
+					return $.cc;
 				}),
 				A2(
 				billstclair$elm_sortable_table$Table$stringColumn,
@@ -6821,24 +6893,24 @@ var author$project$Main$config = billstclair$elm_sortable_table$Table$customConf
 					elm$core$Basics$composeL,
 					elm$core$String$join(' '),
 					function ($) {
-						return $.bg;
+						return $.au;
 					}))
 			]),
-		dw: _Utils_update(
+		dx: _Utils_update(
 			billstclair$elm_sortable_table$Table$defaultCustomizations,
 			{
-				dQ: _List_fromArray(
+				dR: _List_fromArray(
 					[
 						elm$html$Html$Attributes$class('table')
 					])
 			}),
-		dR: A2(
+		dS: A2(
 			elm$core$Basics$composeL,
 			elm$core$String$fromInt,
 			function ($) {
-				return $.ao;
+				return $.ap;
 			}),
-		dS: author$project$Main$SetTableState
+		dT: author$project$Main$SetTableState
 	});
 var billstclair$elm_sortable_table$Table$applySorter = F3(
 	function (isReversed, sorter, data) {
@@ -6869,8 +6941,8 @@ var billstclair$elm_sortable_table$Table$findSorter = F2(
 			if (!columnData.b) {
 				return elm$core$Maybe$Nothing;
 			} else {
-				var name = columnData.a.cX;
-				var sorter = columnData.a.dd;
+				var name = columnData.a.cY;
+				var sorter = columnData.a.de;
 				var remainingColumnData = columnData.b;
 				if (_Utils_eq(name, selectedColumn)) {
 					return elm$core$Maybe$Just(sorter);
@@ -6898,10 +6970,10 @@ var billstclair$elm_sortable_table$Table$sort = F3(
 	});
 var billstclair$elm_sortable_table$Table$getSortedData = F3(
 	function (_n0, state, data) {
-		var toId = _n0.dR;
-		var toMsg = _n0.dS;
-		var columns = _n0.dt;
-		var customizations = _n0.dw;
+		var toId = _n0.dS;
+		var toMsg = _n0.dT;
+		var columns = _n0.du;
+		var customizations = _n0.dx;
 		return A3(billstclair$elm_sortable_table$Table$sort, state, columns, data);
 	});
 var billstclair$elm_sortable_table$Table$Reversible = function (a) {
@@ -6937,13 +7009,12 @@ var billstclair$elm_sortable_table$Table$onClick = F3(
 					elm$json$Json$Decode$succeed(isReversed))));
 	});
 var elm$core$Basics$neq = _Utils_notEqual;
-var elm$core$Basics$not = _Basics_not;
 var billstclair$elm_sortable_table$Table$toHeaderInfo = F3(
 	function (_n0, toMsg, _n1) {
 		var sortName = _n0.a;
 		var isReversed = _n0.b;
-		var name = _n1.cX;
-		var sorter = _n1.dd;
+		var name = _n1.cY;
+		var sorter = _n1.de;
 		switch (sorter.$) {
 			case 0:
 				return _Utils_Tuple3(
@@ -6985,9 +7056,9 @@ var billstclair$elm_sortable_table$Table$toHeaderInfo = F3(
 var elm$html$Html$td = _VirtualDom_node('td');
 var billstclair$elm_sortable_table$Table$viewCell = F2(
 	function (data, _n0) {
-		var viewData = _n0.dn;
+		var viewData = _n0.$7;
 		var details = viewData(data);
-		return A2(elm$html$Html$td, details.ah, details.aj);
+		return A2(elm$html$Html$td, details.ai, details.ak);
 	});
 var elm$html$Html$tr = _VirtualDom_node('tr');
 var billstclair$elm_sortable_table$Table$viewRowHelp = F3(
@@ -7019,38 +7090,38 @@ var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 var elm$html$Html$Keyed$node = elm$virtual_dom$VirtualDom$keyedNode;
 var billstclair$elm_sortable_table$Table$view = F3(
 	function (conf, state, data) {
-		var toId = conf.dR;
-		var toMsg = conf.dS;
-		var columns = conf.dt;
-		var customizations = conf.dw;
-		var theadDetails = customizations.cB(
+		var toId = conf.dS;
+		var toMsg = conf.dT;
+		var columns = conf.du;
+		var customizations = conf.dx;
+		var theadDetails = customizations.cC(
 			A2(
 				elm$core$List$map,
 				A2(billstclair$elm_sortable_table$Table$toHeaderInfo, state, toMsg),
 				columns));
 		var thead = A2(
 			elm$html$Html$thead,
-			theadDetails.ah,
+			theadDetails.ai,
 			_List_fromArray(
 				[
-					A2(elm$html$Html$tr, _List_Nil, theadDetails.aj)
+					A2(elm$html$Html$tr, _List_Nil, theadDetails.ak)
 				]));
 		var sortedData = A3(billstclair$elm_sortable_table$Table$getSortedData, conf, state, data);
 		var tbody = A3(
 			elm$html$Html$Keyed$node,
 			'tbody',
-			customizations.cz,
+			customizations.cA,
 			A2(
 				elm$core$List$map,
-				A3(billstclair$elm_sortable_table$Table$viewRow, toId, columns, customizations.cs),
+				A3(billstclair$elm_sortable_table$Table$viewRow, toId, columns, customizations.ct),
 				sortedData));
 		var withFoot = function () {
-			var _n1 = customizations.cA;
+			var _n1 = customizations.cB;
 			if (_n1.$ === 1) {
 				return A2(elm$core$List$cons, tbody, _List_Nil);
 			} else {
-				var attributes = _n1.a.ah;
-				var children = _n1.a.aj;
+				var attributes = _n1.a.ai;
+				var children = _n1.a.ak;
 				return A2(
 					elm$core$List$cons,
 					A2(elm$html$Html$tfoot, attributes, children),
@@ -7059,31 +7130,20 @@ var billstclair$elm_sortable_table$Table$view = F3(
 		}();
 		return A2(
 			elm$html$Html$table,
-			customizations.dQ,
+			customizations.dR,
 			function () {
-				var _n0 = customizations.b9;
+				var _n0 = customizations.ca;
 				if (_n0.$ === 1) {
 					return A2(elm$core$List$cons, thead, withFoot);
 				} else {
-					var attributes = _n0.a.ah;
-					var children = _n0.a.aj;
+					var attributes = _n0.a.ai;
+					var children = _n0.a.ak;
 					return A2(
 						elm$core$List$cons,
 						A2(elm$html$Html$caption, attributes, children),
 						A2(elm$core$List$cons, thead, withFoot));
 				}
 			}());
-	});
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
 	});
 var elm$core$String$contains = _String_contains;
 var elm$core$String$toLower = _String_toLower;
@@ -7131,10 +7191,10 @@ var rundis$elm_bootstrap$Bootstrap$Form$applyModifier = F2(
 		return _Utils_update(
 			options,
 			{
-				ah: _Utils_ap(options.ah, value)
+				ai: _Utils_ap(options.ai, value)
 			});
 	});
-var rundis$elm_bootstrap$Bootstrap$Form$defaultOptions = {ah: _List_Nil};
+var rundis$elm_bootstrap$Bootstrap$Form$defaultOptions = {ai: _List_Nil};
 var rundis$elm_bootstrap$Bootstrap$Form$toAttributes = function (modifiers) {
 	var options = A3(elm$core$List$foldl, rundis$elm_bootstrap$Bootstrap$Form$applyModifier, rundis$elm_bootstrap$Bootstrap$Form$defaultOptions, modifiers);
 	return _Utils_ap(
@@ -7142,7 +7202,7 @@ var rundis$elm_bootstrap$Bootstrap$Form$toAttributes = function (modifiers) {
 			[
 				elm$html$Html$Attributes$class('form-group')
 			]),
-		options.ah);
+		options.ai);
 };
 var rundis$elm_bootstrap$Bootstrap$Form$group = F2(
 	function (options, children) {
@@ -7151,59 +7211,106 @@ var rundis$elm_bootstrap$Bootstrap$Form$group = F2(
 			rundis$elm_bootstrap$Bootstrap$Form$toAttributes(options),
 			children);
 	});
-var author$project$Main$viewResearchList = function (model) {
-	var lowerQuery = elm$core$String$toLower(model.bM);
-	var acceptableResearch = A2(
-		elm$core$List$filter,
-		A2(
-			elm$core$Basics$composeL,
+var author$project$Main$viewResearchList = F3(
+	function (tableState, query, researchList) {
+		var lowerQuery = elm$core$String$toLower(query);
+		var acceptableResearch = A2(
+			elm$core$List$filter,
 			A2(
 				elm$core$Basics$composeL,
-				elm$core$String$contains(lowerQuery),
-				elm$core$String$toLower),
-			function ($) {
-				return $.Q;
-			}),
-		model.bO);
-	return _List_fromArray(
-		[
-			A2(
-			rundis$elm_bootstrap$Bootstrap$Form$form,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$class('form-inline')
-				]),
-			_List_fromArray(
-				[
-					A2(
-					rundis$elm_bootstrap$Bootstrap$Form$group,
-					_List_Nil,
-					_List_fromArray(
-						[
-							A2(
-							elm$html$Html$input,
-							_List_fromArray(
-								[
-									elm$html$Html$Attributes$class('form-control'),
-									elm$html$Html$Attributes$placeholder('Search by Author'),
-									elm$html$Html$Events$onInput(author$project$Main$SetQuery),
-									A2(elm$html$Html$Attributes$style, 'margin', '.5rem 0')
-								]),
-							_List_Nil)
-						]))
-				])),
-			A2(
-			elm$html$Html$div,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$class('table-responsive')
-				]),
-			_List_fromArray(
-				[
-					A3(billstclair$elm_sortable_table$Table$view, author$project$Main$config, model.bV, acceptableResearch)
-				]))
-		]);
+				A2(
+					elm$core$Basics$composeL,
+					elm$core$String$contains(lowerQuery),
+					elm$core$String$toLower),
+				function ($) {
+					return $.R;
+				}),
+			researchList);
+		return _List_fromArray(
+			[
+				A2(
+				rundis$elm_bootstrap$Bootstrap$Form$form,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('form-inline')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						rundis$elm_bootstrap$Bootstrap$Form$group,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$input,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$class('form-control'),
+										elm$html$Html$Attributes$placeholder('Search by Author'),
+										elm$html$Html$Events$onInput(author$project$Main$SetQuery),
+										A2(elm$html$Html$Attributes$style, 'margin', '.5rem 0')
+									]),
+								_List_Nil)
+							]))
+					])),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('table-responsive')
+					]),
+				_List_fromArray(
+					[
+						A3(billstclair$elm_sortable_table$Table$view, author$project$Main$config, tableState, acceptableResearch)
+					]))
+			]);
+	});
+var elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === -2) {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3(elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var elm$core$Dict$filter = F2(
+	function (isGood, dict) {
+		return A3(
+			elm$core$Dict$foldl,
+			F3(
+				function (k, v, d) {
+					return A2(isGood, k, v) ? A3(elm$core$Dict$insert, k, v, d) : d;
+				}),
+			elm$core$Dict$empty,
+			dict);
+	});
+var elm$html$Html$label = _VirtualDom_node('label');
+var rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring = function (a) {
+	return {$: 1, a: a};
 };
+var rundis$elm_bootstrap$Bootstrap$Internal$Button$Light = 7;
+var rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled = function (a) {
+	return {$: 0, a: a};
+};
+var rundis$elm_bootstrap$Bootstrap$Button$light = rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring(
+	rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled(7));
 var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
 	return {$: 2, a: a};
 };
@@ -7231,16 +7338,9 @@ var rundis$elm_bootstrap$Bootstrap$Button$onClick = function (message) {
 					_Utils_Tuple2(message, true)))
 			]));
 };
-var rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring = function (a) {
-	return {$: 1, a: a};
-};
 var rundis$elm_bootstrap$Bootstrap$Internal$Button$Primary = 0;
-var rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled = function (a) {
-	return {$: 0, a: a};
-};
 var rundis$elm_bootstrap$Bootstrap$Button$primary = rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring(
 	rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled(0));
-var elm$html$Html$label = _VirtualDom_node('label');
 var elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -7311,7 +7411,7 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						ct: elm$core$Maybe$Just(size)
+						cu: elm$core$Maybe$Just(size)
 					});
 			case 1:
 				var coloring = modifier.a;
@@ -7323,22 +7423,22 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 			case 2:
 				return _Utils_update(
 					options,
-					{aW: true});
+					{a_: true});
 			case 3:
 				var val = modifier.a;
 				return _Utils_update(
 					options,
-					{a4: val});
+					{a8: val});
 			default:
 				var attrs = modifier.a;
 				return _Utils_update(
 					options,
 					{
-						ah: _Utils_ap(options.ah, attrs)
+						ai: _Utils_ap(options.ai, attrs)
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {ah: _List_Nil, aW: false, w: elm$core$Maybe$Nothing, a4: false, ct: elm$core$Maybe$Nothing};
+var rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {ai: _List_Nil, a_: false, w: elm$core$Maybe$Nothing, a8: false, cu: elm$core$Maybe$Nothing};
 var rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass = function (role) {
 	switch (role) {
 		case 0:
@@ -7370,14 +7470,14 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function (
 				_List_fromArray(
 					[
 						_Utils_Tuple2('btn', true),
-						_Utils_Tuple2('btn-block', options.aW),
-						_Utils_Tuple2('disabled', options.a4)
+						_Utils_Tuple2('btn-block', options.a_),
+						_Utils_Tuple2('disabled', options.a8)
 					])),
-				elm$html$Html$Attributes$disabled(options.a4)
+				elm$html$Html$Attributes$disabled(options.a8)
 			]),
 		_Utils_ap(
 			function () {
-				var _n0 = A2(elm$core$Maybe$andThen, rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.ct);
+				var _n0 = A2(elm$core$Maybe$andThen, rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.cu);
 				if (!_n0.$) {
 					var s = _n0.a;
 					return _List_fromArray(
@@ -7411,7 +7511,7 @@ var rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function (
 						return _List_Nil;
 					}
 				}(),
-				options.ah)));
+				options.ai)));
 };
 var rundis$elm_bootstrap$Bootstrap$Button$radioButton = F3(
 	function (checked, options, children) {
@@ -7456,22 +7556,22 @@ var rundis$elm_bootstrap$Bootstrap$ButtonGroup$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						ct: elm$core$Maybe$Just(size)
+						cu: elm$core$Maybe$Just(size)
 					});
 			case 1:
 				return _Utils_update(
 					options,
-					{b4: true});
+					{b5: true});
 			default:
 				var attrs_ = modifier.a;
 				return _Utils_update(
 					options,
 					{
-						ah: _Utils_ap(options.ah, attrs_)
+						ai: _Utils_ap(options.ai, attrs_)
 					});
 		}
 	});
-var rundis$elm_bootstrap$Bootstrap$ButtonGroup$defaultOptions = {ah: _List_Nil, ct: elm$core$Maybe$Nothing, b4: false};
+var rundis$elm_bootstrap$Bootstrap$ButtonGroup$defaultOptions = {ai: _List_Nil, cu: elm$core$Maybe$Nothing, b5: false};
 var rundis$elm_bootstrap$Bootstrap$ButtonGroup$groupAttributes = F2(
 	function (toggle, modifiers) {
 		var options = A3(elm$core$List$foldl, rundis$elm_bootstrap$Bootstrap$ButtonGroup$applyModifier, rundis$elm_bootstrap$Bootstrap$ButtonGroup$defaultOptions, modifiers);
@@ -7484,13 +7584,13 @@ var rundis$elm_bootstrap$Bootstrap$ButtonGroup$groupAttributes = F2(
 						[
 							_Utils_Tuple2('btn-group', true),
 							_Utils_Tuple2('btn-group-toggle', toggle),
-							_Utils_Tuple2('btn-group-vertical', options.b4)
+							_Utils_Tuple2('btn-group-vertical', options.b5)
 						])),
 					A2(elm$html$Html$Attributes$attribute, 'data-toggle', 'buttons')
 				]),
 			_Utils_ap(
 				function () {
-					var _n0 = A2(elm$core$Maybe$andThen, rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.ct);
+					var _n0 = A2(elm$core$Maybe$andThen, rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.cu);
 					if (!_n0.$) {
 						var s = _n0.a;
 						return _List_fromArray(
@@ -7501,7 +7601,7 @@ var rundis$elm_bootstrap$Bootstrap$ButtonGroup$groupAttributes = F2(
 						return _List_Nil;
 					}
 				}(),
-				options.ah));
+				options.ai));
 	});
 var rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroupItem = F2(
 	function (options, items) {
@@ -7526,9 +7626,60 @@ var rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup = F2(
 			A2(rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroupItem, options, items));
 	});
 var author$project$Main$viewResearch = function (model) {
+	var teacherFilterSwitch = A2(
+		elm$html$Html$label,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('filter by:'),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('mb-1')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A3(
+								rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+								!model.J,
+								_List_fromArray(
+									[
+										rundis$elm_bootstrap$Bootstrap$Button$light,
+										rundis$elm_bootstrap$Bootstrap$Button$onClick(
+										author$project$Main$SetTeacherFilter(false))
+									]),
+								_List_fromArray(
+									[
+										elm$html$Html$text('All research')
+									])),
+								A3(
+								rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+								model.J,
+								_List_fromArray(
+									[
+										rundis$elm_bootstrap$Bootstrap$Button$light,
+										rundis$elm_bootstrap$Bootstrap$Button$onClick(
+										author$project$Main$SetTeacherFilter(true))
+									]),
+								_List_fromArray(
+									[
+										elm$html$Html$text('Research by teachers')
+									]))
+							]))
+					]))
+			]));
 	var radioSwitch = A2(
 		elm$html$Html$div,
-		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('mb-1')
+			]),
 		_List_fromArray(
 			[
 				A2(
@@ -7538,7 +7689,7 @@ var author$project$Main$viewResearch = function (model) {
 					[
 						A3(
 						rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
-						!model.ae,
+						!model.af,
 						_List_fromArray(
 							[
 								rundis$elm_bootstrap$Bootstrap$Button$primary,
@@ -7551,7 +7702,7 @@ var author$project$Main$viewResearch = function (model) {
 							])),
 						A3(
 						rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
-						model.ae === 1,
+						model.af === 1,
 						_List_fromArray(
 							[
 								rundis$elm_bootstrap$Bootstrap$Button$primary,
@@ -7565,13 +7716,21 @@ var author$project$Main$viewResearch = function (model) {
 					]))
 			]));
 	var content = function () {
-		var _n0 = model.ae;
+		var _n0 = model.af;
 		if (!_n0) {
+			var filtered = model.J ? A2(elm$core$List$filter, author$project$Main$isTeacherResearch, model.aB) : model.aB;
 			return A2(
 				elm$html$Html$div,
 				_List_Nil,
-				author$project$Main$viewResearchList(model));
+				A3(author$project$Main$viewResearchList, model.bW, model.bO, filtered));
 		} else {
+			var filtered = model.J ? A2(
+				elm$core$Dict$filter,
+				F2(
+					function (key, value) {
+						return A2(elm$core$List$any, author$project$Main$isTeacherResearch, value);
+					}),
+				model.at) : model.at;
 			return A2(
 				elm$html$Html$div,
 				_List_fromArray(
@@ -7580,7 +7739,7 @@ var author$project$Main$viewResearch = function (model) {
 					]),
 				_List_fromArray(
 					[
-						author$project$Main$viewKeywords(model)
+						author$project$Main$renderKeywords(filtered)
 					]));
 		}
 	}();
@@ -7617,6 +7776,7 @@ var author$project$Main$viewResearch = function (model) {
 							]))
 					])),
 				radioSwitch,
+				teacherFilterSwitch,
 				content
 			]));
 };
@@ -7628,7 +7788,7 @@ var elm$html$Html$Events$onClick = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var author$project$Main$view = function (model) {
-	var _n0 = model.Y;
+	var _n0 = model.Z;
 	switch (_n0.$) {
 		case 0:
 			var details = _n0.a;
@@ -7736,7 +7896,7 @@ var elm$core$String$isEmpty = function (string) {
 var elm$core$String$toInt = _String_toInt;
 var elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {cM: fragment, cN: host, c$: path, c1: port_, c5: protocol, bM: query};
+		return {cN: fragment, cO: host, c0: path, c2: port_, c6: protocol, bO: query};
 	});
 var elm$url$Url$chompBeforePath = F5(
 	function (protocol, path, params, frag, str) {
@@ -7842,6 +8002,6 @@ var elm$url$Url$fromString = function (str) {
 };
 var elm$browser$Browser$element = _Browser_element;
 var author$project$Main$main = elm$browser$Browser$element(
-	{dF: author$project$Main$init, dP: author$project$Main$subscriptions, dT: author$project$Main$update, dU: author$project$Main$view});
+	{dG: author$project$Main$init, dQ: author$project$Main$subscriptions, dU: author$project$Main$update, dV: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
 	elm$json$Json$Decode$succeed(0))(0)}});}(this));
