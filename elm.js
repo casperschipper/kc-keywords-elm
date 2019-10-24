@@ -6893,7 +6893,10 @@ var author$project$Main$config = billstclair$elm_sortable_table$Table$customConf
 					elm$core$Basics$composeL,
 					A2(
 						elm$core$Basics$composeL,
-						elm$core$String$join(' '),
+						A2(
+							elm$core$Basics$composeL,
+							elm$core$String$join(', '),
+							elm$core$List$map(author$project$Main$capitalize)),
 						author$project$Main$excludeTags),
 					function ($) {
 						return $.au;

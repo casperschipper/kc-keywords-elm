@@ -311,7 +311,7 @@ config =
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
             , createdColumn "Created" .created
-            , Table.stringColumn "Keywords" (String.join " " << excludeTags << .keywords)
+            , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             ]
         , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
         }
