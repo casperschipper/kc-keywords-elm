@@ -9,10 +9,10 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, map5, string)
+import Json.Decode exposing (Decoder, field, int, list, map, map6, string, succeed)
 import Random
 import Table exposing (Column, defaultCustomizations)
-import Util exposing (RGBColor, hexColor, stringToColor, zip, zipWith)
+import Util exposing (RGBColor, hexColor, liftA2Bool, stringToColor, zip, zipWith)
 
 
 baseExpoUrl : String
@@ -30,6 +30,7 @@ type alias Research =
     , keywords : List String
     , created : String
     , author : String
+    , researchType : ResearchType
     }
 
 
@@ -44,14 +45,31 @@ type Link
     | KeywordLink LinkInfo
 
 
+type ResearchType
+    = Teacher
+    | Student
+    | Lectorate
+    | Unknown
+
+
+type Filter
+    = All
+    | Only ResearchType
+
+
 teacherTag : String
 teacherTag =
     "Research by teachers of the Royal Conservatoire"
 
 
+lectorateTag : String
+lectorateTag =
+    "KonCon Lectorate"
+
+
 allTags : List String
 allTags =
-    [ teacherTag ]
+    [ teacherTag, lectorateTag ]
 
 
 isTag : String -> Bool
@@ -65,8 +83,22 @@ excludeTags =
 
 
 isTeacherResearch : Research -> Bool
-isTeacherResearch research =
-    List.member teacherTag research.keywords
+isTeacherResearch =
+    List.member teacherTag << .keywords
+
+
+isLectorateResearch : Research -> Bool
+isLectorateResearch =
+    List.member lectorateTag << .keywords
+
+
+isStudentResearch : Research -> Bool
+isStudentResearch =
+    not << liftA2Bool (||) isTeacherResearch isLectorateResearch
+
+
+
+-- not << (isTeacherResearch || isLectorateResearch)
 
 
 hyperlink : Link -> Html Msg
@@ -110,12 +142,28 @@ decodeResearch =
 
 entry : Decoder Research
 entry =
-    map5 Research
-        (field "id" int)
-        (field "title" string)
-        (field "keywords" (list string))
-        (field "created" string)
-        (field "author" <| field "name" string)
+    let
+        researchType : Research -> Research
+        researchType research =
+            if isTeacherResearch research then
+                { research | researchType = Teacher }
+
+            else if isLectorateResearch research then
+                { research | researchType = Lectorate }
+
+            else
+                -- there is no tag for students
+                { research | researchType = Student }
+    in
+    map researchType
+        (map6 Research
+            (field "id" int)
+            (field "title" string)
+            (field "keywords" (list string))
+            (field "created" string)
+            (field "author" <| field "name" string)
+            (succeed Unknown)
+        )
 
 
 
@@ -153,7 +201,7 @@ type alias Model =
     , tableState : Table.State
     , query : String
     , loadingStatus : LoadingStatus
-    , teacherFilter : Bool
+    , filter : Filter
     }
 
 
@@ -165,7 +213,7 @@ emptyModel =
     , tableState = Table.initialSort "title"
     , query = ""
     , loadingStatus = Loading
-    , teacherFilter = False
+    , filter = All
     }
 
 
@@ -184,7 +232,7 @@ type Msg
     | SetQuery String
     | SetTableState Table.State
     | SetViewType ViewType
-    | SetTeacherFilter Bool
+    | SetFilter Filter
 
 
 
@@ -239,8 +287,8 @@ update msg model =
         SetViewType newType ->
             ( { model | viewType = newType }, Cmd.none )
 
-        SetTeacherFilter bool ->
-            ( { model | teacherFilter = bool }, Cmd.none )
+        SetFilter filter ->
+            ( { model | filter = filter }, Cmd.none )
 
 
 
@@ -307,7 +355,7 @@ config =
         { toId = String.fromInt << .id
         , toMsg = SetTableState
         , columns =
-            [ Table.intColumn "Id" .id
+            [ typeColumn "Type" .researchType
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
             , createdColumn "Created" .created
@@ -352,6 +400,16 @@ view model =
             viewResearch model
 
 
+filterResearch : Filter -> List Research -> List Research
+filterResearch filter list =
+    case filter of
+        All ->
+            list
+
+        Only filterType ->
+            List.filter ((==) filterType << .researchType) list
+
+
 viewResearch : Model -> Html Msg
 viewResearch model =
     let
@@ -369,59 +427,60 @@ viewResearch model =
                     ]
                 ]
 
-        teacherFilterSwitch =
+        filterSwitch =
+            let
+                current =
+                    model.filter
+            in
             label []
                 [ text "filter by:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
-                            (not
-                                model.teacherFilter
-                            )
-                            [ Button.light, Button.onClick <| SetTeacherFilter False ]
+                            (current == All)
+                            [ Button.light, Button.onClick <| SetFilter All ]
                             [ text "All research" ]
                         , ButtonGroup.radioButton
-                            model.teacherFilter
-                            [ Button.light, Button.onClick <| SetTeacherFilter True ]
+                            (current == Only Teacher)
+                            [ Button.light, Button.onClick <| SetFilter (Only Teacher) ]
                             [ text "Research by teachers" ]
+                        , ButtonGroup.radioButton
+                            (current == Only Student)
+                            [ Button.light, Button.onClick <| SetFilter (Only Student) ]
+                            [ text "Research by students" ]
+                        , ButtonGroup.radioButton
+                            (current == Only Lectorate)
+                            [ Button.light, Button.onClick <| SetFilter (Only Lectorate) ]
+                            [ text "Research part of the lectorate 'Music, Education and Society'" ]
                         ]
                     ]
                 ]
 
+        filtered =
+            filterResearch model.filter model.researchList
+
         content =
             case model.viewType of
                 TableView ->
-                    let
-                        filtered =
-                            if model.teacherFilter then
-                                List.filter isTeacherResearch model.researchList
-
-                            else
-                                model.researchList
-                    in
                     div
                         []
                         (viewResearchList model.tableState model.query filtered)
 
                 KeywordView ->
                     let
-                        filtered =
-                            if model.teacherFilter then
-                                Dict.filter (\key value -> List.any isTeacherResearch value) model.keywordDict
-
-                            else
-                                model.keywordDict
+                        filteredDict =
+                            fillKeywordsDict <| filtered
                     in
                     div [ id "keywords" ]
-                        [ renderKeywords filtered ]
+                        [ renderKeywords filteredDict ]
     in
     div [ id "top", class "container" ]
         [ div [ class "headers" ]
             [ h1 [] [ text "Research Results" ]
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
+        , filterSwitch
         , radioSwitch
-        , teacherFilterSwitch
         , content
         ]
 
@@ -505,6 +564,31 @@ createdColumn name toCreated =
         , viewData = \data -> toCreated data
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
+
+
+typeColumn : String -> (data -> ResearchType) -> Column data msg
+typeColumn name getType =
+    Table.customColumn
+        { name = name
+        , viewData = typeToString << getType
+        , sorter = Table.increasingOrDecreasingBy <| typeToString << getType
+        }
+
+
+typeToString : ResearchType -> String
+typeToString researchType =
+    case researchType of
+        Teacher ->
+            "Teacher"
+
+        Student ->
+            "Student"
+
+        Lectorate ->
+            "Lectorate"
+
+        Unknown ->
+            "Unknown"
 
 
 getTitle : Link -> String

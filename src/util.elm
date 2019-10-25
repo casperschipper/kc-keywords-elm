@@ -1,4 +1,4 @@
-module Util exposing (RGBColor, flip, hexColor, stringToColor, zip, zipWith)
+module Util exposing (RGBColor, flip, hexColor, liftA2Bool, stringToColor, zip, zipWith)
 
 import Hex
 
@@ -6,6 +6,11 @@ import Hex
 flip : (a -> b -> c) -> b -> a -> c
 flip f x y =
     f y x
+
+
+liftA2Bool : (Bool -> Bool -> Bool) -> (a -> Bool) -> (a -> Bool) -> a -> Bool
+liftA2Bool operator test1 test2 value =
+    operator (test1 value) (test2 value)
 
 
 zip : List a -> List b -> List ( a, b )
