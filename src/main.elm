@@ -9,7 +9,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, map, map6, string, succeed)
+import Json.Decode exposing (Decoder, field, int, list, map, map6, map7, string, succeed)
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, stringToColor, zip, zipWith)
@@ -31,6 +31,7 @@ type alias Research =
     , created : String
     , author : String
     , researchType : ResearchType
+    , issueId : Int
     }
 
 
@@ -156,13 +157,14 @@ entry =
                 { research | researchType = Student }
     in
     map researchType
-        (map6 Research
+        (map7 Research
             (field "id" int)
             (field "title" string)
             (field "keywords" (list string))
             (field "created" string)
             (field "author" <| field "name" string)
             (succeed Unknown)
+            (field "issue" <| field "id" int)
         )
 
 
@@ -288,6 +290,20 @@ update msg model =
             ( { model | viewType = newType }, Cmd.none )
 
         SetFilter filter ->
+            {--
+            let
+                view =
+                    case filter of
+                        Only Teacher ->
+                            ListView
+
+                        Only Lectorate ->
+                            ListView
+
+                        _ ->
+                            model.view
+            in
+            --}
             ( { model | filter = filter }, Cmd.none )
 
 
