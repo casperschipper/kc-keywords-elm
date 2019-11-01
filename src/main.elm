@@ -9,7 +9,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, map, map6, map7, string, succeed)
+import Json.Decode exposing (Decoder, field, int, list, map, map6, map7, maybe, string, succeed)
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, stringToColor, zip, zipWith)
@@ -20,7 +20,13 @@ baseExpoUrl =
     "https://www.researchcatalogue.net/profile/show-exposition?exposition="
 
 
+dataUrl : String
+dataUrl =
+    "data/internal_research.json"
 
+
+
+-- "data/KCdate_26_Aug_2019.json"
 -- Research type
 
 
@@ -31,7 +37,7 @@ type alias Research =
     , created : String
     , author : String
     , researchType : ResearchType
-    , issueId : Int
+    , issueId : Maybe Int
     }
 
 
@@ -164,7 +170,7 @@ entry =
             (field "created" string)
             (field "author" <| field "name" string)
             (succeed Unknown)
-            (field "issue" <| field "id" int)
+            (maybe (field "issue" <| field "id" int))
         )
 
 
@@ -242,6 +248,19 @@ type Msg
 -- | NewColor
 
 
+filterInternal : List Research -> List Research
+filterInternal =
+    List.filter
+        (\r ->
+            case r.issueId of
+                Just id ->
+                    id == 534751
+
+                Nothing ->
+                    False
+        )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -253,7 +272,7 @@ update msg model =
                 Ok list ->
                     ( { model
                         | loadingStatus = Success
-                        , researchList = list
+                        , researchList = filterInternal list
                         , keywordDict = fillKeywordsDict list
                       }
                     , Cmd.none
@@ -639,7 +658,7 @@ viewLink link =
 getResearch : Cmd Msg
 getResearch =
     Http.get
-        { url = "data/KCdate_26_Aug_2019.json"
+        { url = dataUrl
         , expect = Http.expectJson GotList decodeResearch
         }
 
