@@ -9,20 +9,22 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, map, map6, map7, maybe, string, succeed)
+import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, stringToColor, zip, zipWith)
 
 
-baseExpoUrl : String
 baseExpoUrl =
     "https://www.researchcatalogue.net/profile/show-exposition?exposition="
 
 
-dataUrl : String
 dataUrl =
     "data/internal_research.json"
+
+
+localIssueId =
+    534751
 
 
 
@@ -38,6 +40,7 @@ type alias Research =
     , author : String
     , researchType : ResearchType
     , issueId : Maybe Int
+    , publicationStatus : PublicationStatus -- should be string ? then a valu0-=98
     }
 
 
@@ -57,6 +60,13 @@ type ResearchType
     | Student
     | Lectorate
     | Unknown
+
+
+type PublicationStatus
+    = InProgress
+    | Published
+    | LocalPublication
+    | Undecided
 
 
 type Filter
@@ -104,6 +114,41 @@ isStudentResearch =
     not << liftA2Bool (||) isTeacherResearch isLectorateResearch
 
 
+calcStatus : Research -> PublicationStatus
+calcStatus research =
+    case research.publicationStatus of
+        InProgress ->
+            InProgress
+
+        _ ->
+            case research.issueId of
+                Just id ->
+                    if id == localIssueId then
+                        LocalPublication
+
+                    else
+                        Published
+
+                Nothing ->
+                    Published
+
+
+statusToString : PublicationStatus -> String
+statusToString status =
+    case status of
+        InProgress ->
+            "in progress"
+
+        Published ->
+            "published"
+
+        LocalPublication ->
+            "local publication"
+
+        Undecided ->
+            "..."
+
+
 
 -- not << (isTeacherResearch || isLectorateResearch)
 
@@ -142,6 +187,10 @@ keyToLinkInfo key =
     KeywordLink <| LinkInfo key ("#" ++ keywordLink key)
 
 
+
+-- JSON Decoder
+
+
 decodeResearch : Decoder (List Research)
 decodeResearch =
     list entry
@@ -161,9 +210,25 @@ entry =
             else
                 -- there is no tag for students
                 { research | researchType = Student }
+
+        researchPublicationStatus : Research -> Research
+        researchPublicationStatus research =
+            { research | publicationStatus = calcStatus research }
+
+        statusFromString : String -> PublicationStatus
+        statusFromString statusString =
+            case statusString of
+                "published" ->
+                    Published
+
+                "in progress" ->
+                    InProgress
+
+                _ ->
+                    Undecided
     in
-    map researchType
-        (map7 Research
+    map (researchType << researchPublicationStatus)
+        (map8 Research
             (field "id" int)
             (field "title" string)
             (field "keywords" (list string))
@@ -171,6 +236,7 @@ entry =
             (field "author" <| field "name" string)
             (succeed Unknown)
             (maybe (field "issue" <| field "id" int))
+            (map statusFromString (field "status" string))
         )
 
 
@@ -210,6 +276,7 @@ type alias Model =
     , query : String
     , loadingStatus : LoadingStatus
     , filter : Filter
+    , includeInternalResearch : Bool
     }
 
 
@@ -222,6 +289,7 @@ emptyModel =
     , query = ""
     , loadingStatus = Loading
     , filter = All
+    , includeInternalResearch = True
     }
 
 
@@ -241,24 +309,12 @@ type Msg
     | SetTableState Table.State
     | SetViewType ViewType
     | SetFilter Filter
+    | ToggleInternalPublicationFilter
 
 
 
 -- | GenColor
 -- | NewColor
-
-
-filterInternal : List Research -> List Research
-filterInternal =
-    List.filter
-        (\r ->
-            case r.issueId of
-                Just id ->
-                    id == 534751
-
-                Nothing ->
-                    False
-        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -272,7 +328,7 @@ update msg model =
                 Ok list ->
                     ( { model
                         | loadingStatus = Success
-                        , researchList = filterInternal list
+                        , researchList = list
                         , keywordDict = fillKeywordsDict list
                       }
                     , Cmd.none
@@ -324,6 +380,9 @@ update msg model =
             in
             --}
             ( { model | filter = filter }, Cmd.none )
+
+        ToggleInternalPublicationFilter ->
+            ( { model | includeInternalResearch = not model.includeInternalResearch }, Cmd.none )
 
 
 
@@ -395,6 +454,7 @@ config =
             , Table.stringColumn "Author" .author
             , createdColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
+            , Table.stringColumn "Status" (statusToString << .publicationStatus)
             ]
         , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
         }
@@ -449,16 +509,40 @@ viewResearch : Model -> Html Msg
 viewResearch model =
     let
         radioSwitch =
-            div [ class "mb-1" ]
-                [ ButtonGroup.radioButtonGroup []
-                    [ ButtonGroup.radioButton
-                        (model.viewType == TableView)
-                        [ Button.primary, Button.onClick <| SetViewType TableView ]
-                        [ text "list view" ]
-                    , ButtonGroup.radioButton
-                        (model.viewType == KeywordView)
-                        [ Button.primary, Button.onClick <| SetViewType KeywordView ]
-                        [ text "keyword view" ]
+            label []
+                [ text "switch view:"
+                , div [ class "mb-1" ]
+                    [ ButtonGroup.radioButtonGroup []
+                        [ ButtonGroup.radioButton
+                            (model.viewType == TableView)
+                            [ Button.primary, Button.onClick <| SetViewType TableView ]
+                            [ text "list view" ]
+                        , ButtonGroup.radioButton
+                            (model.viewType == KeywordView)
+                            [ Button.primary, Button.onClick <| SetViewType KeywordView ]
+                            [ text "keyword view" ]
+                        ]
+                    ]
+                ]
+
+        publicInternalSwitch =
+            label []
+                [ text "publication status"
+                , div [ class "mb-1" ]
+                    [ ButtonGroup.checkboxButtonGroup []
+                        [ ButtonGroup.checkboxButton
+                            model.includeInternalResearch
+                            [ Button.primary, Button.onClick ToggleInternalPublicationFilter ]
+                            [ text <|
+                                "click to"
+                                    ++ (if model.includeInternalResearch then
+                                            " hide internal"
+
+                                        else
+                                            " show internal"
+                                       )
+                            ]
+                        ]
                     ]
                 ]
 
@@ -492,19 +576,37 @@ viewResearch model =
                 ]
 
         filtered =
+            -- Student/Teacher etc..
             filterResearch model.filter model.researchList
+
+        filteredOnStatus =
+            -- publication status
+            if model.includeInternalResearch then
+                filtered
+
+            else
+                List.filter
+                    (\research ->
+                        case research.publicationStatus of
+                            LocalPublication ->
+                                model.includeInternalResearch
+
+                            _ ->
+                                True
+                    )
+                    filtered
 
         content =
             case model.viewType of
                 TableView ->
                     div
                         []
-                        (viewResearchList model.tableState model.query filtered)
+                        (viewResearchList model.tableState model.query filteredOnStatus)
 
                 KeywordView ->
                     let
                         filteredDict =
-                            fillKeywordsDict <| filtered
+                            fillKeywordsDict <| filteredOnStatus
                     in
                     div [ id "keywords" ]
                         [ renderKeywords filteredDict ]
@@ -516,6 +618,7 @@ viewResearch model =
             ]
         , filterSwitch
         , radioSwitch
+        , publicInternalSwitch
         , content
         ]
 
