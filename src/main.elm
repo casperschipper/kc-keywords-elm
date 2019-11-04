@@ -526,9 +526,9 @@ viewResearch model =
                 ]
 
         publicInternalSwitch =
-            label []
+            label [ class "ml-1" ]
                 [ text "publication status"
-                , div [ class "mb-1" ]
+                , div []
                     [ ButtonGroup.checkboxButtonGroup []
                         [ ButtonGroup.checkboxButton
                             model.includeInternalResearch
