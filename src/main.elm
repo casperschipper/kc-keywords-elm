@@ -12,7 +12,11 @@ import Http
 import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
 import Random
 import Table exposing (Column, defaultCustomizations)
-import Util exposing (RGBColor, hexColor, liftA2Bool, stringToColor, zip, zipWith)
+import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
+
+
+
+-- Config
 
 
 baseExpoUrl =
@@ -24,12 +28,12 @@ dataUrl =
 
 
 localIssueId =
+    -- used to identify local publications
     534751
 
 
 
--- "data/KCdate_26_Aug_2019.json"
--- Research type
+-- Local Types
 
 
 type alias Research =
@@ -72,6 +76,68 @@ type PublicationStatus
 type Filter
     = All
     | Only ResearchType
+
+
+
+-- MAIN
+
+
+main =
+    Browser.element
+        { init = init
+        , update = update
+        , subscriptions = subscriptions
+        , view = view
+        }
+
+
+
+-- MODEL
+
+
+type LoadingStatus
+    = Failure String
+    | Loading
+    | Success
+
+
+type ViewType
+    = TableView
+    | KeywordView
+
+
+type alias Model =
+    { researchList : List Research
+    , keywordDict : KeywordDict
+    , viewType : ViewType
+    , tableState : Table.State
+    , query : String
+    , loadingStatus : LoadingStatus
+    , filter : Filter
+    , includeInternalResearch : Bool
+    }
+
+
+emptyModel : Model
+emptyModel =
+    { researchList = []
+    , keywordDict = emptyKeywords
+    , viewType = KeywordView
+    , tableState = Table.initialSort "title"
+    , query = ""
+    , loadingStatus = Loading
+    , filter = All
+    , includeInternalResearch = True
+    }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( emptyModel, getResearch )
+
+
+
+-- helper funcs
 
 
 teacherTag : String
@@ -188,12 +254,12 @@ keyToLinkInfo key =
 
 
 
--- JSON Decoder
+-- JSON Decoders
 
 
 decodeResearch : Decoder (List Research)
 decodeResearch =
-    list entry
+    Json.Decode.list entry
 
 
 entry : Decoder Research
@@ -227,75 +293,17 @@ entry =
                 _ ->
                     Undecided
     in
-    map (researchType << researchPublicationStatus)
-        (map8 Research
+    Json.Decode.map (researchType << researchPublicationStatus)
+        (Json.Decode.map8 Research
             (field "id" int)
             (field "title" string)
-            (field "keywords" (list string))
+            (field "keywords" (Json.Decode.list string))
             (field "created" string)
             (field "author" <| field "name" string)
             (succeed Unknown)
             (maybe (field "issue" <| field "id" int))
-            (map statusFromString (field "status" string))
+            (Json.Decode.map statusFromString (field "status" string))
         )
-
-
-
--- MAIN
-
-
-main =
-    Browser.element
-        { init = init
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
-
-
-
--- MODEL
-
-
-type LoadingStatus
-    = Failure String
-    | Loading
-    | Success
-
-
-type ViewType
-    = TableView
-    | KeywordView
-
-
-type alias Model =
-    { researchList : List Research
-    , keywordDict : KeywordDict
-    , viewType : ViewType
-    , tableState : Table.State
-    , query : String
-    , loadingStatus : LoadingStatus
-    , filter : Filter
-    , includeInternalResearch : Bool
-    }
-
-
-emptyModel : Model
-emptyModel =
-    { researchList = []
-    , keywordDict = emptyKeywords
-    , viewType = KeywordView
-    , tableState = Table.initialSort "title"
-    , query = ""
-    , loadingStatus = Loading
-    , filter = All
-    , includeInternalResearch = True
-    }
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( emptyModel, getResearch )
 
 
 
@@ -427,22 +435,6 @@ viewAuthor research =
     span [ class "author" ] [ text <| .author research ]
 
 
-
--- config : Table.Config Research Msg
--- config =
---     Table.config
---         { toId = String.fromInt << .id
---         , toMsg = SetTableState
---         , columns =
---             [ Table.intColumn "Id" .id
---             , linkColumn "Title" makeLink
---             , Table.stringColumn "Author" .author
---             , createdColumn "Created" .created
---             , Table.stringColumn "Keywords" (String.join " " << .keywords)
---             ]
---         }
-
-
 config : Table.Config Research Msg
 config =
     Table.customConfig
@@ -458,16 +450,6 @@ config =
             ]
         , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
         }
-
-
-
--- type Error
---     = BadUrl String
---     | Timeout
---     | NetworkError
---     | BadStatus Int
---     | BadBody String
--- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
@@ -508,7 +490,7 @@ filterResearch filter list =
 viewResearch : Model -> Html Msg
 viewResearch model =
     let
-        radioSwitch =
+        radioSwitchView =
             label []
                 [ text "switch view:"
                 , div [ class "mb-1" ]
@@ -527,21 +509,19 @@ viewResearch model =
 
         publicInternalSwitch =
             label [ class "ml-1" ]
-                [ text "publication status"
+                [ text "expositions exclusive to KC Portal Members "
                 , div []
-                    [ ButtonGroup.checkboxButtonGroup []
-                        [ ButtonGroup.checkboxButton
+                    [ ButtonGroup.radioButtonGroup []
+                        [ ButtonGroup.radioButton
                             model.includeInternalResearch
-                            [ Button.primary, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text <|
-                                "click to"
-                                    ++ (if model.includeInternalResearch then
-                                            " hide internal"
-
-                                        else
-                                            " show internal"
-                                       )
-                            ]
+                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
+                            [ text "Show" ]
+                        , ButtonGroup.radioButton
+                            (not
+                                model.includeInternalResearch
+                            )
+                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
+                            [ text "Hide" ]
                         ]
                     ]
                 ]
@@ -552,25 +532,25 @@ viewResearch model =
                     model.filter
             in
             label []
-                [ text "filter by:"
+                [ text "show research by:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
                             (current == All)
                             [ Button.light, Button.onClick <| SetFilter All ]
-                            [ text "All research" ]
+                            [ text "All" ]
                         , ButtonGroup.radioButton
                             (current == Only Teacher)
                             [ Button.light, Button.onClick <| SetFilter (Only Teacher) ]
-                            [ text "Research by teachers" ]
+                            [ text "Teachers" ]
                         , ButtonGroup.radioButton
                             (current == Only Student)
                             [ Button.light, Button.onClick <| SetFilter (Only Student) ]
-                            [ text "Research by students" ]
+                            [ text "Students" ]
                         , ButtonGroup.radioButton
                             (current == Only Lectorate)
                             [ Button.light, Button.onClick <| SetFilter (Only Lectorate) ]
-                            [ text "Research part of the lectorate 'Music, Education and Society'" ]
+                            [ text "The lectorate 'Music, Education and Society'" ]
                         ]
                     ]
                 ]
@@ -617,8 +597,9 @@ viewResearch model =
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
         , filterSwitch
-        , radioSwitch
         , publicInternalSwitch
+        , br [] []
+        , radioSwitchView
         , content
         ]
 
@@ -685,9 +666,19 @@ viewMeta research =
 
 viewShortMeta : Research -> Html Msg
 viewShortMeta research =
-    li [ class "short-meta" ]
-        [ a [ href <| (linkToUrl << makeLink) research, target "_blank" ] [ text <| .title research ]
-        , span [ class "author-name" ] [ text <| .author research ]
+    li [ class "research-meta" ]
+        [ p []
+            [ a
+                [ href <| (linkToUrl << makeLink) research, target "_blank" ]
+                [ text <| research.title ]
+            , span
+                [ class "research-meta-status", title "publication status" ]
+                [ text <| " " ++ (parenthesize <| statusToString research.publicationStatus) ]
+            ]
+        , p [ class "research-meta-author" ]
+            [ text <| research.author
+            , span [ class "research-meta-type" ] [ text <| " " ++ (parenthesize <| typeToString research.researchType) ]
+            ]
         ]
 
 

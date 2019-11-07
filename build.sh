@@ -1,1 +1,1 @@
-. minify-script.sh src/main.elm 
+. minify-script.sh src/Main.elm 

@@ -8,16 +8,35 @@
     src: url(lib/MarrSansCondensed-Semibold-Web.woff2);
 }
 
+.research-meta {
+    margin-top:25px;
+    margin-bottom:25px;
+}
+
+.research-meta-status {
+    font-size:0.85em;
+    font-weight:normal;
+    color:#555;
+}
+
+.research-meta-type {
+    font-size:0.7em;
+    color:#888;
+}
+
+.research-meta-author {
+    font-size: 0.9em;
+    font-weight: regular;
+    display: block;
+}
+
+
 .keyword {
     /* t r b l */
     margin: 0px 25px 0px 0px;
 }
 
-.author-name {
-    font-size: 0.9em;
-    font-weight: regular;
-    display: block;
-}
+
 
 .keyword-research-list {
     margin-top:5em;

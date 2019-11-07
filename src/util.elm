@@ -1,6 +1,11 @@
-module Util exposing (RGBColor, flip, hexColor, liftA2Bool, stringToColor, zip, zipWith)
+module Util exposing (RGBColor, flip, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
 
 import Hex
+
+
+parenthesize : String -> String
+parenthesize x =
+    "(" ++ x ++ ")"
 
 
 flip : (a -> b -> c) -> b -> a -> c
