@@ -8,6 +8,33 @@
     src: url(lib/MarrSansCondensed-Semibold-Web.woff2);
 }
 
+.btn-info {
+    background-color: #f8f9fa;
+    color: #000;
+    border: none;
+}
+
+.btn-primary {
+    background-color:  #f8f9fa;
+    color: #000;
+    border:none;
+}
+
+.important-note
+{
+    color: #000;
+}
+
+.internal-note {
+    color: #888;
+}
+
+.local-publication {
+    color: #454545;
+    background: #f9f9f9;
+}
+
+
 .research-meta {
     margin-top:25px;
     margin-bottom:25px;
@@ -89,6 +116,7 @@ h1.keywordlink a {
 }
 
 .headers {
+    margin-top: 2em;
     margin-bottom: 2em;
 }
 

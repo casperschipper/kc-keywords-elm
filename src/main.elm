@@ -373,21 +373,19 @@ update msg model =
             ( { model | viewType = newType }, Cmd.none )
 
         SetFilter filter ->
-            {--
             let
-                view =
+                newView =
                     case filter of
                         Only Teacher ->
-                            ListView
+                            TableView
 
                         Only Lectorate ->
-                            ListView
+                            TableView
 
                         _ ->
-                            model.view
+                            model.viewType
             in
-            --}
-            ( { model | filter = filter }, Cmd.none )
+            ( { model | filter = filter, viewType = newView }, Cmd.none )
 
         ToggleInternalPublicationFilter ->
             ( { model | includeInternalResearch = not model.includeInternalResearch }, Cmd.none )
@@ -435,6 +433,16 @@ viewAuthor research =
     span [ class "author" ] [ text <| .author research ]
 
 
+attrsFromResearch : Research -> List (Attribute Msg)
+attrsFromResearch research =
+    case research.publicationStatus of
+        LocalPublication ->
+            [ class "local-publication" ]
+
+        _ ->
+            [ class "global-publication" ]
+
+
 config : Table.Config Research Msg
 config =
     Table.customConfig
@@ -448,7 +456,7 @@ config =
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Status" (statusToString << .publicationStatus)
             ]
-        , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
+        , customizations = { defaultCustomizations | tableAttrs = [ class "table" ], rowAttrs = attrsFromResearch }
         }
 
 
@@ -492,7 +500,7 @@ viewResearch model =
     let
         radioSwitchView =
             label []
-                [ text "switch view:"
+                [ text "Switch view:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -509,20 +517,26 @@ viewResearch model =
 
         publicInternalSwitch =
             label [ class "ml-1" ]
-                [ text "expositions exclusive to KC Portal Members "
+                [ text "Internal publications: "
                 , div []
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
-                            model.includeInternalResearch
-                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Show" ]
-                        , ButtonGroup.radioButton
                             (not
                                 model.includeInternalResearch
                             )
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
                             [ text "Hide" ]
+                        , ButtonGroup.radioButton
+                            model.includeInternalResearch
+                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
+                            [ text "Show" ]
                         ]
+                    , if model.includeInternalResearch then
+                        p [ class "internal-note" ]
+                            [ text "KC internal publications shown :", span [ class "important-note" ] [ text " access for KC staff and students only" ] ]
+
+                      else
+                        p [ class "internal-note" ] [ text "Internal publications are hidden" ]
                     ]
                 ]
 
@@ -532,7 +546,7 @@ viewResearch model =
                     model.filter
             in
             label []
-                [ text "show research by:"
+                [ text "Show research by:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -597,6 +611,7 @@ viewResearch model =
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
         , filterSwitch
+        , br [] []
         , publicInternalSwitch
         , br [] []
         , radioSwitchView
@@ -666,7 +681,7 @@ viewMeta research =
 
 viewShortMeta : Research -> Html Msg
 viewShortMeta research =
-    li [ class "research-meta" ]
+    li ([ class "research-meta" ] ++ attrsFromResearch research)
         [ p []
             [ a
                 [ href <| (linkToUrl << makeLink) research, target "_blank" ]
