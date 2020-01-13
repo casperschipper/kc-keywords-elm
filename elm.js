@@ -4989,7 +4989,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {cM: fragment, cO: host, c0: path, c2: port_, c6: protocol, bJ: query};
+		return {cM: fragment, cO: host, c0: path, c2: port_, c6: protocol, ax: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5286,7 +5286,7 @@ var $author$project$Main$emptyModel = {
 	o: true,
 	cf: $author$project$Main$emptyKeywords,
 	Y: $author$project$Main$Loading,
-	bJ: '',
+	ax: '',
 	bL: _List_Nil,
 	bS: $billstclair$elm_sortable_table$Table$initialSort('title'),
 	z: 1
@@ -5300,7 +5300,7 @@ var $author$project$Main$Lectorate = 2;
 var $author$project$Main$Published = 1;
 var $author$project$Main$Research = F8(
 	function (id, title, keywords, created, author, researchType, issueId, publicationStatus) {
-		return {P: author, b8: created, bb: id, cS: issueId, W: keywords, H: publicationStatus, I: researchType, n: title};
+		return {P: author, b8: created, bc: id, cS: issueId, W: keywords, H: publicationStatus, I: researchType, n: title};
 	});
 var $author$project$Main$Student = 1;
 var $author$project$Main$Teacher = 0;
@@ -6341,7 +6341,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{bJ: newQuery}),
+						{ax: newQuery}),
 					$elm$core$Platform$Cmd$none);
 			case 3:
 				var newState = msg.a;
@@ -6553,12 +6553,12 @@ var $rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 			case 2:
 				return _Utils_update(
 					options,
-					{aU: true});
+					{aV: true});
 			case 3:
 				var val = modifier.a;
 				return _Utils_update(
 					options,
-					{a2: val});
+					{a3: val});
 			default:
 				var attrs = modifier.a;
 				return _Utils_update(
@@ -6582,7 +6582,7 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
-var $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {ag: _List_Nil, aU: false, t: $elm$core$Maybe$Nothing, a2: false, de: $elm$core$Maybe$Nothing};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {ag: _List_Nil, aV: false, t: $elm$core$Maybe$Nothing, a3: false, de: $elm$core$Maybe$Nothing};
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
@@ -6637,10 +6637,10 @@ var $rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function 
 				_List_fromArray(
 					[
 						_Utils_Tuple2('btn', true),
-						_Utils_Tuple2('btn-block', options.aU),
-						_Utils_Tuple2('disabled', options.a2)
+						_Utils_Tuple2('btn-block', options.aV),
+						_Utils_Tuple2('disabled', options.a3)
 					])),
-				$elm$html$Html$Attributes$disabled(options.a2)
+				$elm$html$Html$Attributes$disabled(options.a3)
 			]),
 		_Utils_ap(
 			function () {
@@ -6794,6 +6794,9 @@ var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup = F2(
 		return $rundis$elm_bootstrap$Bootstrap$ButtonGroup$renderGroup(
 			A2($rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroupItem, options, items));
 	});
+var $author$project$Main$SetQuery = function (a) {
+	return {$: 2, a: a};
+};
 var $author$project$Main$allTags = _List_fromArray(
 	[$author$project$Main$teacherTag, $author$project$Main$lectorateTag]);
 var $author$project$Util$flip = F3(
@@ -6803,6 +6806,37 @@ var $author$project$Util$flip = F3(
 var $author$project$Main$isTag = A2($author$project$Util$flip, $elm$core$List$member, $author$project$Main$allTags);
 var $author$project$Main$excludeTags = $elm$core$List$filter(
 	A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$Main$isTag));
+var $elm$html$Html$form = _VirtualDom_node('form');
+var $rundis$elm_bootstrap$Bootstrap$Form$form = F2(
+	function (attributes, children) {
+		return A2($elm$html$Html$form, attributes, children);
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$applyModifier = F2(
+	function (modifier, options) {
+		var value = modifier;
+		return _Utils_update(
+			options,
+			{
+				ag: _Utils_ap(options.ag, value)
+			});
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions = {ag: _List_Nil};
+var $rundis$elm_bootstrap$Bootstrap$Form$toAttributes = function (modifiers) {
+	var options = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Form$applyModifier, $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions, modifiers);
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('form-group')
+			]),
+		options.ag);
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$group = F2(
+	function (options, children) {
+		return A2(
+			$elm$html$Html$div,
+			$rundis$elm_bootstrap$Bootstrap$Form$toAttributes(options),
+			children);
+	});
 var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
@@ -7035,6 +7069,38 @@ var $author$project$Main$keyToLinkInfo = function (key) {
 			key,
 			'#' + $author$project$Main$keywordLink(key)));
 };
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -7127,7 +7193,7 @@ var $author$project$Main$makeLink = function (research) {
 		$author$project$Main$baseExpoUrl,
 		$elm$core$String$fromInt(
 			function ($) {
-				return $.bb;
+				return $.bc;
 			}(research)));
 	return $author$project$Main$ResearchLink(
 		A2(
@@ -7350,30 +7416,61 @@ var $author$project$Main$researchByKeywordList = F2(
 						])
 					])));
 	});
-var $elm$core$List$singleton = function (value) {
-	return _List_fromArray(
-		[value]);
-};
 var $elm$core$List$sortBy = _List_sortBy;
 var $elm$core$List$sort = function (xs) {
 	return A2($elm$core$List$sortBy, $elm$core$Basics$identity, xs);
 };
-var $author$project$Main$renderKeywords = function (dict) {
-	var viewKey = A2($elm$core$Basics$composeL, $author$project$Main$hyperlink, $author$project$Main$keyToLinkInfo);
-	var sortedKeys = $elm$core$List$sort(
-		$elm$core$Dict$keys(dict));
-	return A2(
-		$elm$html$Html$div,
-		_List_Nil,
-		$elm$core$List$singleton(
+var $elm$core$String$toLower = _String_toLower;
+var $author$project$Main$renderKeywords = F2(
+	function (query, dict) {
+		var viewKey = A2($elm$core$Basics$composeL, $author$project$Main$hyperlink, $author$project$Main$keyToLinkInfo);
+		var queryForm = A2(
+			$rundis$elm_bootstrap$Bootstrap$Form$form,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('form-inline')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$rundis$elm_bootstrap$Bootstrap$Form$group,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('form-control'),
+									$elm$html$Html$Attributes$placeholder('Filter keywords'),
+									$elm$html$Html$Events$onInput($author$project$Main$SetQuery),
+									A2($elm$html$Html$Attributes$style, 'margin', '.5rem 0')
+								]),
+							_List_Nil)
+						]))
+				]));
+		var lowerQuery = $elm$core$String$toLower(query);
+		var allKeys = $elm$core$Dict$keys(dict);
+		var acceptableKeys = A2(
+			$elm$core$List$filter,
 			A2(
-				$author$project$Main$researchByKeywordList,
-				$author$project$Main$excludeTags(sortedKeys),
-				dict)));
-};
-var $author$project$Main$SetQuery = function (a) {
-	return {$: 2, a: a};
-};
+				$elm$core$Basics$composeL,
+				$elm$core$String$contains(lowerQuery),
+				$elm$core$String$toLower),
+			allKeys);
+		var sortedKeys = $elm$core$List$sort(acceptableKeys);
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					queryForm,
+					A2(
+					$author$project$Main$researchByKeywordList,
+					$author$project$Main$excludeTags(sortedKeys),
+					dict)
+				]));
+	});
 var $author$project$Main$SetTableState = function (a) {
 	return {$: 3, a: a};
 };
@@ -7644,74 +7741,10 @@ var $author$project$Main$config = $billstclair$elm_sortable_table$Table$customCo
 			$elm$core$Basics$composeL,
 			$elm$core$String$fromInt,
 			function ($) {
-				return $.bb;
+				return $.bc;
 			}),
 		dW: $author$project$Main$SetTableState
 	});
-var $elm$html$Html$form = _VirtualDom_node('form');
-var $rundis$elm_bootstrap$Bootstrap$Form$form = F2(
-	function (attributes, children) {
-		return A2($elm$html$Html$form, attributes, children);
-	});
-var $rundis$elm_bootstrap$Bootstrap$Form$applyModifier = F2(
-	function (modifier, options) {
-		var value = modifier;
-		return _Utils_update(
-			options,
-			{
-				ag: _Utils_ap(options.ag, value)
-			});
-	});
-var $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions = {ag: _List_Nil};
-var $rundis$elm_bootstrap$Bootstrap$Form$toAttributes = function (modifiers) {
-	var options = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Form$applyModifier, $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions, modifiers);
-	return _Utils_ap(
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('form-group')
-			]),
-		options.ag);
-};
-var $rundis$elm_bootstrap$Bootstrap$Form$group = F2(
-	function (options, children) {
-		return A2(
-			$elm$html$Html$div,
-			$rundis$elm_bootstrap$Bootstrap$Form$toAttributes(options),
-			children);
-	});
-var $elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 1, a: a};
-};
-var $elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
-var $elm$html$Html$Events$targetValue = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	$elm$json$Json$Decode$string);
-var $elm$html$Html$Events$onInput = function (tagger) {
-	return A2(
-		$elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			$elm$json$Json$Decode$map,
-			$elm$html$Html$Events$alwaysStop,
-			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
-};
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$core$String$toLower = _String_toLower;
 var $elm$html$Html$caption = _VirtualDom_node('caption');
 var $billstclair$elm_sortable_table$Table$applySorter = F3(
 	function (isReversed, sorter, data) {
@@ -8197,7 +8230,7 @@ var $author$project$Main$viewResearch = function (model) {
 			return A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				A3($author$project$Main$viewResearchList, model.bS, model.bJ, filteredOnStatus));
+				A3($author$project$Main$viewResearchList, model.bS, model.ax, filteredOnStatus));
 		} else {
 			var filteredDict = $author$project$Main$fillKeywordsDict(filteredOnStatus);
 			return A2(
@@ -8208,7 +8241,7 @@ var $author$project$Main$viewResearch = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$Main$renderKeywords(filteredDict)
+						A2($author$project$Main$renderKeywords, model.ax, filteredDict)
 					]));
 		}
 	}();

@@ -606,7 +606,7 @@ viewResearch model =
                             fillKeywordsDict <| filteredOnStatus
                     in
                     div [ id "keywords" ]
-                        [ renderKeywords filteredDict ]
+                        [ renderKeywords model.query filteredDict ]
     in
     div [ id "top", class "container" ]
         [ div [ class "headers" ]
@@ -793,21 +793,42 @@ keywordLink keyword =
     String.replace " " "-" keyword
 
 
-renderKeywords : KeywordDict -> Html Msg
-renderKeywords dict =
+renderKeywords : String -> KeywordDict -> Html Msg
+renderKeywords query dict =
     let
+        allKeys =
+            keys dict
+
+        lowerQuery =
+            String.toLower query
+
+        acceptableKeys =
+            List.filter (String.contains lowerQuery << String.toLower) allKeys
+
         sortedKeys : List String
         sortedKeys =
-            List.sort (keys dict)
+            List.sort acceptableKeys
 
         viewKey =
             hyperlink << keyToLinkInfo
+
+        queryForm =
+            Form.form [ class "form-inline" ]
+                [ Form.group []
+                    [ input
+                        [ class "form-control"
+                        , placeholder "Filter keywords"
+                        , onInput SetQuery
+                        , style "margin" ".5rem 0"
+                        ]
+                        []
+                    ]
+                ]
     in
     div [] <|
-        List.singleton <|
-            researchByKeywordList
-                (excludeTags sortedKeys)
-                dict
+        [ queryForm
+        , researchByKeywordList (excludeTags sortedKeys) dict
+        ]
 
 
 headerForSize : Int -> List (Html.Attribute Msg) -> List (Html.Html Msg) -> Html.Html Msg
