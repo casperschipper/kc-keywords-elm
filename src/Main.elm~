@@ -206,10 +206,10 @@ statusToString status =
             "in progress"
 
         Published ->
-            "public"
+            "published"
 
         LocalPublication ->
-            "KonCon portal members only!"
+            "local publication"
 
         Undecided ->
             "..."
@@ -454,7 +454,7 @@ config =
             , Table.stringColumn "Author" .author
             , createdColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
-            , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
+            , Table.stringColumn "Status" (statusToString << .publicationStatus)
             ]
         , customizations = { defaultCustomizations | tableAttrs = [ class "table" ], rowAttrs = attrsFromResearch }
         }
@@ -516,16 +516,8 @@ viewResearch model =
                 ]
 
         publicInternalSwitch =
-            let
-                helperWarning =
-                    if model.includeInternalResearch then
-                        p [] [ text "Some research is accessible to KonCon portal members only!" ]
-
-                    else
-                        p [] []
-            in
             label [ class "ml-1" ]
-                [ text "Visibility filter: "
+                [ text "Internal publications: "
                 , div []
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -533,13 +525,18 @@ viewResearch model =
                                 model.includeInternalResearch
                             )
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Public only" ]
+                            [ text "Hide" ]
                         , ButtonGroup.radioButton
                             model.includeInternalResearch
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Show all" ]
+                            [ text "Show" ]
                         ]
-                    , helperWarning
+                    , if model.includeInternalResearch then
+                        p [ class "internal-note" ]
+                            [ text "KC internal publications shown :", span [ class "important-note" ] [ text " access for KC staff and students only" ] ]
+
+                      else
+                        p [ class "internal-note" ] [ text "Internal publications are hidden" ]
                     ]
                 ]
 
@@ -685,14 +682,14 @@ viewMeta research =
 viewShortMeta : Research -> Html Msg
 viewShortMeta research =
     li ([ class "research-meta" ] ++ attrsFromResearch research)
-        [ p [ class "research-meta-title" ]
+        [ p []
             [ a
                 [ href <| (linkToUrl << makeLink) research, target "_blank" ]
                 [ text <| research.title ]
+            , span
+                [ class "research-meta-status", title "publication status" ]
+                [ text <| " " ++ (parenthesize <| statusToString research.publicationStatus) ]
             ]
-        , p
-            [ class "research-meta-status", title "publication status" ]
-            [ text <| statusToString research.publicationStatus ]
         , p [ class "research-meta-author" ]
             [ text <| research.author
             , span [ class "research-meta-type" ] [ text <| " " ++ (parenthesize <| typeToString research.researchType) ]

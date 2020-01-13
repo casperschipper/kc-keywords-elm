@@ -7145,9 +7145,9 @@ var $author$project$Main$statusToString = function (status) {
 		case 0:
 			return 'in progress';
 		case 1:
-			return 'published';
+			return 'public';
 		case 2:
-			return 'local publication';
+			return 'KonCon portal members only!';
 		default:
 			return '...';
 	}
@@ -7177,7 +7177,10 @@ var $author$project$Main$viewShortMeta = function (research) {
 			[
 				A2(
 				$elm$html$Html$p,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('research-meta-title')
+					]),
 				_List_fromArray(
 					[
 						A2(
@@ -7191,20 +7194,19 @@ var $author$project$Main$viewShortMeta = function (research) {
 						_List_fromArray(
 							[
 								$elm$html$Html$text(research.n)
-							])),
-						A2(
-						$elm$html$Html$span,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('research-meta-status'),
-								$elm$html$Html$Attributes$title('publication status')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text(
-								' ' + $author$project$Util$parenthesize(
-									$author$project$Main$statusToString(research.H)))
 							]))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('research-meta-status'),
+						$elm$html$Html$Attributes$title('publication status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Main$statusToString(research.H))
 					])),
 				A2(
 				$elm$html$Html$p,
@@ -7621,7 +7623,7 @@ var $author$project$Main$config = $billstclair$elm_sortable_table$Table$customCo
 					})),
 				A2(
 				$billstclair$elm_sortable_table$Table$stringColumn,
-				'Status',
+				'Visibility',
 				A2(
 					$elm$core$Basics$composeL,
 					$author$project$Main$statusToString,
@@ -8035,81 +8037,62 @@ var $author$project$Main$viewResearch = function (model) {
 							]))
 					]))
 			]));
-	var publicInternalSwitch = A2(
-		$elm$html$Html$label,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('ml-1')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Internal publications: '),
-				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A3(
-								$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
-								!model.o,
-								_List_fromArray(
-									[
-										$rundis$elm_bootstrap$Bootstrap$Button$info,
-										$rundis$elm_bootstrap$Bootstrap$Button$onClick($author$project$Main$ToggleInternalPublicationFilter)
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Hide')
-									])),
-								A3(
-								$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
-								model.o,
-								_List_fromArray(
-									[
-										$rundis$elm_bootstrap$Bootstrap$Button$info,
-										$rundis$elm_bootstrap$Bootstrap$Button$onClick($author$project$Main$ToggleInternalPublicationFilter)
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Show')
-									]))
-							])),
-						model.o ? A2(
-						$elm$html$Html$p,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('internal-note')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('KC internal publications shown :'),
-								A2(
-								$elm$html$Html$span,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('important-note')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text(' access for KC staff and students only')
-									]))
-							])) : A2(
-						$elm$html$Html$p,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('internal-note')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Internal publications are hidden')
-							]))
-					]))
-			]));
+	var publicInternalSwitch = function () {
+		var helperWarning = model.o ? A2(
+			$elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Some research is accessible to KonCon portal members only!')
+				])) : A2($elm$html$Html$p, _List_Nil, _List_Nil);
+		return A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('ml-1')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Visibility filter: '),
+					A2(
+					$elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									!model.o,
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$info,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick($author$project$Main$ToggleInternalPublicationFilter)
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Public only')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									model.o,
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$info,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick($author$project$Main$ToggleInternalPublicationFilter)
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Show all')
+										]))
+								])),
+							helperWarning
+						]))
+				]));
+	}();
 	var filtered = A2($author$project$Main$filterResearch, model.al, model.bL);
 	var filteredOnStatus = model.o ? filtered : A2(
 		$elm$core$List$filter,
