@@ -370,7 +370,7 @@ update msg model =
             ( { model | tableState = newState }, Cmd.none )
 
         SetViewType newType ->
-            ( { model | viewType = newType }, Cmd.none )
+            ( { model | viewType = newType, query = "" }, Cmd.none )
 
         SetFilter filter ->
             let
@@ -525,7 +525,7 @@ viewResearch model =
                         p [] []
             in
             label [ class "ml-1" ]
-                [ text "Visibility filter: "
+                [ text "Filter "
                 , div []
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -533,11 +533,11 @@ viewResearch model =
                                 model.includeInternalResearch
                             )
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Public only" ]
+                            [ text "public only" ]
                         , ButtonGroup.radioButton
                             model.includeInternalResearch
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Show all" ]
+                            [ text "public and KC internal publications" ]
                         ]
                     , helperWarning
                     ]
