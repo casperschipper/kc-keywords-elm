@@ -725,7 +725,7 @@ dateColumn : String -> (data -> Maybe String) -> Column data msg
 dateColumn name toCreated =
     let
         sortableDateString =
-            Maybe.withDefault "00/00/9999" >> String.split "/" >> List.reverse >> String.join "/"
+            Maybe.withDefault "?" >> String.split "/" >> List.reverse >> String.join "/"
     in
     Table.customColumn
         { name = name

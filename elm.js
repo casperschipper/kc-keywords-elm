@@ -7800,7 +7800,7 @@ var $author$project$Main$dateColumn = F2(
 	function (name, toCreated) {
 		var sortableDateString = A2(
 			$elm$core$Basics$composeR,
-			$elm$core$Maybe$withDefault('00/00/9999'),
+			$elm$core$Maybe$withDefault('?'),
 			A2(
 				$elm$core$Basics$composeR,
 				$elm$core$String$split('/'),
