@@ -729,7 +729,7 @@ dateColumn name toCreated =
     in
     Table.customColumn
         { name = name
-        , viewData = \data -> (Maybe.withDefault "?" << toCreated) data
+        , viewData = \data -> (Maybe.withDefault "in progress" << toCreated) data
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
 

@@ -13,6 +13,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
+import Json.Decode.Extra as JDE
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
@@ -47,7 +48,8 @@ type alias Research =
     , author : String
     , researchType : ResearchType
     , issueId : Maybe Int
-    , publicationStatus : PublicationStatus -- should be string ? then a valu0-=98
+    , publicationStatus : PublicationStatus -- should be string?
+    , publication : Maybe String
     }
 
 
@@ -298,16 +300,18 @@ entry =
                 _ ->
                     Undecided
     in
-    Json.Decode.map (researchType << researchPublicationStatus)
-        (Json.Decode.map8 Research
-            (field "id" int)
-            (field "title" string)
-            (field "keywords" (Json.Decode.list string))
-            (field "created" string)
-            (field "author" <| field "name" string)
-            (succeed Unknown)
-            (maybe (field "issue" <| field "id" int))
-            (Json.Decode.map statusFromString (field "status" string))
+    Json.Decode.map (researchType << researchPublicationStatus) <|
+        (Json.Decode.succeed
+            Research
+            |> JDE.andMap (field "id" int)
+            |> JDE.andMap (field "title" string)
+            |> JDE.andMap (field "keywords" (Json.Decode.list string))
+            |> JDE.andMap (field "created" string)
+            |> JDE.andMap (field "author" <| field "name" string)
+            |> JDE.andMap (succeed Unknown)
+            |> JDE.andMap (maybe (field "issue" <| field "id" int))
+            |> JDE.andMap (Json.Decode.map statusFromString (field "status" string))
+            |> JDE.andMap (maybe (field "published" string))
         )
 
 
@@ -461,7 +465,7 @@ config =
             [ typeColumn "Type" .researchType
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
-            , createdColumn "Created" .created
+            , dateColumn "Published" .publication
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
@@ -717,15 +721,15 @@ viewShortMeta research =
         ]
 
 
-createdColumn : String -> (data -> String) -> Column data msg
-createdColumn name toCreated =
+dateColumn : String -> (data -> Maybe String) -> Column data msg
+dateColumn name toCreated =
     let
         sortableDateString =
-            String.split "/" >> List.reverse >> String.join "/"
+            Maybe.withDefault "?" >> String.split "/" >> List.reverse >> String.join "/"
     in
     Table.customColumn
         { name = name
-        , viewData = \data -> toCreated data
+        , viewData = \data -> (Maybe.withDefault "?" << toCreated) data
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
 

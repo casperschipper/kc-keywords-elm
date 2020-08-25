@@ -7816,7 +7816,7 @@ var $author$project$Main$dateColumn = F2(
 				cF: function (data) {
 					return A2(
 						$elm$core$Basics$composeL,
-						$elm$core$Maybe$withDefault('?'),
+						$elm$core$Maybe$withDefault('in progress'),
 						toCreated)(data);
 				}
 			});
