@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.cx.ax === region.cR.ax)
+	if (region.cx.ay === region.cR.ay)
 	{
-		return 'on line ' + region.cx.ax;
+		return 'on line ' + region.cx.ay;
 	}
-	return 'on lines ' + region.cx.ax + ' through ' + region.cR.ax;
+	return 'on lines ' + region.cx.ay + ' through ' + region.cR.ay;
 }
 
 
@@ -5289,7 +5289,7 @@ var $author$project$Main$emptyModel = {
 	ae: '',
 	bQ: _List_Nil,
 	bX: $billstclair$elm_sortable_table$Table$initialSort('title'),
-	aE: '',
+	aF: '',
 	C: 1
 };
 var $author$project$Main$GotList = function (a) {
@@ -5301,7 +5301,7 @@ var $author$project$Main$Lectorate = 2;
 var $author$project$Main$Published = 1;
 var $author$project$Main$Research = F9(
 	function (id, title, keywords, created, author, researchType, issueId, publicationStatus, publication) {
-		return {T: author, cN: created, bh: id, c1: issueId, _: keywords, dk: publication, L: publicationStatus, M: researchType, p: title};
+		return {T: author, cN: created, at: id, c1: issueId, _: keywords, dk: publication, L: publicationStatus, M: researchType, p: title};
 	});
 var $author$project$Main$Student = 1;
 var $author$project$Main$Teacher = 0;
@@ -6306,6 +6306,65 @@ var $author$project$Main$fillKeywordsDict = function (research) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$Set$Set_elm_builtin = $elm$core$Basics$identity;
+var $elm$core$Set$empty = $elm$core$Dict$empty;
+var $elm$core$Set$insert = F2(
+	function (key, _v0) {
+		var dict = _v0;
+		return A3($elm$core$Dict$insert, key, 0, dict);
+	});
+var $elm$core$Dict$member = F2(
+	function (key, dict) {
+		var _v0 = A2($elm$core$Dict$get, key, dict);
+		if (!_v0.$) {
+			return true;
+		} else {
+			return false;
+		}
+	});
+var $elm$core$Set$member = F2(
+	function (key, _v0) {
+		var dict = _v0;
+		return A2($elm$core$Dict$member, key, dict);
+	});
+var $elm_community$list_extra$List$Extra$uniqueHelp = F4(
+	function (f, existing, remaining, accumulator) {
+		uniqueHelp:
+		while (true) {
+			if (!remaining.b) {
+				return $elm$core$List$reverse(accumulator);
+			} else {
+				var first = remaining.a;
+				var rest = remaining.b;
+				var computedFirst = f(first);
+				if (A2($elm$core$Set$member, computedFirst, existing)) {
+					var $temp$f = f,
+						$temp$existing = existing,
+						$temp$remaining = rest,
+						$temp$accumulator = accumulator;
+					f = $temp$f;
+					existing = $temp$existing;
+					remaining = $temp$remaining;
+					accumulator = $temp$accumulator;
+					continue uniqueHelp;
+				} else {
+					var $temp$f = f,
+						$temp$existing = A2($elm$core$Set$insert, computedFirst, existing),
+						$temp$remaining = rest,
+						$temp$accumulator = A2($elm$core$List$cons, first, accumulator);
+					f = $temp$f;
+					existing = $temp$existing;
+					remaining = $temp$remaining;
+					accumulator = $temp$accumulator;
+					continue uniqueHelp;
+				}
+			}
+		}
+	});
+var $elm_community$list_extra$List$Extra$uniqueBy = F2(
+	function (f, list) {
+		return A4($elm_community$list_extra$List$Extra$uniqueHelp, f, $elm$core$Set$empty, list, _List_Nil);
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6319,13 +6378,19 @@ var $author$project$Main$update = F2(
 				var result = msg.a;
 				if (!result.$) {
 					var list = result.a;
+					var unique = A2(
+						$elm_community$list_extra$List$Extra$uniqueBy,
+						function ($) {
+							return $.at;
+						},
+						list);
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
 								cj: $author$project$Main$fillKeywordsDict(list),
 								ab: $author$project$Main$Success,
-								bQ: list
+								bQ: unique
 							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
@@ -6366,7 +6431,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{aE: newTitle}),
+						{aF: newTitle}),
 					$elm$core$Platform$Cmd$none);
 			case 4:
 				var newState = msg.a;
@@ -6380,7 +6445,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{ae: '', aE: '', C: newType}),
+						{ae: '', aF: '', C: newType}),
 					$elm$core$Platform$Cmd$none);
 			case 6:
 				var filter = msg.a;
@@ -6472,7 +6537,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 				return _Utils_update(
 					options,
 					{
-						bh: $elm$core$Maybe$Just(val)
+						at: $elm$core$Maybe$Just(val)
 					});
 			case 1:
 				var val = modifier.a;
@@ -6482,7 +6547,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 			case 2:
 				return _Utils_update(
 					options,
-					{at: true});
+					{au: true});
 			case 3:
 				var toMsg = modifier.a;
 				return _Utils_update(
@@ -6498,7 +6563,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
 				var val = modifier.a;
 				return _Utils_update(
 					options,
-					{a8: val});
+					{a9: val});
 			case 6:
 				var validation = modifier.a;
 				return _Utils_update(
@@ -6550,7 +6615,7 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
 var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Off = 1;
-var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions = {al: _List_Nil, m: false, a8: false, bh: $elm$core$Maybe$Nothing, at: false, bv: $elm$core$Maybe$Nothing, f: 1, b5: $elm$core$Maybe$Nothing};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions = {al: _List_Nil, m: false, a9: false, at: $elm$core$Maybe$Nothing, au: false, bv: $elm$core$Maybe$Nothing, f: 1, b5: $elm$core$Maybe$Nothing};
 var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$label = _VirtualDom_node('label');
@@ -6629,7 +6694,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes = function (optio
 						_Utils_Tuple2('custom-control-input', options.m)
 					])),
 				$elm$html$Html$Attributes$type_('checkbox'),
-				$elm$html$Html$Attributes$disabled(options.a8),
+				$elm$html$Html$Attributes$disabled(options.a9),
 				$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$stateAttribute(options.f)
 			]),
 		_Utils_ap(
@@ -6639,7 +6704,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes = function (optio
 				_List_fromArray(
 					[
 						A2($elm$core$Maybe$map, $elm$html$Html$Events$onCheck, options.bv),
-						A2($elm$core$Maybe$map, $elm$html$Html$Attributes$id, options.bh)
+						A2($elm$core$Maybe$map, $elm$html$Html$Attributes$id, options.at)
 					])),
 			_Utils_ap(
 				function () {
@@ -6670,10 +6735,10 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view = function (_v0) {
 				_List_fromArray(
 					[
 						_Utils_Tuple2('form-check', !opts.m),
-						_Utils_Tuple2('form-check-inline', (!opts.m) && opts.at),
+						_Utils_Tuple2('form-check-inline', (!opts.m) && opts.au),
 						_Utils_Tuple2('custom-control', opts.m),
 						_Utils_Tuple2('custom-checkbox', opts.m),
-						_Utils_Tuple2('custom-control-inline', opts.at && opts.m)
+						_Utils_Tuple2('custom-control-inline', opts.au && opts.m)
 					]))
 			]),
 		_List_fromArray(
@@ -6697,7 +6762,7 @@ var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view = function (_v0) {
 									]))
 							]),
 						function () {
-							var _v2 = opts.bh;
+							var _v2 = opts.at;
 							if (!_v2.$) {
 								var v = _v2.a;
 								return _List_fromArray(
@@ -6838,12 +6903,12 @@ var $rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 			case 2:
 				return _Utils_update(
 					options,
-					{a_: true});
+					{a$: true});
 			case 3:
 				var val = modifier.a;
 				return _Utils_update(
 					options,
-					{a8: val});
+					{a9: val});
 			default:
 				var attrs = modifier.a;
 				return _Utils_update(
@@ -6853,7 +6918,7 @@ var $rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
 					});
 		}
 	});
-var $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {al: _List_Nil, a_: false, w: $elm$core$Maybe$Nothing, a8: false, dv: $elm$core$Maybe$Nothing};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {al: _List_Nil, a$: false, w: $elm$core$Maybe$Nothing, a9: false, dv: $elm$core$Maybe$Nothing};
 var $rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass = function (role) {
 	switch (role) {
 		case 0:
@@ -6899,10 +6964,10 @@ var $rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function 
 				_List_fromArray(
 					[
 						_Utils_Tuple2('btn', true),
-						_Utils_Tuple2('btn-block', options.a_),
-						_Utils_Tuple2('disabled', options.a8)
+						_Utils_Tuple2('btn-block', options.a$),
+						_Utils_Tuple2('disabled', options.a9)
 					])),
-				$elm$html$Html$Attributes$disabled(options.a8)
+				$elm$html$Html$Attributes$disabled(options.a9)
 			]),
 		_Utils_ap(
 			function () {
@@ -7448,7 +7513,7 @@ var $author$project$Main$makeLink = function (research) {
 		$author$project$Main$baseExpoUrl,
 		$elm$core$String$fromInt(
 			function ($) {
-				return $.bh;
+				return $.at;
 			}(research)));
 	return $author$project$Main$ResearchLink(
 		A2(
@@ -8015,7 +8080,7 @@ var $author$project$Main$config = $billstclair$elm_sortable_table$Table$customCo
 			$elm$core$Basics$composeL,
 			$elm$core$String$fromInt,
 			function ($) {
-				return $.bh;
+				return $.at;
 			}),
 		ee: $author$project$Main$SetTableState
 	});
@@ -8502,7 +8567,7 @@ var $author$project$Main$viewResearch = function (model) {
 			return A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				A4($author$project$Main$viewResearchList, model.bX, model.aE, model.ae, filteredOnStatus));
+				A4($author$project$Main$viewResearchList, model.bX, model.aF, model.ae, filteredOnStatus));
 		} else {
 			var filteredDict = $author$project$Main$fillKeywordsDict(filteredOnStatus);
 			return A2(

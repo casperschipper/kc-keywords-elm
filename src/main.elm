@@ -14,6 +14,7 @@ import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
 import Json.Decode.Extra as JDE
+import List.Extra as L
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
@@ -344,9 +345,13 @@ update msg model =
         GotList result ->
             case result of
                 Ok list ->
+                    let
+                        unique =
+                            L.uniqueBy .id list
+                    in
                     ( { model
                         | loadingStatus = Success
-                        , researchList = list
+                        , researchList = unique
                         , keywordDict = fillKeywordsDict list
                       }
                     , Cmd.none
