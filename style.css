@@ -8,15 +8,49 @@
     src: url(lib/MarrSansCondensed-Semibold-Web.woff2);
 }
 
+.btn-info {
+    background-color: #f8f9fa;
+    color: #000;
+    border: none;
+}
+
+.btn-primary {
+    background-color:  #f8f9fa;
+    color: #000;
+    border:none;
+}
+
+.important-note
+{
+    color: #000;
+}
+
+.internal-note {
+    color: #888;
+}
+
+.local-publication {
+    color: #454545;
+}
+
+
 .research-meta {
-    margin-top:25px;
-    margin-bottom:25px;
+    margin-top:0.2em;
+    margin-bottom:0.2em;
+    border-bottom: 1px solid #ddd;
+}
+
+.research-meta-title {
+    margin-bottom:0.0em;
+    margin-top:0.0em;
 }
 
 .research-meta-status {
     font-size:0.85em;
     font-weight:normal;
     color:#555;
+    margin-bottom: 0.2em;
+    margin-top: 0.2em;
 }
 
 .research-meta-type {
@@ -28,6 +62,8 @@
     font-size: 0.9em;
     font-weight: regular;
     display: block;
+    margin-top:0.2em;
+    margin-bottom:0.2em;
 }
 
 
@@ -89,6 +125,7 @@ h1.keywordlink a {
 }
 
 .headers {
+    margin-top: 2em;
     margin-bottom: 2em;
 }
 

@@ -206,10 +206,10 @@ statusToString status =
             "in progress"
 
         Published ->
-            "published"
+            "public"
 
         LocalPublication ->
-            "local publication"
+            "KonCon portal members only!"
 
         Undecided ->
             "..."
@@ -370,24 +370,22 @@ update msg model =
             ( { model | tableState = newState }, Cmd.none )
 
         SetViewType newType ->
-            ( { model | viewType = newType }, Cmd.none )
+            ( { model | viewType = newType, query = "" }, Cmd.none )
 
         SetFilter filter ->
-            {--
             let
-                view =
+                newView =
                     case filter of
                         Only Teacher ->
-                            ListView
+                            TableView
 
                         Only Lectorate ->
-                            ListView
+                            TableView
 
                         _ ->
-                            model.view
+                            model.viewType
             in
-            --}
-            ( { model | filter = filter }, Cmd.none )
+            ( { model | filter = filter, viewType = newView }, Cmd.none )
 
         ToggleInternalPublicationFilter ->
             ( { model | includeInternalResearch = not model.includeInternalResearch }, Cmd.none )
@@ -435,6 +433,16 @@ viewAuthor research =
     span [ class "author" ] [ text <| .author research ]
 
 
+attrsFromResearch : Research -> List (Attribute Msg)
+attrsFromResearch research =
+    case research.publicationStatus of
+        LocalPublication ->
+            [ class "local-publication" ]
+
+        _ ->
+            [ class "global-publication" ]
+
+
 config : Table.Config Research Msg
 config =
     Table.customConfig
@@ -446,9 +454,9 @@ config =
             , Table.stringColumn "Author" .author
             , createdColumn "Created" .created
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
-            , Table.stringColumn "Status" (statusToString << .publicationStatus)
+            , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
-        , customizations = { defaultCustomizations | tableAttrs = [ class "table" ] }
+        , customizations = { defaultCustomizations | tableAttrs = [ class "table" ], rowAttrs = attrsFromResearch }
         }
 
 
@@ -492,7 +500,7 @@ viewResearch model =
     let
         radioSwitchView =
             label []
-                [ text "switch view:"
+                [ text "Switch view:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -508,21 +516,30 @@ viewResearch model =
                 ]
 
         publicInternalSwitch =
+            let
+                helperWarning =
+                    if model.includeInternalResearch then
+                        p [] [ text "Some research is accessible to KonCon portal members only!" ]
+
+                    else
+                        p [] []
+            in
             label [ class "ml-1" ]
-                [ text "expositions exclusive to KC Portal Members "
+                [ text "Filter "
                 , div []
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
-                            model.includeInternalResearch
-                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Show" ]
-                        , ButtonGroup.radioButton
                             (not
                                 model.includeInternalResearch
                             )
                             [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "Hide" ]
+                            [ text "public only" ]
+                        , ButtonGroup.radioButton
+                            model.includeInternalResearch
+                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
+                            [ text "public and KC internal publications" ]
                         ]
+                    , helperWarning
                     ]
                 ]
 
@@ -532,7 +549,7 @@ viewResearch model =
                     model.filter
             in
             label []
-                [ text "show research by:"
+                [ text "Show research by:"
                 , div [ class "mb-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
@@ -589,7 +606,7 @@ viewResearch model =
                             fillKeywordsDict <| filteredOnStatus
                     in
                     div [ id "keywords" ]
-                        [ renderKeywords filteredDict ]
+                        [ renderKeywords model.query filteredDict ]
     in
     div [ id "top", class "container" ]
         [ div [ class "headers" ]
@@ -597,6 +614,7 @@ viewResearch model =
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
         , filterSwitch
+        , br [] []
         , publicInternalSwitch
         , br [] []
         , radioSwitchView
@@ -666,15 +684,15 @@ viewMeta research =
 
 viewShortMeta : Research -> Html Msg
 viewShortMeta research =
-    li [ class "research-meta" ]
-        [ p []
+    li ([ class "research-meta" ] ++ attrsFromResearch research)
+        [ p [ class "research-meta-title" ]
             [ a
                 [ href <| (linkToUrl << makeLink) research, target "_blank" ]
                 [ text <| research.title ]
-            , span
-                [ class "research-meta-status", title "publication status" ]
-                [ text <| " " ++ (parenthesize <| statusToString research.publicationStatus) ]
             ]
+        , p
+            [ class "research-meta-status", title "publication status" ]
+            [ text <| statusToString research.publicationStatus ]
         , p [ class "research-meta-author" ]
             [ text <| research.author
             , span [ class "research-meta-type" ] [ text <| " " ++ (parenthesize <| typeToString research.researchType) ]
@@ -775,21 +793,42 @@ keywordLink keyword =
     String.replace " " "-" keyword
 
 
-renderKeywords : KeywordDict -> Html Msg
-renderKeywords dict =
+renderKeywords : String -> KeywordDict -> Html Msg
+renderKeywords query dict =
     let
+        allKeys =
+            keys dict
+
+        lowerQuery =
+            String.toLower query
+
+        acceptableKeys =
+            List.filter (String.contains lowerQuery << String.toLower) allKeys
+
         sortedKeys : List String
         sortedKeys =
-            List.sort (keys dict)
+            List.sort acceptableKeys
 
         viewKey =
             hyperlink << keyToLinkInfo
+
+        queryForm =
+            Form.form [ class "form-inline" ]
+                [ Form.group []
+                    [ input
+                        [ class "form-control"
+                        , placeholder "Filter keywords"
+                        , onInput SetQuery
+                        , style "margin" ".5rem 0"
+                        ]
+                        []
+                    ]
+                ]
     in
     div [] <|
-        List.singleton <|
-            researchByKeywordList
-                (excludeTags sortedKeys)
-                dict
+        [ queryForm
+        , researchByKeywordList (excludeTags sortedKeys) dict
+        ]
 
 
 headerForSize : Int -> List (Html.Attribute Msg) -> List (Html.Html Msg) -> Html.Html Msg
