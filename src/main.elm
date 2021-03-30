@@ -3,6 +3,9 @@ module Main exposing (Model, Msg(..), Research, capitalize, decodeResearch, getR
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Form as Form
+import Bootstrap.Form.Checkbox as Checkbox
+import Bootstrap.Utilities.Display as Display
+import Bootstrap.Utilities.Spacing as Spacing
 import Browser
 import Dict exposing (..)
 import Html exposing (..)
@@ -10,6 +13,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
+import Json.Decode.Extra as JDE
+import List.Extra as L
 import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
@@ -44,7 +49,8 @@ type alias Research =
     , author : String
     , researchType : ResearchType
     , issueId : Maybe Int
-    , publicationStatus : PublicationStatus -- should be string ? then a valu0-=98
+    , publicationStatus : PublicationStatus -- should be string?
+    , publication : Maybe String
     }
 
 
@@ -112,6 +118,7 @@ type alias Model =
     , viewType : ViewType
     , tableState : Table.State
     , query : String
+    , titleQuery : String
     , loadingStatus : LoadingStatus
     , filter : Filter
     , includeInternalResearch : Bool
@@ -125,6 +132,7 @@ emptyModel =
     , viewType = KeywordView
     , tableState = Table.initialSort "title"
     , query = ""
+    , titleQuery = ""
     , loadingStatus = Loading
     , filter = All
     , includeInternalResearch = True
@@ -293,16 +301,18 @@ entry =
                 _ ->
                     Undecided
     in
-    Json.Decode.map (researchType << researchPublicationStatus)
-        (Json.Decode.map8 Research
-            (field "id" int)
-            (field "title" string)
-            (field "keywords" (Json.Decode.list string))
-            (field "created" string)
-            (field "author" <| field "name" string)
-            (succeed Unknown)
-            (maybe (field "issue" <| field "id" int))
-            (Json.Decode.map statusFromString (field "status" string))
+    Json.Decode.map (researchType << researchPublicationStatus) <|
+        (Json.Decode.succeed
+            Research
+            |> JDE.andMap (field "id" int)
+            |> JDE.andMap (field "title" string)
+            |> JDE.andMap (field "keywords" (Json.Decode.list string))
+            |> JDE.andMap (field "created" string)
+            |> JDE.andMap (field "author" <| field "name" string)
+            |> JDE.andMap (succeed Unknown)
+            |> JDE.andMap (maybe (field "issue" <| field "id" int))
+            |> JDE.andMap (Json.Decode.map statusFromString (field "status" string))
+            |> JDE.andMap (maybe (field "published" string))
         )
 
 
@@ -314,10 +324,11 @@ type Msg
     = Go
     | GotList (Result Http.Error (List Research))
     | SetQuery String
+    | SetTitleQuery String
     | SetTableState Table.State
     | SetViewType ViewType
     | SetFilter Filter
-    | ToggleInternalPublicationFilter
+    | ToggleInternalPublicationFilter Bool
 
 
 
@@ -334,9 +345,13 @@ update msg model =
         GotList result ->
             case result of
                 Ok list ->
+                    let
+                        unique =
+                            L.uniqueBy .id list
+                    in
                     ( { model
                         | loadingStatus = Success
-                        , researchList = list
+                        , researchList = unique
                         , keywordDict = fillKeywordsDict list
                       }
                     , Cmd.none
@@ -366,11 +381,14 @@ update msg model =
         SetQuery newQuery ->
             ( { model | query = newQuery }, Cmd.none )
 
+        SetTitleQuery newTitle ->
+            ( { model | titleQuery = newTitle }, Cmd.none )
+
         SetTableState newState ->
             ( { model | tableState = newState }, Cmd.none )
 
         SetViewType newType ->
-            ( { model | viewType = newType, query = "" }, Cmd.none )
+            ( { model | viewType = newType, query = "", titleQuery = "" }, Cmd.none )
 
         SetFilter filter ->
             let
@@ -387,8 +405,8 @@ update msg model =
             in
             ( { model | filter = filter, viewType = newView }, Cmd.none )
 
-        ToggleInternalPublicationFilter ->
-            ( { model | includeInternalResearch = not model.includeInternalResearch }, Cmd.none )
+        ToggleInternalPublicationFilter includeInternal ->
+            ( { model | includeInternalResearch = includeInternal }, Cmd.none )
 
 
 
@@ -452,7 +470,7 @@ config =
             [ typeColumn "Type" .researchType
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
-            , createdColumn "Created" .created
+            , dateColumn "Published" .publication
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
@@ -519,27 +537,22 @@ viewResearch model =
             let
                 helperWarning =
                     if model.includeInternalResearch then
-                        p [] [ text "Some research is accessible to KonCon portal members only!" ]
+                        " (these are accessible to staff and students only)"
 
                     else
-                        p [] []
+                        ""
             in
             label [ class "ml-1" ]
-                [ text "Filter "
+                [ text "Access filter: "
                 , div []
-                    [ ButtonGroup.radioButtonGroup []
-                        [ ButtonGroup.radioButton
-                            (not
-                                model.includeInternalResearch
-                            )
-                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "public only" ]
-                        , ButtonGroup.radioButton
-                            model.includeInternalResearch
-                            [ Button.info, Button.onClick ToggleInternalPublicationFilter ]
-                            [ text "public and KC internal publications" ]
+                    [ Checkbox.checkbox
+                        [ Checkbox.id "show-internal-toggle"
+                        , Checkbox.onCheck ToggleInternalPublicationFilter
+                        , Checkbox.checked model.includeInternalResearch
                         ]
-                    , helperWarning
+                        ("include internal publications"
+                            ++ helperWarning
+                        )
                     ]
                 ]
 
@@ -598,7 +611,7 @@ viewResearch model =
                 TableView ->
                     div
                         []
-                        (viewResearchList model.tableState model.query filteredOnStatus)
+                        (viewResearchList model.tableState model.titleQuery model.query filteredOnStatus)
 
                 KeywordView ->
                     let
@@ -622,21 +635,34 @@ viewResearch model =
         ]
 
 
-viewResearchList : Table.State -> String -> List Research -> List (Html Msg)
-viewResearchList tableState query researchList =
+viewResearchList : Table.State -> String -> String -> List Research -> List (Html Msg)
+viewResearchList tableState titleQuery query researchList =
     let
         lowerQuery =
             String.toLower query
 
+        lowerTitle =
+            String.toLower titleQuery
+
         acceptableResearch =
-            List.filter (String.contains lowerQuery << String.toLower << .author) researchList
+            List.filter (String.contains lowerTitle << String.toLower << .title) <|
+                List.filter (String.contains lowerQuery << String.toLower << .author) researchList
     in
     [ Form.form [ class "form-inline" ]
         [ Form.group []
             [ input
                 [ class "form-control"
-                , placeholder "Search by Author"
+                , placeholder "Search by author"
                 , onInput SetQuery
+                , style "margin" ".5rem 0"
+                ]
+                []
+            , input
+                [ Display.inline
+                , class "form-control"
+                , Spacing.m1
+                , placeholder "Search by title"
+                , onInput SetTitleQuery
                 , style "margin" ".5rem 0"
                 ]
                 []
@@ -700,15 +726,15 @@ viewShortMeta research =
         ]
 
 
-createdColumn : String -> (data -> String) -> Column data msg
-createdColumn name toCreated =
+dateColumn : String -> (data -> Maybe String) -> Column data msg
+dateColumn name toCreated =
     let
         sortableDateString =
-            String.split "/" >> List.reverse >> String.join "/"
+            Maybe.withDefault "?" >> String.split "/" >> List.reverse >> String.join "/"
     in
     Table.customColumn
         { name = name
-        , viewData = \data -> toCreated data
+        , viewData = \data -> (Maybe.withDefault "in progress" << toCreated) data
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
 
@@ -817,7 +843,7 @@ renderKeywords query dict =
                 [ Form.group []
                     [ input
                         [ class "form-control"
-                        , placeholder "Filter keywords"
+                        , placeholder "Search keywords"
                         , onInput SetQuery
                         , style "margin" ".5rem 0"
                         ]
