@@ -32,14 +32,13 @@ let fetchData = function (url) {
 }
 
 let fetchAll = function () {
-    let jsonPromises = [publishedUrl,publishedUrl2,publishedUrl3,lectorate,sonology].map(fetchData) ;
-    Promise.all(jsonPromises).then(values => { console.log(values);
-	                                       let flat = values.flat();
-					       let json = JSON.stringify(flat);
-					       download('internal-research.json',json);
-					     });
+    let jsonPromises = [publishedUrl,publishedUrl2,publishedUrl3,lectorate,sonology,teachers].map(fetchData) ;
+    Promise.all(jsonPromises).then(values => { 
+    	console.log(values);
+        let flat = values.flat();
+        let json = JSON.stringify(flat);
+        download('internal-research.json',json);
+    });
 };
-
-
 
 fetchAll();
