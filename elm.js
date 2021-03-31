@@ -8335,6 +8335,11 @@ var $author$project$Main$viewResearchList = F4(
 						return $.T;
 					}),
 				researchList));
+		var statistics = function (numString) {
+			return numString + ' results';
+		}(
+			$elm$core$String$fromInt(
+				$elm$core$List$length(acceptableResearch)));
 		return _List_fromArray(
 			[
 				A2(
@@ -8373,6 +8378,16 @@ var $author$project$Main$viewResearchList = F4(
 									]),
 								_List_Nil)
 							]))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('table-statistics')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(statistics)
 					])),
 				A2(
 				$elm$html$Html$div,

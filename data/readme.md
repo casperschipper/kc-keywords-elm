@@ -10,3 +10,8 @@ be sure to check it is less than 250, otherwise there may be a page 3!
 
 Lectorate, in progress stuff:
 https://www.researchcatalogue.net/portal/search-result?fulltext=&title=&autocomplete=&keyword=KonCon+Lectorate&portal=&statusprogress=0&statusprogress=1&statuspublished=0&includelimited=0&includeprivate=0&type_research=research&resulttype=research&format=json&limit=50&page=0
+
+Sonology:
+https://www.researchcatalogue.net/portal/search-result?fulltext=&title=&autocomplete=&keyword=sonology&portal=6&statusprogress=0&statusprogress=1&statuspublished=0&includelimited=0&includeprivate=0&type_research=research&resulttype=research&format=json&limit=50&page=0
+
+

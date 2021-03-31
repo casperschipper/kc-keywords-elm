@@ -1,12 +1,16 @@
+/* these can be replaced with any advanced searches */
+
 let publishedUrl = "portal/search-result?fulltext=&title=&autocomplete=&keyword=&portal=6&statusprogress=0&statuspublished=0&statuspublished=1&includelimited=0&includelimited=1&includeprivate=0&type_research=research&resulttype=research&format=json&limit=250&page=0";
 
 let publishedUrl2 = "portal/search-result?fulltext=&title=&autocomplete=&keyword=&portal=6&statusprogress=0&statuspublished=0&statuspublished=1&includelimited=0&includelimited=1&includeprivate=0&type_research=research&resulttype=research&format=json&limit=250&page=1";
 
 let publishedUrl3 = "portal/search-result?fulltext=&title=&autocomplete=&keyword=&portal=6&statusprogress=0&statuspublished=0&statuspublished=1&includelimited=0&includelimited=1&includeprivate=0&type_research=research&resulttype=research&format=json&limit=250&page=2";
 
-let lectorate = "portal/search-result?fulltext=&title=&autocomplete=&keyword=KonCon+Lectorate&portal=&statusprogress=0&statusprogress=1&statuspublished=0&includelimited=0&includeprivate=0&type_research=research&resulttype=research&format=json&limit=50&page=0";
+let lectorate = "portal/search-result?fulltext=&title=&autocomplete=&keyword=KonCon+Lectorate&portal=&statusprogress=0&statusprogress=1&statuspublished=0&statuspublished=1&includelimited=0&includelimited=1&includeprivate=0&type_research=research&resulttype=research&format=json&limit=250&page=0";
 
 let sonology = "portal/search-result?fulltext=&title=&autocomplete=&keyword=sonology&portal=6&statusprogress=0&statusprogress=1&statuspublished=0&includelimited=0&includeprivate=0&type_research=research&resulttype=research&format=json&limit=50&page=0";
+
+let teachers = "portal/search-result?fulltext=&title=&autocomplete=&keyword=Research+by+teachers+of+the+Royal+Conservatoire&portal=&statusprogress=0&statusprogress=1&statuspublished=0&statuspublished=1&includelimited=0&includelimited=1&includeprivate=0&type_research=research&resulttype=research&format=json&limit=50&page=0"
 
 function download(filename, text) {
     var pom = document.createElement('a');
@@ -28,7 +32,7 @@ let fetchData = function (url) {
 }
 
 let fetchAll = function () {
-    let jsonPromises = [publishedUrl,publishedUrl2,publishedUrl3,sonology].map(fetchData) ;
+    let jsonPromises = [publishedUrl,publishedUrl2,publishedUrl3,lectorate,sonology].map(fetchData) ;
     Promise.all(jsonPromises).then(values => { console.log(values);
 	                                       let flat = values.flat();
 					       let json = JSON.stringify(flat);
