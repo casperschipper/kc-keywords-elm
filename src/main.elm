@@ -19,6 +19,8 @@ import Random
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
 
+{- This is an elm application to create a table overview of RC search results
+   this particular implementation is for the KC portal -}
 
 
 -- Config
@@ -33,9 +35,17 @@ dataUrl =
 
 
 localIssueId =
-    -- used to identify local publications
+    -- used to identify local publications of KC portal
     534751
 
+-- These are specific keywords we use in KC
+teacherTag : String
+teacherTag =
+    "Research by teachers of the Royal Conservatoire"
+
+lectorateTag : String
+lectorateTag =
+    "KonCon Lectorate"
 
 
 -- Local Types
@@ -47,7 +57,7 @@ type alias Research =
     , keywords : List String
     , created : String
     , author : String
-    , researchType : ResearchType
+    , researchType : ResearchType -- This type local to KC, may differ for other portals
     , issueId : Maybe Int
     , publicationStatus : PublicationStatus -- should be string?
     , publication : Maybe String
@@ -124,7 +134,7 @@ type alias Model =
     , includeInternalResearch : Bool
     }
 
-
+-- initialize model
 emptyModel : Model
 emptyModel =
     { researchList = []
@@ -146,17 +156,6 @@ init _ =
 
 
 -- helper funcs
-
-
-teacherTag : String
-teacherTag =
-    "Research by teachers of the Royal Conservatoire"
-
-
-lectorateTag : String
-lectorateTag =
-    "KonCon Lectorate"
-
 
 allTags : List String
 allTags =
@@ -183,11 +182,13 @@ isLectorateResearch =
     List.member lectorateTag << .keywords
 
 
+-- Logically, if something is not teacher nor lectorate, it must be student
 isStudentResearch : Research -> Bool
 isStudentResearch =
     not << liftA2Bool (||) isTeacherResearch isLectorateResearch
 
 
+-- Determine which kind of publication status the research has:
 calcStatus : Research -> PublicationStatus
 calcStatus research =
     case research.publicationStatus of
@@ -205,8 +206,6 @@ calcStatus research =
 
                 Nothing ->
                     Published
-
-
 statusToString : PublicationStatus -> String
 statusToString status =
     case status of
@@ -264,12 +263,13 @@ keyToLinkInfo key =
 
 -- JSON Decoders
 
-
+-- this decodes the JSON search result from the advanced search in RC:
 decodeResearch : Decoder (List Research)
 decodeResearch =
     Json.Decode.list entry
 
 
+-- A single research item in the search results
 entry : Decoder Research
 entry =
     let
@@ -647,6 +647,9 @@ viewResearchList tableState titleQuery query researchList =
         acceptableResearch =
             List.filter (String.contains lowerTitle << String.toLower << .title) <|
                 List.filter (String.contains lowerQuery << String.toLower << .author) researchList
+
+        statistics =
+            List.length acceptableResearch |> String.fromInt |> (\numString -> numString ++ " results")
     in
     [ Form.form [ class "form-inline" ]
         [ Form.group []
@@ -668,6 +671,7 @@ viewResearchList tableState titleQuery query researchList =
                 []
             ]
         ]
+    , p [ class "table-statistics" ] [ text statistics ]
     , div
         [ class "table-responsive" ]
         [ Table.view config tableState acceptableResearch
