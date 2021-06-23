@@ -1,4 +1,4 @@
-module Util exposing (RGBColor, flip, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
+module Util exposing (RGBColor, flip, hexColor, parenthesize, stringToColor)
 
 import Hex
 
@@ -11,37 +11,6 @@ parenthesize x =
 flip : (a -> b -> c) -> b -> a -> c
 flip f x y =
     f y x
-
-
-liftA2Bool : (Bool -> Bool -> Bool) -> (a -> Bool) -> (a -> Bool) -> a -> Bool
-liftA2Bool operator test1 test2 value =
-    operator (test1 value) (test2 value)
-
-
-zip : List a -> List b -> List ( a, b )
-zip list1 list2 =
-    case ( list1, list2 ) of
-        ( [], _ ) ->
-            []
-
-        ( _, [] ) ->
-            []
-
-        ( a :: ass, b :: bs ) ->
-            ( a, b ) :: zip ass bs
-
-
-zipWith : (a -> b -> c) -> List a -> List b -> List c
-zipWith f l1 l2 =
-    case ( l1, l2 ) of
-        ( [], _ ) ->
-            []
-
-        ( _, [] ) ->
-            []
-
-        ( a :: ass, b :: bs ) ->
-            f a b :: zipWith f ass bs
 
 
 type RGBColor
@@ -65,7 +34,7 @@ stringToColor string =
         mapTriple f ( a, b, c ) =
             ( f a, f b, f c )
 
-        countCommon haystack =
+        countCommon =
             let
                 a =
                     countLetter "e" + countLetter "d"
@@ -78,14 +47,6 @@ stringToColor string =
             in
             mapTriple toFloat ( a, b, c )
 
-        normalize : ( Int, Int, Int ) -> ( Float, Float, Float )
-        normalize ( a, b, c ) =
-            let
-                total =
-                    toFloat (a + b + c)
-            in
-            ( toFloat a / total, toFloat b / total, toFloat c / total )
-
         mup m ( a, b, c ) =
             ( a * m, b * m, c * m )
 
@@ -93,6 +54,6 @@ stringToColor string =
             ( o + a, o + b, o + c )
 
         ( red, green, blue ) =
-            mapTriple floor <| offset 32 <| mup 64 <| countCommon string
+            mapTriple floor <| offset 32 <| mup 64 <| countCommon 
     in
     Color red green blue

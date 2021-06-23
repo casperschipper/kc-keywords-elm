@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), Research, capitalize, decodeResearch, getResearch, init, main, subscriptions, update, view, viewMeta)
+module Main exposing (Model, Msg(..), Research, main)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
@@ -12,15 +12,17 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, map, map8, maybe, string, succeed)
+import Json.Decode exposing (Decoder, field, int, list, maybe, string, succeed)
 import Json.Decode.Extra as JDE
 import List.Extra as L
-import Random
 import Table exposing (Column, defaultCustomizations)
-import Util exposing (RGBColor, hexColor, liftA2Bool, parenthesize, stringToColor, zip, zipWith)
+import Util exposing (hexColor, parenthesize, stringToColor)
 
 
 
+{- This is an elm application to create a table overview of RC search results
+   this particular implementation is for the KC portal
+-}
 -- Config
 
 
@@ -33,8 +35,22 @@ dataUrl =
 
 
 localIssueId =
-    -- used to identify local publications
+    -- used to identify local publications of KC portal
     534751
+
+
+
+-- These are specific keywords we use in KC
+
+
+teacherTag : String
+teacherTag =
+    "Research by teachers of the Royal Conservatoire"
+
+
+lectorateTag : String
+lectorateTag =
+    "KonCon Lectorate"
 
 
 
@@ -47,7 +63,7 @@ type alias Research =
     , keywords : List String
     , created : String
     , author : String
-    , researchType : ResearchType
+    , researchType : ResearchType -- This type local to KC, may differ for other portals
     , issueId : Maybe Int
     , publicationStatus : PublicationStatus -- should be string?
     , publication : Maybe String
@@ -125,6 +141,10 @@ type alias Model =
     }
 
 
+
+-- initialize model
+
+
 emptyModel : Model
 emptyModel =
     { researchList = []
@@ -146,16 +166,6 @@ init _ =
 
 
 -- helper funcs
-
-
-teacherTag : String
-teacherTag =
-    "Research by teachers of the Royal Conservatoire"
-
-
-lectorateTag : String
-lectorateTag =
-    "KonCon Lectorate"
 
 
 allTags : List String
@@ -183,9 +193,9 @@ isLectorateResearch =
     List.member lectorateTag << .keywords
 
 
-isStudentResearch : Research -> Bool
-isStudentResearch =
-    not << liftA2Bool (||) isTeacherResearch isLectorateResearch
+
+-- Logically, if something is not teacher nor lectorate, it must be student
+-- Determine which kind of publication status the research has:
 
 
 calcStatus : Research -> PublicationStatus
@@ -263,11 +273,16 @@ keyToLinkInfo key =
 
 
 -- JSON Decoders
+-- this decodes the JSON search result from the advanced search in RC:
 
 
 decodeResearch : Decoder (List Research)
 decodeResearch =
     Json.Decode.list entry
+
+
+
+-- A single research item in the search results
 
 
 entry : Decoder Research
@@ -410,23 +425,6 @@ update msg model =
 
 
 
--- type alias ResearchData a =
---     { a
---         | researchList : List Research
---         , keywordDict : KeywordDict
---     }
--- applyTeacherFilter : ResearchData a -> ResearchData a
--- applyTeacherFilter data =
---     let
---         dictFilter key value =
---             isTeacherResearch value
---     in
---     { data
---         | researchList = List.filter data.researchList isTeacherResearch
---         , keywordDict = Dict.filter dictFilter data.keywordDict
---     }
-
-
 makeLink : Research -> Link
 makeLink research =
     let
@@ -444,11 +442,6 @@ linkToUrl link =
 
         KeywordLink info ->
             info.url
-
-
-viewAuthor : Research -> Html Msg
-viewAuthor research =
-    span [ class "author" ] [ text <| .author research ]
 
 
 attrsFromResearch : Research -> List (Attribute Msg)
@@ -479,7 +472,7 @@ config =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
 
@@ -647,6 +640,9 @@ viewResearchList tableState titleQuery query researchList =
         acceptableResearch =
             List.filter (String.contains lowerTitle << String.toLower << .title) <|
                 List.filter (String.contains lowerQuery << String.toLower << .author) researchList
+
+        statistics =
+            List.length acceptableResearch |> String.fromInt |> (\numString -> numString ++ " results")
     in
     [ Form.form [ class "form-inline" ]
         [ Form.group []
@@ -668,44 +664,12 @@ viewResearchList tableState titleQuery query researchList =
                 []
             ]
         ]
+    , p [ class "table-statistics" ] [ text statistics ]
     , div
         [ class "table-responsive" ]
         [ Table.view config tableState acceptableResearch
         ]
     ]
-
-
-applyValue : a -> List (a -> b) -> List b
-applyValue value list =
-    List.map (\f -> f value) list
-
-
-renderField : ( String, String ) -> Html Msg
-renderField ( value, name ) =
-    label
-        []
-        [ text name
-        , p [] [ text value ]
-        ]
-
-
-labelField : ( String, Html Msg ) -> Html Msg
-labelField ( name, content ) =
-    label [] [ text name, content ]
-
-
-viewMeta : Research -> Html Msg
-viewMeta research =
-    let
-        fields =
-            [ ( String.fromInt research.id, "id" )
-            , ( research.title, "title" )
-            , ( String.join " " research.keywords, "keywords" )
-            , ( research.created, "created" )
-            , ( research.author, "author" )
-            ]
-    in
-    div [] <| List.map renderField fields
 
 
 viewShortMeta : Research -> Html Msg
@@ -835,9 +799,6 @@ renderKeywords query dict =
         sortedKeys =
             List.sort acceptableKeys
 
-        viewKey =
-            hyperlink << keyToLinkInfo
-
         queryForm =
             Form.form [ class "form-inline" ]
                 [ Form.group []
@@ -855,25 +816,6 @@ renderKeywords query dict =
         [ queryForm
         , researchByKeywordList (excludeTags sortedKeys) dict
         ]
-
-
-headerForSize : Int -> List (Html.Attribute Msg) -> List (Html.Html Msg) -> Html.Html Msg
-headerForSize count =
-    case count of
-        1 ->
-            h5
-
-        2 ->
-            h4
-
-        3 ->
-            h3
-
-        4 ->
-            h2
-
-        _ ->
-            h1
 
 
 scaleLink : Int -> List (Html.Attribute Msg) -> Html Msg -> Html Msg
@@ -908,10 +850,6 @@ researchByKeywordList sortedKeys dict =
                     span [] [ text "empty keyword" ]
 
                 Just list ->
-                    let
-                        number =
-                            List.length list
-                    in
                     div [ id <| keywordLink key ]
                         [ h5 [ class "keyword-header" ] [ text key ]
                         , a
