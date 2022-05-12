@@ -638,20 +638,21 @@ viewResearch model =
 
         filteredOnStatus =
             -- publication status
-            if model.includeInternalResearch == HideInternal then
-                filtered
-
-            else
-                List.filter
-                    (\research ->
-                        case research.publicationStatus of
-                            LocalPublication ->
-                                False
-
-                            _ ->
-                                True
-                    )
+            case model.includeInternalResearch of
+                ShowInternal ->    
                     filtered
+
+                HideInternal ->
+                    List.filter
+                        (\research ->
+                            case research.publicationStatus of
+                                LocalPublication ->
+                                    False
+
+                                _ ->
+                                    True
+                        )
+                        filtered
 
         filteredOnPublication = 
             if model.includeUnpublishedResearch then

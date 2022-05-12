@@ -8541,17 +8541,24 @@ var $author$project$Main$viewResearch = function (model) {
 					]))
 			]));
 	var filtered = A2($author$project$Main$filterResearch, model.ao, model.bR);
-	var filteredOnStatus = (model.V === 1) ? filtered : A2(
-		$elm$core$List$filter,
-		function (research) {
-			var _v1 = research.t;
-			if (_v1 === 2) {
-				return false;
-			} else {
-				return true;
-			}
-		},
-		filtered);
+	var filteredOnStatus = function () {
+		var _v1 = model.V;
+		if (!_v1) {
+			return filtered;
+		} else {
+			return A2(
+				$elm$core$List$filter,
+				function (research) {
+					var _v2 = research.t;
+					if (_v2 === 2) {
+						return false;
+					} else {
+						return true;
+					}
+				},
+				filtered);
+		}
+	}();
 	var filteredOnPublication = model.ar ? filteredOnStatus : A2(
 		$elm$core$List$filter,
 		function (r) {
