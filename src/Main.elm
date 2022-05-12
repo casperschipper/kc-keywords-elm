@@ -17,6 +17,7 @@ import Json.Decode.Extra as JDE
 import List.Extra as L
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (hexColor, parenthesize, stringToColor)
+import Browser exposing (UrlRequest(..))
 
 
 
@@ -26,14 +27,17 @@ import Util exposing (hexColor, parenthesize, stringToColor)
 -- Config
 
 
+baseExpoUrl : String
 baseExpoUrl =
     "https://www.researchcatalogue.net/profile/show-exposition?exposition="
 
 
+dataUrl : String
 dataUrl =
     "data/internal_research.json"
 
 
+localIssueId : number
 localIssueId =
     -- used to identify local publications of KC portal
     534751
@@ -104,6 +108,7 @@ type Filter
 -- MAIN
 
 
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
@@ -137,7 +142,8 @@ type alias Model =
     , titleQuery : String
     , loadingStatus : LoadingStatus
     , filter : Filter
-    , includeInternalResearch : Bool
+    , includeInternalResearch : ScopeFilter
+    , includeUnpublishedResearch : Bool
     }
 
 
@@ -155,7 +161,8 @@ emptyModel =
     , titleQuery = ""
     , loadingStatus = Loading
     , filter = All
-    , includeInternalResearch = True
+    , includeInternalResearch = ShowInternal
+    , includeUnpublishedResearch = True
     }
 
 
@@ -191,6 +198,22 @@ isTeacherResearch =
 isLectorateResearch : Research -> Bool
 isLectorateResearch =
     List.member lectorateTag << .keywords
+
+
+isPublished : PublicationStatus -> Bool
+isPublished pubStatus =
+    case pubStatus of
+        Published ->
+            True
+
+        LocalPublication ->
+            True
+
+        Undecided ->
+            False
+
+        InProgress ->
+            False
 
 
 
@@ -310,7 +333,7 @@ entry =
                 "published" ->
                     Published
 
-                "in progress" ->
+                "progress" ->
                     InProgress
 
                 _ ->
@@ -343,7 +366,13 @@ type Msg
     | SetTableState Table.State
     | SetViewType ViewType
     | SetFilter Filter
-    | ToggleInternalPublicationFilter Bool
+    | ScopeFilter ScopeFilter
+    | TogglePublishedFilter Bool
+
+
+type ScopeFilter
+    = ShowInternal
+    | HideInternal
 
 
 
@@ -420,9 +449,11 @@ update msg model =
             in
             ( { model | filter = filter, viewType = newView }, Cmd.none )
 
-        ToggleInternalPublicationFilter includeInternal ->
-            ( { model | includeInternalResearch = includeInternal }, Cmd.none )
+        ScopeFilter state ->
+            ( { model | includeInternalResearch = state }, Cmd.none )
 
+        TogglePublishedFilter includeUnpublished ->
+            ( { model | includeUnpublishedResearch = includeUnpublished }, Cmd.none )
 
 
 makeLink : Research -> Link
@@ -453,6 +484,22 @@ attrsFromResearch research =
         _ ->
             [ class "global-publication" ]
 
+getDate : Research -> Maybe String 
+getDate research =
+    case research.publicationStatus of
+         InProgress -> 
+            Just research.created
+
+         Undecided -> 
+            Just research.created
+
+         Published ->
+            research.publication
+         
+         LocalPublication ->
+            research.publication
+
+
 
 config : Table.Config Research Msg
 config =
@@ -463,7 +510,7 @@ config =
             [ typeColumn "Type" .researchType
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
-            , dateColumn "Published" .publication
+            , dateColumn "Published" getDate
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
@@ -526,26 +573,33 @@ viewResearch model =
                     ]
                 ]
 
-        publicInternalSwitch =
-            let
-                helperWarning =
-                    if model.includeInternalResearch then
-                        " (these are accessible to staff and students only)"
+        publicInternalSwitch2 =
+            label []
+                [ text "Filter by access:"
+                , div [ class "mb-1" ]
+                    [ ButtonGroup.radioButtonGroup []
+                        [ ButtonGroup.radioButton
+                            (model.includeInternalResearch == ShowInternal)
+                            [ Button.light, Button.onClick <| ScopeFilter ShowInternal ]
+                            [ text "Include internal results" ]
+                        , ButtonGroup.radioButton
+                            (model.includeInternalResearch == HideInternal)
+                            [ Button.light, Button.onClick <| ScopeFilter HideInternal ]
+                            [ text "Show only public accessible work" ]
+                        ]
+                    ]
+                ]
 
-                    else
-                        ""
-            in
+        publishedSwitch =
             label [ class "ml-1" ]
-                [ text "Access filter: "
+                [ text "Include unpublished expositions: "
                 , div []
                     [ Checkbox.checkbox
-                        [ Checkbox.id "show-internal-toggle"
-                        , Checkbox.onCheck ToggleInternalPublicationFilter
-                        , Checkbox.checked model.includeInternalResearch
+                        [ Checkbox.id "show-published-toggle"
+                        , Checkbox.onCheck TogglePublishedFilter
+                        , Checkbox.checked model.includeUnpublishedResearch
                         ]
-                        ("include internal publications"
-                            ++ helperWarning
-                        )
+                        "include unpublished expositions"
                     ]
                 ]
 
@@ -584,7 +638,7 @@ viewResearch model =
 
         filteredOnStatus =
             -- publication status
-            if model.includeInternalResearch then
+            if model.includeInternalResearch == HideInternal then
                 filtered
 
             else
@@ -592,19 +646,25 @@ viewResearch model =
                     (\research ->
                         case research.publicationStatus of
                             LocalPublication ->
-                                model.includeInternalResearch
+                                False
 
                             _ ->
                                 True
                     )
                     filtered
 
+        filteredOnPublication = 
+            if model.includeUnpublishedResearch then
+                filteredOnStatus
+            else
+                filteredOnStatus |> List.filter (\r -> isPublished r.publicationStatus)
+
         content =
             case model.viewType of
                 TableView ->
                     div
                         []
-                        (viewResearchList model.tableState model.titleQuery model.query filteredOnStatus)
+                        (viewResearchList model.tableState model.titleQuery model.query filteredOnPublication)
 
                 KeywordView ->
                     let
@@ -621,7 +681,9 @@ viewResearch model =
             ]
         , filterSwitch
         , br [] []
-        , publicInternalSwitch
+        , publicInternalSwitch2
+        , br [] []
+        , publishedSwitch
         , br [] []
         , radioSwitchView
         , content
@@ -674,7 +736,7 @@ viewResearchList tableState titleQuery query researchList =
 
 viewShortMeta : Research -> Html Msg
 viewShortMeta research =
-    li ([ class "research-meta" ] ++ attrsFromResearch research)
+    li (class "research-meta" :: attrsFromResearch research)
         [ p [ class "research-meta-title" ]
             [ a
                 [ href <| (linkToUrl << makeLink) research, target "_blank" ]
@@ -690,15 +752,19 @@ viewShortMeta research =
         ]
 
 
-dateColumn : String -> (data -> Maybe String) -> Column data msg
+dateColumn : String -> (Research -> Maybe String) -> Column Research msg
 dateColumn name toCreated =
     let
-        sortableDateString =
-            Maybe.withDefault "?" >> String.split "/" >> List.reverse >> String.join "/"
+        sortableDateString mstr =
+            mstr
+                |> Maybe.withDefault "?"
+                |> String.split "/"
+                |> List.reverse
+                |> String.join "/"
     in
     Table.customColumn
         { name = name
-        , viewData = \data -> (Maybe.withDefault "in progress" << toCreated) data
+        , viewData = getDate >> Maybe.withDefault "no date"
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
 
