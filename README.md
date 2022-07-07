@@ -13,3 +13,9 @@ You will have to install elm to build and run this program:
     $ elm reactor 
     
  and go to localhost:8000/index.html
+ 
+To make a new version you will have to do:
+
+`elm make src/Main.elm`
+
+
