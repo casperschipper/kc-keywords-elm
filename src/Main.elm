@@ -6,7 +6,7 @@ import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
 import Bootstrap.Utilities.Display as Display
 import Bootstrap.Utilities.Spacing as Spacing
-import Browser
+import Browser exposing (UrlRequest(..))
 import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -17,7 +17,6 @@ import Json.Decode.Extra as JDE
 import List.Extra as L
 import Table exposing (Column, defaultCustomizations)
 import Util exposing (hexColor, parenthesize, stringToColor)
-import Browser exposing (UrlRequest(..))
 
 
 
@@ -80,8 +79,13 @@ type alias LinkInfo =
     }
 
 
+type LinkVisibility
+    = InternalLink
+    | PublicLink
+
+
 type Link
-    = ResearchLink LinkInfo
+    = ResearchLink LinkInfo LinkVisibility
     | KeywordLink LinkInfo
 
 
@@ -89,7 +93,9 @@ type ResearchType
     = Teacher
     | Student
     | Lectorate
+    | Kcpedia
     | Unknown
+
 
 
 type PublicationStatus
@@ -173,11 +179,11 @@ init _ =
 
 
 -- helper funcs
-
+kcpediaTag = "kcpedia"
 
 allTags : List String
 allTags =
-    [ teacherTag, lectorateTag ]
+    [ teacherTag, lectorateTag, kcpediaTag ]
 
 
 isTag : String -> Bool
@@ -198,6 +204,10 @@ isTeacherResearch =
 isLectorateResearch : Research -> Bool
 isLectorateResearch =
     List.member lectorateTag << .keywords
+
+isKcpediaResearch : Research -> Bool
+isKcpediaResearch research =
+    research |> .keywords |> List.member kcpediaTag
 
 
 isPublished : PublicationStatus -> Bool
@@ -263,20 +273,29 @@ statusToString status =
 hyperlink : Link -> Html Msg
 hyperlink link =
     case link of
-        ResearchLink l ->
-            viewResearchLink l
+        ResearchLink l status ->
+            viewResearchLink l status
 
         KeywordLink l ->
             viewKeywordLink l
 
 
-viewResearchLink : LinkInfo -> Html Msg
-viewResearchLink link =
-    a
-        [ href link.url
-        , target "_blank"
-        ]
-        [ text link.title ]
+viewResearchLink : LinkInfo -> LinkVisibility -> Html Msg
+viewResearchLink link vis =
+    case vis of
+        PublicLink ->
+            a
+                [ href link.url
+                , target "_blank"
+                ]
+                [ text link.title ]
+
+        InternalLink ->
+            a
+                [ href link.url
+                , target "_blank"
+                ]
+                [ keyIcon, text link.title ]
 
 
 viewKeywordLink : LinkInfo -> Html Msg
@@ -319,6 +338,8 @@ entry =
             else if isLectorateResearch research then
                 { research | researchType = Lectorate }
 
+            else if isKcpediaResearch research then
+                { research | researchType = Kcpedia }
             else
                 -- there is no tag for students
                 { research | researchType = Student }
@@ -461,14 +482,22 @@ makeLink research =
     let
         link =
             baseExpoUrl ++ String.fromInt (.id research)
+
+        vis =
+            case research.publicationStatus of
+                LocalPublication ->
+                    InternalLink
+
+                _ ->
+                    PublicLink
     in
-    ResearchLink <| LinkInfo (.title research) link
+    ResearchLink (LinkInfo (.title research) link) vis
 
 
 linkToUrl : Link -> String
 linkToUrl link =
     case link of
-        ResearchLink info ->
+        ResearchLink info _ ->
             info.url
 
         KeywordLink info ->
@@ -484,21 +513,21 @@ attrsFromResearch research =
         _ ->
             [ class "global-publication" ]
 
-getDate : Research -> Maybe String 
+
+getDate : Research -> Maybe String
 getDate research =
     case research.publicationStatus of
-         InProgress -> 
+        InProgress ->
             Just research.created
 
-         Undecided -> 
+        Undecided ->
             Just research.created
 
-         Published ->
-            research.publication
-         
-         LocalPublication ->
+        Published ->
             research.publication
 
+        LocalPublication ->
+            research.publication
 
 
 config : Table.Config Research Msg
@@ -575,20 +604,28 @@ viewResearch model =
 
         publicInternalSwitch2 =
             label []
-                [ text "Filter by access:"
-                , div [ class "mb-1" ]
-                    [ ButtonGroup.radioButtonGroup []
-                        [ ButtonGroup.radioButton
-                            (model.includeInternalResearch == ShowInternal)
-                            [ Button.light, Button.onClick <| ScopeFilter ShowInternal ]
-                            [ text "Include internal results" ]
-                        , ButtonGroup.radioButton
-                            (model.includeInternalResearch == HideInternal)
-                            [ Button.light, Button.onClick <| ScopeFilter HideInternal ]
-                            [ text "Show only public accessible work" ]
+                [ 
+                div [ class "mb-1" ]
+                    [ Checkbox.checkbox
+                        [ Checkbox.checked (model.includeInternalResearch == ShowInternal)
+                        , Checkbox.id "internal-switch"
+                        , Checkbox.onCheck
+                            (\checked ->
+                                if checked then
+                                    ScopeFilter ShowInternal
+
+                                else
+                                    ScopeFilter HideInternal
+                            )
                         ]
+                        "Show all research (including internal)"
                     ]
+                , case model.includeInternalResearch of
+                    ShowInternal -> text "internal works are visible to KC portal members only."
+
+                    HideInternal -> text ""
                 ]
+                
 
         publishedSwitch =
             label [ class "ml-1" ]
@@ -628,6 +665,10 @@ viewResearch model =
                             (current == Only Lectorate)
                             [ Button.light, Button.onClick <| SetFilter (Only Lectorate) ]
                             [ text "The lectorate 'Music, Education and Society'" ]
+                        , ButtonGroup.radioButton 
+                            (current == Only Kcpedia)
+                            [ Button.light, Button.onClick <| SetFilter (Only Kcpedia) ]
+                            [ text "KCPedia" ]
                         ]
                     ]
                 ]
@@ -639,7 +680,7 @@ viewResearch model =
         filteredOnStatus =
             -- publication status
             case model.includeInternalResearch of
-                ShowInternal ->    
+                ShowInternal ->
                     filtered
 
                 HideInternal ->
@@ -654,9 +695,10 @@ viewResearch model =
                         )
                         filtered
 
-        filteredOnPublication = 
+        filteredOnPublication =
             if model.includeUnpublishedResearch then
                 filteredOnStatus
+
             else
                 filteredOnStatus |> List.filter (\r -> isPublished r.publicationStatus)
 
@@ -683,8 +725,6 @@ viewResearch model =
         , filterSwitch
         , br [] []
         , publicInternalSwitch2
-        , br [] []
-        , publishedSwitch
         , br [] []
         , radioSwitchView
         , content
@@ -739,9 +779,7 @@ viewShortMeta : Research -> Html Msg
 viewShortMeta research =
     li (class "research-meta" :: attrsFromResearch research)
         [ p [ class "research-meta-title" ]
-            [ a
-                [ href <| (linkToUrl << makeLink) research, target "_blank" ]
-                [ text <| research.title ]
+            [ hyperlink (makeLink research)
             ]
         , p
             [ class "research-meta-status", title "publication status" ]
@@ -791,6 +829,9 @@ typeToString researchType =
         Lectorate ->
             "Lectorate"
 
+        Kcpedia ->
+            "KCPedia"
+
         Unknown ->
             "Unknown"
 
@@ -798,7 +839,7 @@ typeToString researchType =
 getTitle : Link -> String
 getTitle l =
     case l of
-        ResearchLink i ->
+        ResearchLink i _ ->
             i.title
 
         KeywordLink i ->
@@ -1000,3 +1041,15 @@ fillKeywordsDict research =
                 res.keywords
     in
     List.foldr updateDict emptyKeywords research
+
+
+keyIcon : Html Msg
+keyIcon =
+    Html.img
+        [ class "key-icon"
+        , src "./key.svg"
+        , width 25
+        , height 25
+        , title "this research is only accessible for students and staff"
+        ]
+        []
