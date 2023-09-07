@@ -70,6 +70,7 @@ type alias Research =
     , issueId : Maybe Int
     , publicationStatus : PublicationStatus -- should be string?
     , publication : Maybe String
+    , lastChanged : Maybe String
     }
 
 
@@ -372,6 +373,7 @@ entry =
             |> JDE.andMap (maybe (field "issue" <| field "id" int))
             |> JDE.andMap (Json.Decode.map statusFromString (field "status" string))
             |> JDE.andMap (maybe (field "published" string))
+            |> JDE.andMap (field "last-modified" string |> Json.Decode.map Just)
         )
 
 
@@ -518,10 +520,10 @@ getDate : Research -> Maybe String
 getDate research =
     case research.publicationStatus of
         InProgress ->
-            Just research.created
+            Just "in progress"
 
         Undecided ->
-            Just research.created
+            Just "unknown"
 
         Published ->
             research.publication
@@ -529,6 +531,9 @@ getDate research =
         LocalPublication ->
             research.publication
 
+getModified : Research -> Maybe String
+getModified =
+    .lastChanged
 
 config : Table.Config Research Msg
 config =
@@ -540,6 +545,7 @@ config =
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
             , dateColumn "Published" getDate
+            , dateColumn "Modified" getModified
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
@@ -803,7 +809,7 @@ dateColumn name toCreated =
     in
     Table.customColumn
         { name = name
-        , viewData = getDate >> Maybe.withDefault "no date"
+        , viewData = toCreated >> Maybe.withDefault "no date"
         , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
         }
 
