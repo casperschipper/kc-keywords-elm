@@ -493,8 +493,11 @@ makeLink research =
                 _ ->
                     PublicLink
     in
-    ResearchLink (LinkInfo (.title research) link) vis
+    ResearchLink (LinkInfo (displayTitle research) link) vis
 
+displayTitle : Research -> String
+displayTitle research = 
+    research.title |> String.replace "&amp;" "&"
 
 linkToUrl : Link -> String
 linkToUrl link =
