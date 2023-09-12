@@ -79,6 +79,7 @@ type alias LinkInfo =
     , url : String
     }
 
+-- There are internal and public expositions in the RC, internal means only portal members can see it.
 
 type LinkVisibility
     = InternalLink
@@ -96,7 +97,6 @@ type ResearchType
     | Lectorate
     | Kcpedia
     | Unknown
-
 
 
 type PublicationStatus
@@ -163,7 +163,7 @@ emptyModel =
     { researchList = []
     , keywordDict = emptyKeywords
     , viewType = KeywordView
-    , tableState = Table.initialSort "title"
+    , tableState = Table.sortBy "Modified" True
     , query = ""
     , titleQuery = ""
     , loadingStatus = Loading
@@ -180,7 +180,11 @@ init _ =
 
 
 -- helper funcs
-kcpediaTag = "kcpedia"
+
+
+kcpediaTag =
+    "kcpedia"
+
 
 allTags : List String
 allTags =
@@ -205,6 +209,7 @@ isTeacherResearch =
 isLectorateResearch : Research -> Bool
 isLectorateResearch =
     List.member lectorateTag << .keywords
+
 
 isKcpediaResearch : Research -> Bool
 isKcpediaResearch research =
@@ -341,6 +346,7 @@ entry =
 
             else if isKcpediaResearch research then
                 { research | researchType = Kcpedia }
+
             else
                 -- there is no tag for students
                 { research | researchType = Student }
@@ -470,7 +476,12 @@ update msg model =
                         _ ->
                             model.viewType
             in
-            ( { model | filter = filter, viewType = newView }, Cmd.none )
+            ( { model
+                | filter = filter
+                , viewType = newView
+              }
+            , Cmd.none
+            )
 
         ScopeFilter state ->
             ( { model | includeInternalResearch = state }, Cmd.none )
@@ -495,9 +506,11 @@ makeLink research =
     in
     ResearchLink (LinkInfo (displayTitle research) link) vis
 
+
 displayTitle : Research -> String
-displayTitle research = 
+displayTitle research =
     research.title |> String.replace "&amp;" "&"
+
 
 linkToUrl : Link -> String
 linkToUrl link =
@@ -534,9 +547,11 @@ getDate research =
         LocalPublication ->
             research.publication
 
+
 getModified : Research -> Maybe String
 getModified =
     .lastChanged
+
 
 config : Table.Config Research Msg
 config =
@@ -613,8 +628,7 @@ viewResearch model =
 
         publicInternalSwitch2 =
             label []
-                [ 
-                div [ class "mb-1" ]
+                [ div [ class "mb-1" ]
                     [ Checkbox.checkbox
                         [ Checkbox.checked (model.includeInternalResearch == ShowInternal)
                         , Checkbox.id "internal-switch"
@@ -630,11 +644,12 @@ viewResearch model =
                         "Show all research (including internal)"
                     ]
                 , case model.includeInternalResearch of
-                    ShowInternal -> text "internal works are visible to KC portal members only."
+                    ShowInternal ->
+                        text "internal works are visible to KC portal members only."
 
-                    HideInternal -> text ""
+                    HideInternal ->
+                        text ""
                 ]
-                
 
         publishedSwitch =
             label [ class "ml-1" ]
@@ -674,7 +689,7 @@ viewResearch model =
                             (current == Only Lectorate)
                             [ Button.light, Button.onClick <| SetFilter (Only Lectorate) ]
                             [ text "The lectorate 'Music, Education and Society'" ]
-                        , ButtonGroup.radioButton 
+                        , ButtonGroup.radioButton
                             (current == Only Kcpedia)
                             [ Button.light, Button.onClick <| SetFilter (Only Kcpedia) ]
                             [ text "KCPedia" ]
@@ -813,9 +828,9 @@ dateColumn name toCreated =
     Table.customColumn
         { name = name
         , viewData = toCreated >> Maybe.withDefault "no date"
-        , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
+        , sorter = Table.increasingOrDecreasingBy <|  
+            (toCreated >> sortableDateString)
         }
-
 
 typeColumn : String -> (data -> ResearchType) -> Column data msg
 typeColumn name getType =
