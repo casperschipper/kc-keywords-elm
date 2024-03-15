@@ -1,7 +1,8 @@
-module Main exposing (Model, Msg(..), Research, main)
+module Main exposing (Msg(..), Research, main)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
+import Bootstrap.Dropdown as Dropdown
 import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
 import Bootstrap.Utilities.Display as Display
@@ -79,7 +80,10 @@ type alias LinkInfo =
     , url : String
     }
 
+
+
 -- There are internal and public expositions in the RC, internal means only portal members can see it.
+
 
 type LinkVisibility
     = InternalLink
@@ -91,12 +95,17 @@ type Link
     | KeywordLink LinkInfo
 
 
+
+-- Research categories:
+
+
 type ResearchType
     = Teacher
     | Student
     | Lectorate
     | Kcpedia
     | Unknown
+    | Music
 
 
 type PublicationStatus
@@ -140,6 +149,11 @@ type ViewType
     | KeywordView
 
 
+type DateFilter
+    = Year Int
+    | AnyYear
+
+
 type alias Model =
     { researchList : List Research
     , keywordDict : KeywordDict
@@ -149,8 +163,10 @@ type alias Model =
     , titleQuery : String
     , loadingStatus : LoadingStatus
     , filter : Filter
+    , dateFilter : DateFilter
     , includeInternalResearch : ScopeFilter
     , includeUnpublishedResearch : Bool
+    , dropdown : Dropdown.State
     }
 
 
@@ -168,8 +184,10 @@ emptyModel =
     , titleQuery = ""
     , loadingStatus = Loading
     , filter = All
+    , dateFilter = AnyYear
     , includeInternalResearch = ShowInternal
     , includeUnpublishedResearch = True
+    , dropdown = Dropdown.initialState
     }
 
 
@@ -182,6 +200,7 @@ init _ =
 -- helper funcs
 
 
+kcpediaTag : String
 kcpediaTag =
     "kcpedia"
 
@@ -204,6 +223,11 @@ excludeTags =
 isTeacherResearch : Research -> Bool
 isTeacherResearch =
     List.member teacherTag << .keywords
+
+
+isMusicResearch : Research -> Bool
+isMusicResearch research =
+    research.keywords |> List.member "music"
 
 
 isLectorateResearch : Research -> Bool
@@ -338,7 +362,10 @@ entry =
     let
         researchType : Research -> Research
         researchType research =
-            if isTeacherResearch research then
+            if isMusicResearch research then
+                { research | researchType = Music }
+
+            else if isTeacherResearch research then
                 { research | researchType = Teacher }
 
             else if isLectorateResearch research then
@@ -387,6 +414,10 @@ entry =
 -- UPDATE
 
 
+type alias Year =
+    Int
+
+
 type Msg
     = Go
     | GotList (Result Http.Error (List Research))
@@ -397,6 +428,8 @@ type Msg
     | SetFilter Filter
     | ScopeFilter ScopeFilter
     | TogglePublishedFilter Bool
+    | DropdownMsg Dropdown.State
+    | SetYearFilter Year
 
 
 type ScopeFilter
@@ -489,6 +522,20 @@ update msg model =
         TogglePublishedFilter includeUnpublished ->
             ( { model | includeUnpublishedResearch = includeUnpublished }, Cmd.none )
 
+        DropdownMsg newstate ->
+            ( { model | dropdown = newstate }
+            , Cmd.none
+            )
+
+        SetYearFilter year ->
+            let
+                _ =
+                    Debug.log "year" year
+            in
+            ( { model | dateFilter = Year year }
+            , Cmd.none
+            )
+
 
 makeLink : Research -> Link
 makeLink research =
@@ -572,8 +619,8 @@ config =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    Dropdown.subscriptions model.dropdown DropdownMsg
 
 
 
@@ -604,6 +651,15 @@ filterResearch filter list =
 
         Only filterType ->
             List.filter ((==) filterType << .researchType) list
+
+
+filterByYear : Year -> List Research -> List Research
+filterByYear year research =
+    let
+        getYear r =
+            r.publication |> Maybe.andThen (\str -> str |> String.split "/" |> List.reverse |> List.head) |> Maybe.andThen String.toInt |> Maybe.withDefault 0
+    in
+    List.filter (\rs -> getYear rs == year) research
 
 
 viewResearch : Model -> Html Msg
@@ -693,7 +749,38 @@ viewResearch model =
                             (current == Only Kcpedia)
                             [ Button.light, Button.onClick <| SetFilter (Only Kcpedia) ]
                             [ text "KCPedia" ]
+                        , ButtonGroup.radioButton
+                            (current == Only Music)
+                            [ Button.light, Button.onClick <| SetFilter (Only Music) ]
+                            [ text "Music" ]
                         ]
+                    ]
+                ]
+
+        dateFilterToString dateFilterState =
+            case dateFilterState of
+                AnyYear ->
+                    "any"
+
+                Year x ->
+                    String.fromInt x
+
+        yearFilter =
+            label []
+                [ text "filter by year"
+                , div [ class "mb-1" ]
+                    [ Dropdown.dropdown
+                        model.dropdown
+                        { options = [ Dropdown.alignMenuRight ]
+                        , toggleMsg = DropdownMsg
+                        , toggleButton =
+                            Dropdown.toggle [] [ text (model.dateFilter |> dateFilterToString) ]
+                        , items =
+                            [ Dropdown.buttonItem [ onClick (SetYearFilter 2024) ] [ text "2024" ]
+                            , Dropdown.buttonItem [ onClick (SetYearFilter 2023) ] [ text "2023" ]
+                            , Dropdown.buttonItem [ onClick (SetYearFilter 2022) ] [ text "2022" ]
+                            ]
+                        }
                     ]
                 ]
 
@@ -701,11 +788,19 @@ viewResearch model =
             -- Student/Teacher etc..
             filterResearch model.filter model.researchList
 
+        filteredByYear =
+            case model.dateFilter of
+                AnyYear ->
+                    filtered
+
+                Year y ->
+                    filterByYear y filtered
+
         filteredOnStatus =
             -- publication status
             case model.includeInternalResearch of
                 ShowInternal ->
-                    filtered
+                    filteredByYear
 
                 HideInternal ->
                     List.filter
@@ -717,7 +812,7 @@ viewResearch model =
                                 _ ->
                                     True
                         )
-                        filtered
+                        filteredByYear
 
         filteredOnPublication =
             if model.includeUnpublishedResearch then
@@ -747,6 +842,8 @@ viewResearch model =
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
         , filterSwitch
+        , br [] []
+        , yearFilter
         , br [] []
         , publicInternalSwitch2
         , br [] []
@@ -828,9 +925,11 @@ dateColumn name toCreated =
     Table.customColumn
         { name = name
         , viewData = toCreated >> Maybe.withDefault "no date"
-        , sorter = Table.increasingOrDecreasingBy <|  
-            (toCreated >> sortableDateString)
+        , sorter =
+            Table.increasingOrDecreasingBy <|
+                (toCreated >> sortableDateString)
         }
+
 
 typeColumn : String -> (data -> ResearchType) -> Column data msg
 typeColumn name getType =
@@ -858,6 +957,9 @@ typeToString researchType =
 
         Unknown ->
             "Unknown"
+
+        Music ->
+            "music"
 
 
 getTitle : Link -> String

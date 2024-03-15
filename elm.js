@@ -1,2922 +1,9886 @@
-// elm-watch hot {"version":"1.1.2","targetName":"My target name","webSocketPort":58523}
-"use strict";
-(() => {
-  // node_modules/tiny-decoders/index.mjs
-  function boolean(value) {
-    if (typeof value !== "boolean") {
-      throw new DecoderError({ tag: "boolean", got: value });
-    }
-    return value;
-  }
-  function number(value) {
-    if (typeof value !== "number") {
-      throw new DecoderError({ tag: "number", got: value });
-    }
-    return value;
-  }
-  function string(value) {
-    if (typeof value !== "string") {
-      throw new DecoderError({ tag: "string", got: value });
-    }
-    return value;
-  }
-  function stringUnion(mapping) {
-    return function stringUnionDecoder(value) {
-      const str = string(value);
-      if (!Object.prototype.hasOwnProperty.call(mapping, str)) {
-        throw new DecoderError({
-          tag: "unknown stringUnion variant",
-          knownVariants: Object.keys(mapping),
-          got: str
-        });
-      }
-      return str;
-    };
-  }
-  function unknownArray(value) {
-    if (!Array.isArray(value)) {
-      throw new DecoderError({ tag: "array", got: value });
-    }
-    return value;
-  }
-  function unknownRecord(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      throw new DecoderError({ tag: "object", got: value });
-    }
-    return value;
-  }
-  function array(decoder) {
-    return function arrayDecoder(value) {
-      const arr = unknownArray(value);
-      const result = [];
-      for (let index = 0; index < arr.length; index++) {
-        try {
-          result.push(decoder(arr[index]));
-        } catch (error) {
-          throw DecoderError.at(error, index);
-        }
-      }
-      return result;
-    };
-  }
-  function record(decoder) {
-    return function recordDecoder(value) {
-      const object = unknownRecord(value);
-      const keys = Object.keys(object);
-      const result = {};
-      for (const key of keys) {
-        if (key === "__proto__") {
-          continue;
-        }
-        try {
-          result[key] = decoder(object[key]);
-        } catch (error) {
-          throw DecoderError.at(error, key);
-        }
-      }
-      return result;
-    };
-  }
-  function fields(callback, { exact = "allow extra", allow = "object" } = {}) {
-    return function fieldsDecoder(value) {
-      const object = allow === "array" ? unknownArray(value) : unknownRecord(value);
-      const knownFields = /* @__PURE__ */ Object.create(null);
-      function field(key, decoder) {
-        try {
-          const result2 = decoder(object[key]);
-          knownFields[key] = null;
-          return result2;
-        } catch (error) {
-          throw DecoderError.at(error, key);
-        }
-      }
-      const result = callback(field, object);
-      if (exact !== "allow extra") {
-        const unknownFields = Object.keys(object).filter((key) => !Object.prototype.hasOwnProperty.call(knownFields, key));
-        if (unknownFields.length > 0) {
-          throw new DecoderError({
-            tag: "exact fields",
-            knownFields: Object.keys(knownFields),
-            got: unknownFields
-          });
-        }
-      }
-      return result;
-    };
-  }
-  function fieldsAuto(mapping, { exact = "allow extra" } = {}) {
-    return function fieldsAutoDecoder(value) {
-      const object = unknownRecord(value);
-      const keys = Object.keys(mapping);
-      const result = {};
-      for (const key of keys) {
-        if (key === "__proto__") {
-          continue;
-        }
-        const decoder = mapping[key];
-        try {
-          result[key] = decoder(object[key]);
-        } catch (error) {
-          throw DecoderError.at(error, key);
-        }
-      }
-      if (exact !== "allow extra") {
-        const unknownFields = Object.keys(object).filter((key) => !Object.prototype.hasOwnProperty.call(mapping, key));
-        if (unknownFields.length > 0) {
-          throw new DecoderError({
-            tag: "exact fields",
-            knownFields: keys,
-            got: unknownFields
-          });
-        }
-      }
-      return result;
-    };
-  }
-  function fieldsUnion(key, mapping) {
-    return fields(function fieldsUnionFields(field, object) {
-      const tag = field(key, string);
-      if (Object.prototype.hasOwnProperty.call(mapping, tag)) {
-        const decoder = mapping[tag];
-        return decoder(object);
-      }
-      throw new DecoderError({
-        tag: "unknown fieldsUnion tag",
-        knownTags: Object.keys(mapping),
-        got: tag,
-        key
-      });
-    });
-  }
-  function multi(mapping) {
-    return function multiDecoder(value) {
-      if (value === void 0) {
-        if (mapping.undefined !== void 0) {
-          return mapping.undefined(value);
-        }
-      } else if (value === null) {
-        if (mapping.null !== void 0) {
-          return mapping.null(value);
-        }
-      } else if (typeof value === "boolean") {
-        if (mapping.boolean !== void 0) {
-          return mapping.boolean(value);
-        }
-      } else if (typeof value === "number") {
-        if (mapping.number !== void 0) {
-          return mapping.number(value);
-        }
-      } else if (typeof value === "string") {
-        if (mapping.string !== void 0) {
-          return mapping.string(value);
-        }
-      } else if (Array.isArray(value)) {
-        if (mapping.array !== void 0) {
-          return mapping.array(value);
-        }
-      } else {
-        if (mapping.object !== void 0) {
-          return mapping.object(value);
-        }
-      }
-      throw new DecoderError({
-        tag: "unknown multi type",
-        knownTypes: Object.keys(mapping),
-        got: value
-      });
-    };
-  }
-  function optional(decoder, defaultValue) {
-    return function optionalDecoder(value) {
-      if (value === void 0) {
-        return defaultValue;
-      }
-      try {
-        return decoder(value);
-      } catch (error) {
-        const newError = DecoderError.at(error);
-        if (newError.path.length === 0) {
-          newError.optional = true;
-        }
-        throw newError;
-      }
-    };
-  }
-  function chain(decoder, next) {
-    return function chainDecoder(value) {
-      return next(decoder(value));
-    };
-  }
-  function formatDecoderErrorVariant(variant, options) {
-    const formatGot = (value) => {
-      const formatted = repr(value, options);
-      return (options === null || options === void 0 ? void 0 : options.sensitive) === true ? `${formatted}
-(Actual values are hidden in sensitive mode.)` : formatted;
-    };
-    const stringList = (strings) => strings.length === 0 ? "(none)" : strings.map((s) => JSON.stringify(s)).join(", ");
-    const got = (message, value) => value === DecoderError.MISSING_VALUE ? message : `${message}
-Got: ${formatGot(value)}`;
-    switch (variant.tag) {
-      case "boolean":
-      case "number":
-      case "string":
-        return got(`Expected a ${variant.tag}`, variant.got);
-      case "array":
-      case "object":
-        return got(`Expected an ${variant.tag}`, variant.got);
-      case "unknown multi type":
-        return `Expected one of these types: ${variant.knownTypes.length === 0 ? "never" : variant.knownTypes.join(", ")}
-Got: ${formatGot(variant.got)}`;
-      case "unknown fieldsUnion tag":
-        return `Expected one of these tags: ${stringList(variant.knownTags)}
-Got: ${formatGot(variant.got)}`;
-      case "unknown stringUnion variant":
-        return `Expected one of these variants: ${stringList(variant.knownVariants)}
-Got: ${formatGot(variant.got)}`;
-      case "exact fields":
-        return `Expected only these fields: ${stringList(variant.knownFields)}
-Found extra fields: ${formatGot(variant.got).replace(/^\[|\]$/g, "")}`;
-      case "tuple size":
-        return `Expected ${variant.expected} items
-Got: ${variant.got}`;
-      case "custom":
-        return got(variant.message, variant.got);
-    }
-  }
-  var DecoderError = class extends TypeError {
-    constructor({ key, ...params }) {
-      const variant = "tag" in params ? params : { tag: "custom", message: params.message, got: params.value };
-      super(`${formatDecoderErrorVariant(
-        variant,
-        { sensitive: true }
-      )}
+(function(scope){
+'use strict';
 
-For better error messages, see https://github.com/lydell/tiny-decoders#error-messages`);
-      this.path = key === void 0 ? [] : [key];
-      this.variant = variant;
-      this.nullable = false;
-      this.optional = false;
-    }
-    static at(error, key) {
-      if (error instanceof DecoderError) {
-        if (key !== void 0) {
-          error.path.unshift(key);
-        }
-        return error;
-      }
-      return new DecoderError({
-        tag: "custom",
-        message: error instanceof Error ? error.message : String(error),
-        got: DecoderError.MISSING_VALUE,
-        key
-      });
-    }
-    format(options) {
-      const path = this.path.map((part) => `[${JSON.stringify(part)}]`).join("");
-      const nullableString = this.nullable ? " (nullable)" : "";
-      const optionalString = this.optional ? " (optional)" : "";
-      const variant = formatDecoderErrorVariant(this.variant, options);
-      return `At root${path}${nullableString}${optionalString}:
-${variant}`;
-    }
-  };
-  DecoderError.MISSING_VALUE = Symbol("DecoderError.MISSING_VALUE");
-  function repr(value, { recurse = true, maxArrayChildren = 5, maxObjectChildren = 3, maxLength = 100, recurseMaxLength = 20, sensitive = false } = {}) {
-    const type = typeof value;
-    const toStringType = Object.prototype.toString.call(value).replace(/^\[object\s+(.+)\]$/, "$1");
-    try {
-      if (value == null || type === "number" || type === "boolean" || type === "symbol" || toStringType === "RegExp") {
-        return sensitive ? toStringType.toLowerCase() : truncate(String(value), maxLength);
-      }
-      if (type === "string") {
-        return sensitive ? type : truncate(JSON.stringify(value), maxLength);
-      }
-      if (typeof value === "function") {
-        return `function ${truncate(JSON.stringify(value.name), maxLength)}`;
-      }
-      if (Array.isArray(value)) {
-        const arr = value;
-        if (!recurse && arr.length > 0) {
-          return `${toStringType}(${arr.length})`;
-        }
-        const lastIndex = arr.length - 1;
-        const items = [];
-        const end = Math.min(maxArrayChildren - 1, lastIndex);
-        for (let index = 0; index <= end; index++) {
-          const item = index in arr ? repr(arr[index], {
-            recurse: false,
-            maxLength: recurseMaxLength,
-            sensitive
-          }) : "<empty>";
-          items.push(item);
-        }
-        if (end < lastIndex) {
-          items.push(`(${lastIndex - end} more)`);
-        }
-        return `[${items.join(", ")}]`;
-      }
-      if (toStringType === "Object") {
-        const object = value;
-        const keys = Object.keys(object);
-        const { name } = object.constructor;
-        if (!recurse && keys.length > 0) {
-          return `${name}(${keys.length})`;
-        }
-        const numHidden = Math.max(0, keys.length - maxObjectChildren);
-        const items = keys.slice(0, maxObjectChildren).map((key2) => `${truncate(JSON.stringify(key2), recurseMaxLength)}: ${repr(object[key2], {
-          recurse: false,
-          maxLength: recurseMaxLength,
-          sensitive
-        })}`).concat(numHidden > 0 ? `(${numHidden} more)` : []);
-        const prefix = name === "Object" ? "" : `${name} `;
-        return `${prefix}{${items.join(", ")}}`;
-      }
-      return toStringType;
-    } catch (_error) {
-      return toStringType;
-    }
-  }
-  function truncate(str, maxLength) {
-    const half = Math.floor(maxLength / 2);
-    return str.length <= maxLength ? str : `${str.slice(0, half)}\u2026${str.slice(-half)}`;
-  }
+function F(arity, fun, wrapper) {
+  wrapper.a = arity;
+  wrapper.f = fun;
+  return wrapper;
+}
 
-  // src/Helpers.ts
-  function join(array2, separator) {
-    return array2.join(separator);
-  }
-  function pad(number2) {
-    return number2.toString().padStart(2, "0");
-  }
-  function formatDate(date) {
-    return join(
-      [pad(date.getFullYear()), pad(date.getMonth() + 1), pad(date.getDate())],
-      "-"
-    );
-  }
-  function formatTime(date) {
-    return join(
-      [pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())],
-      ":"
-    );
-  }
-
-  // src/TeaProgram.ts
-  async function runTeaProgram(options) {
-    return new Promise((resolve, reject) => {
-      const [initialModel, initialCmds] = options.init;
-      let model = initialModel;
-      const msgQueue = [];
-      let killed = false;
-      const dispatch = (dispatchedMsg) => {
-        if (killed) {
-          return;
-        }
-        const alreadyRunning = msgQueue.length > 0;
-        msgQueue.push(dispatchedMsg);
-        if (alreadyRunning) {
-          return;
-        }
-        for (const msg of msgQueue) {
-          const [newModel, cmds] = options.update(msg, model);
-          model = newModel;
-          runCmds(cmds);
-        }
-        msgQueue.length = 0;
-      };
-      const runCmds = (cmds) => {
-        for (const cmd of cmds) {
-          options.runCmd(
-            cmd,
-            mutable,
-            dispatch,
-            (result) => {
-              cmds.length = 0;
-              killed = true;
-              resolve(result);
-            },
-            (error) => {
-              cmds.length = 0;
-              killed = true;
-              reject(error);
-            }
-          );
-          if (killed) {
-            break;
-          }
-        }
-      };
-      const mutable = options.initMutable(
-        dispatch,
-        (result) => {
-          killed = true;
-          resolve(result);
-        },
-        (error) => {
-          killed = true;
-          reject(error);
-        }
-      );
-      runCmds(initialCmds);
-    });
-  }
-
-  // src/Types.ts
-  var AbsolutePath = fieldsAuto({
-    tag: () => "AbsolutePath",
-    absolutePath: string
+function F2(fun) {
+  return F(2, fun, function(a) { return function(b) { return fun(a,b); }; })
+}
+function F3(fun) {
+  return F(3, fun, function(a) {
+    return function(b) { return function(c) { return fun(a, b, c); }; };
   });
-  var CompilationMode = stringUnion({
-    debug: null,
-    standard: null,
-    optimize: null
+}
+function F4(fun) {
+  return F(4, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return fun(a, b, c, d); }; }; };
   });
-  var BrowserUiPosition = stringUnion({
-    TopLeft: null,
-    TopRight: null,
-    BottomLeft: null,
-    BottomRight: null
+}
+function F5(fun) {
+  return F(5, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return function(e) { return fun(a, b, c, d, e); }; }; }; };
   });
-
-  // client/WebSocketMessages.ts
-  var FocusedTabAcknowledged = fieldsAuto({
-    tag: () => "FocusedTabAcknowledged"
+}
+function F6(fun) {
+  return F(6, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return function(e) { return function(f) {
+    return fun(a, b, c, d, e, f); }; }; }; }; };
   });
-  var OpenEditorError = fieldsUnion("tag", {
-    EnvNotSet: fieldsAuto({
-      tag: () => "EnvNotSet"
-    }),
-    CommandFailed: fieldsAuto({
-      tag: () => "CommandFailed",
-      message: string
-    })
+}
+function F7(fun) {
+  return F(7, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return function(e) { return function(f) {
+    return function(g) { return fun(a, b, c, d, e, f, g); }; }; }; }; }; };
   });
-  var OpenEditorFailed = fieldsAuto({
-    tag: () => "OpenEditorFailed",
-    error: OpenEditorError
+}
+function F8(fun) {
+  return F(8, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return function(e) { return function(f) {
+    return function(g) { return function(h) {
+    return fun(a, b, c, d, e, f, g, h); }; }; }; }; }; }; };
   });
-  var ErrorLocation = fieldsUnion("tag", {
-    FileOnly: fieldsAuto({
-      tag: () => "FileOnly",
-      file: AbsolutePath
-    }),
-    FileWithLineAndColumn: fieldsAuto({
-      tag: () => "FileWithLineAndColumn",
-      file: AbsolutePath,
-      line: number,
-      column: number
-    }),
-    Target: fieldsAuto({
-      tag: () => "Target",
-      targetName: string
-    })
+}
+function F9(fun) {
+  return F(9, fun, function(a) { return function(b) { return function(c) {
+    return function(d) { return function(e) { return function(f) {
+    return function(g) { return function(h) { return function(i) {
+    return fun(a, b, c, d, e, f, g, h, i); }; }; }; }; }; }; }; };
   });
-  var CompileError = fieldsAuto({
-    title: string,
-    location: optional(ErrorLocation),
-    htmlContent: string
-  });
-  var StatusChanged = fieldsAuto({
-    tag: () => "StatusChanged",
-    status: fieldsUnion("tag", {
-      AlreadyUpToDate: fieldsAuto({
-        tag: () => "AlreadyUpToDate",
-        compilationMode: CompilationMode,
-        browserUiPosition: BrowserUiPosition
-      }),
-      Busy: fieldsAuto({
-        tag: () => "Busy",
-        compilationMode: CompilationMode,
-        browserUiPosition: BrowserUiPosition
-      }),
-      CompileError: fieldsAuto({
-        tag: () => "CompileError",
-        compilationMode: CompilationMode,
-        browserUiPosition: BrowserUiPosition,
-        openErrorOverlay: boolean,
-        errors: array(CompileError),
-        foregroundColor: string,
-        backgroundColor: string
-      }),
-      ElmJsonError: fieldsAuto({
-        tag: () => "ElmJsonError",
-        error: string
-      }),
-      ClientError: fieldsAuto({
-        tag: () => "ClientError",
-        message: string
-      })
-    })
-  });
-  var SuccessfullyCompiled = fieldsAuto({
-    tag: () => "SuccessfullyCompiled",
-    code: string,
-    elmCompiledTimestamp: number,
-    compilationMode: CompilationMode,
-    browserUiPosition: BrowserUiPosition
-  });
-  var SuccessfullyCompiledButRecordFieldsChanged = fieldsAuto({
-    tag: () => "SuccessfullyCompiledButRecordFieldsChanged"
-  });
-  var WebSocketToClientMessage = fieldsUnion("tag", {
-    FocusedTabAcknowledged,
-    OpenEditorFailed,
-    StatusChanged,
-    SuccessfullyCompiled,
-    SuccessfullyCompiledButRecordFieldsChanged
-  });
-  var WebSocketToServerMessage = fieldsUnion("tag", {
-    ChangedCompilationMode: fieldsAuto({
-      tag: () => "ChangedCompilationMode",
-      compilationMode: CompilationMode
-    }),
-    ChangedBrowserUiPosition: fieldsAuto({
-      tag: () => "ChangedBrowserUiPosition",
-      browserUiPosition: BrowserUiPosition
-    }),
-    ChangedOpenErrorOverlay: fieldsAuto({
-      tag: () => "ChangedOpenErrorOverlay",
-      openErrorOverlay: boolean
-    }),
-    FocusedTab: fieldsAuto({
-      tag: () => "FocusedTab"
-    }),
-    PressedOpenEditor: fieldsAuto({
-      tag: () => "PressedOpenEditor",
-      file: AbsolutePath,
-      line: number,
-      column: number
-    })
-  });
-  function decodeWebSocketToClientMessage(message) {
-    if (message.startsWith("//")) {
-      const newlineIndexRaw = message.indexOf("\n");
-      const newlineIndex = newlineIndexRaw === -1 ? message.length : newlineIndexRaw;
-      const jsonString = message.slice(2, newlineIndex);
-      const parsed = SuccessfullyCompiled(JSON.parse(jsonString));
-      return { ...parsed, code: message };
-    } else {
-      return WebSocketToClientMessage(JSON.parse(message));
+}
+
+function A2(fun, a, b) {
+  return fun.a === 2 ? fun.f(a, b) : fun(a)(b);
+}
+function A3(fun, a, b, c) {
+  return fun.a === 3 ? fun.f(a, b, c) : fun(a)(b)(c);
+}
+function A4(fun, a, b, c, d) {
+  return fun.a === 4 ? fun.f(a, b, c, d) : fun(a)(b)(c)(d);
+}
+function A5(fun, a, b, c, d, e) {
+  return fun.a === 5 ? fun.f(a, b, c, d, e) : fun(a)(b)(c)(d)(e);
+}
+function A6(fun, a, b, c, d, e, f) {
+  return fun.a === 6 ? fun.f(a, b, c, d, e, f) : fun(a)(b)(c)(d)(e)(f);
+}
+function A7(fun, a, b, c, d, e, f, g) {
+  return fun.a === 7 ? fun.f(a, b, c, d, e, f, g) : fun(a)(b)(c)(d)(e)(f)(g);
+}
+function A8(fun, a, b, c, d, e, f, g, h) {
+  return fun.a === 8 ? fun.f(a, b, c, d, e, f, g, h) : fun(a)(b)(c)(d)(e)(f)(g)(h);
+}
+function A9(fun, a, b, c, d, e, f, g, h, i) {
+  return fun.a === 9 ? fun.f(a, b, c, d, e, f, g, h, i) : fun(a)(b)(c)(d)(e)(f)(g)(h)(i);
+}
+
+console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.1/optimize for better performance and smaller assets.');
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = $elm$core$Set$toList(x);
+		y = $elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
+	}));
+});
+
+
+
+var _JsArray_empty = [];
+
+function _JsArray_singleton(value)
+{
+    return [value];
+}
+
+function _JsArray_length(array)
+{
+    return array.length;
+}
+
+var _JsArray_initialize = F3(function(size, offset, func)
+{
+    var result = new Array(size);
+
+    for (var i = 0; i < size; i++)
+    {
+        result[i] = func(offset + i);
     }
-  }
 
-  // client/client.ts
-  var window = globalThis;
-  var IS_WEB_WORKER = window.window === void 0;
-  var { __ELM_WATCH } = window;
-  if (typeof __ELM_WATCH !== "object" || __ELM_WATCH === null) {
-    __ELM_WATCH = {};
-    Object.defineProperty(window, "__ELM_WATCH", { value: __ELM_WATCH });
-  }
-  __ELM_WATCH.MOCKED_TIMINGS ?? (__ELM_WATCH.MOCKED_TIMINGS = false);
-  __ELM_WATCH.WEBSOCKET_TIMEOUT ?? (__ELM_WATCH.WEBSOCKET_TIMEOUT = 1e3);
-  __ELM_WATCH.ON_INIT ?? (__ELM_WATCH.ON_INIT = () => {
-  });
-  __ELM_WATCH.ON_RENDER ?? (__ELM_WATCH.ON_RENDER = () => {
-  });
-  __ELM_WATCH.ON_REACHED_IDLE_STATE ?? (__ELM_WATCH.ON_REACHED_IDLE_STATE = () => {
-  });
-  __ELM_WATCH.RELOAD_STATUSES ?? (__ELM_WATCH.RELOAD_STATUSES = {});
-  var RELOAD_MESSAGE_KEY = "__elmWatchReloadMessage";
-  var RELOAD_TARGET_NAME_KEY_PREFIX = "__elmWatchReloadTarget__";
-  __ELM_WATCH.RELOAD_PAGE ?? (__ELM_WATCH.RELOAD_PAGE = (message) => {
-    if (message !== void 0) {
-      try {
-        window.sessionStorage.setItem(RELOAD_MESSAGE_KEY, message);
-      } catch {
-      }
+    return result;
+});
+
+var _JsArray_initializeFromList = F2(function (max, ls)
+{
+    var result = new Array(max);
+
+    for (var i = 0; i < max && ls.b; i++)
+    {
+        result[i] = ls.a;
+        ls = ls.b;
     }
-    if (IS_WEB_WORKER) {
-      if (message !== void 0) {
-        console.info(message);
-      }
-      console.error(
-        message === void 0 ? "elm-watch: You need to reload the page! I seem to be running in a Web Worker, so I can\u2019t do it for you." : `elm-watch: You need to reload the page! I seem to be running in a Web Worker, so I couldn\u2019t actually reload the page (see above).`
-      );
-    } else {
-      window.location.reload();
+
+    result.length = i;
+    return _Utils_Tuple2(result, ls);
+});
+
+var _JsArray_unsafeGet = F2(function(index, array)
+{
+    return array[index];
+});
+
+var _JsArray_unsafeSet = F3(function(index, value, array)
+{
+    var length = array.length;
+    var result = new Array(length);
+
+    for (var i = 0; i < length; i++)
+    {
+        result[i] = array[i];
     }
-  });
-  __ELM_WATCH.KILL_MATCHING ?? (__ELM_WATCH.KILL_MATCHING = () => Promise.resolve());
-  __ELM_WATCH.DISCONNECT ?? (__ELM_WATCH.DISCONNECT = () => {
-  });
-  __ELM_WATCH.LOG_DEBUG ?? (__ELM_WATCH.LOG_DEBUG = console.debug);
-  var VERSION = "1.1.2";
-  var TARGET_NAME = "My target name";
-  var INITIAL_ELM_COMPILED_TIMESTAMP = Number(
-    "1710504428009"
-  );
-  var ORIGINAL_COMPILATION_MODE = "proxy";
-  var ORIGINAL_BROWSER_UI_POSITION = "BottomLeft";
-  var WEBSOCKET_PORT = "58523";
-  var CONTAINER_ID = "elm-watch";
-  var DEBUG = String("false") === "true";
-  var BROWSER_UI_MOVED_EVENT = "BROWSER_UI_MOVED_EVENT";
-  var CLOSE_ALL_ERROR_OVERLAYS_EVENT = "CLOSE_ALL_ERROR_OVERLAYS_EVENT";
-  var JUST_CHANGED_BROWSER_UI_POSITION_TIMEOUT = 2e3;
-  var SEND_KEY_DO_NOT_USE_ALL_THE_TIME = Symbol(
-    "This value is supposed to only be obtained via `Status`."
-  );
-  function logDebug(...args) {
-    if (DEBUG) {
-      __ELM_WATCH.LOG_DEBUG(...args);
+
+    result[index] = value;
+    return result;
+});
+
+var _JsArray_push = F2(function(value, array)
+{
+    var length = array.length;
+    var result = new Array(length + 1);
+
+    for (var i = 0; i < length; i++)
+    {
+        result[i] = array[i];
     }
-  }
-  function parseBrowseUiPositionWithFallback(value) {
-    try {
-      return BrowserUiPosition(value);
-    } catch {
-      return ORIGINAL_BROWSER_UI_POSITION;
+
+    result[length] = value;
+    return result;
+});
+
+var _JsArray_foldl = F3(function(func, acc, array)
+{
+    var length = array.length;
+
+    for (var i = 0; i < length; i++)
+    {
+        acc = A2(func, array[i], acc);
     }
-  }
-  function run() {
-    let elmCompiledTimestampBeforeReload = void 0;
-    try {
-      const message = window.sessionStorage.getItem(RELOAD_MESSAGE_KEY);
-      if (message !== null) {
-        console.info(message);
-        window.sessionStorage.removeItem(RELOAD_MESSAGE_KEY);
-      }
-      const key = RELOAD_TARGET_NAME_KEY_PREFIX + TARGET_NAME;
-      const previous = window.sessionStorage.getItem(key);
-      if (previous !== null) {
-        const number2 = Number(previous);
-        if (Number.isFinite(number2)) {
-          elmCompiledTimestampBeforeReload = number2;
-        }
-        window.sessionStorage.removeItem(key);
-      }
-    } catch {
+
+    return acc;
+});
+
+var _JsArray_foldr = F3(function(func, acc, array)
+{
+    for (var i = array.length - 1; i >= 0; i--)
+    {
+        acc = A2(func, array[i], acc);
     }
-    const elements = IS_WEB_WORKER ? void 0 : getOrCreateTargetRoot();
-    const browserUiPosition = elements === void 0 ? ORIGINAL_BROWSER_UI_POSITION : parseBrowseUiPositionWithFallback(elements.container.dataset.position);
-    const getNow = () => new Date();
-    runTeaProgram({
-      initMutable: initMutable(getNow, elements),
-      init: init(getNow(), browserUiPosition, elmCompiledTimestampBeforeReload),
-      update: (msg, model) => {
-        const [updatedModel, cmds] = update(msg, model);
-        const modelChanged = updatedModel !== model;
-        const reloadTrouble = model.status.tag !== updatedModel.status.tag && updatedModel.status.tag === "WaitingForReload" && updatedModel.elmCompiledTimestamp === updatedModel.elmCompiledTimestampBeforeReload;
-        const newModel = modelChanged ? {
-          ...updatedModel,
-          previousStatusTag: model.status.tag,
-          uiExpanded: reloadTrouble ? true : updatedModel.uiExpanded
-        } : model;
-        const oldErrorOverlay = getErrorOverlay(model.status);
-        const newErrorOverlay = getErrorOverlay(newModel.status);
-        const allCmds = modelChanged ? [
-          ...cmds,
-          {
-            tag: "UpdateGlobalStatus",
-            reloadStatus: statusToReloadStatus(newModel),
-            elmCompiledTimestamp: newModel.elmCompiledTimestamp
-          },
-          newModel.status.tag === newModel.previousStatusTag && oldErrorOverlay?.openErrorOverlay === newErrorOverlay?.openErrorOverlay ? { tag: "NoCmd" } : {
-            tag: "UpdateErrorOverlay",
-            errors: newErrorOverlay === void 0 || !newErrorOverlay.openErrorOverlay ? /* @__PURE__ */ new Map() : newErrorOverlay.errors,
-            sendKey: statusToSpecialCaseSendKey(newModel.status)
-          },
-          {
-            tag: "Render",
-            model: newModel,
-            manageFocus: msg.tag === "UiMsg"
-          },
-          model.browserUiPosition === newModel.browserUiPosition ? { tag: "NoCmd" } : {
-            tag: "SetBrowserUiPosition",
-            browserUiPosition: newModel.browserUiPosition
-          },
-          reloadTrouble ? { tag: "TriggerReachedIdleState", reason: "ReloadTrouble" } : { tag: "NoCmd" }
-        ] : cmds;
-        logDebug(`${msg.tag} (${TARGET_NAME})`, msg, newModel, allCmds);
-        return [newModel, allCmds];
-      },
-      runCmd: runCmd(getNow, elements)
-    }).catch((error) => {
-      console.error("elm-watch: Unexpectedly exited with error:", error);
-    });
-  }
-  function getErrorOverlay(status) {
-    return "errorOverlay" in status ? status.errorOverlay : void 0;
-  }
-  function statusToReloadStatus(model) {
-    switch (model.status.tag) {
-      case "Busy":
-      case "Connecting":
-        return { tag: "MightWantToReload" };
-      case "CompileError":
-      case "ElmJsonError":
-      case "EvalError":
-      case "Idle":
-      case "SleepingBeforeReconnect":
-      case "UnexpectedError":
-        return { tag: "NoReloadWanted" };
-      case "WaitingForReload":
-        return model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? { tag: "NoReloadWanted" } : { tag: "ReloadRequested", reasons: model.status.reasons };
+
+    return acc;
+});
+
+var _JsArray_map = F2(function(func, array)
+{
+    var length = array.length;
+    var result = new Array(length);
+
+    for (var i = 0; i < length; i++)
+    {
+        result[i] = func(array[i]);
     }
-  }
-  function statusToStatusType(statusTag) {
-    switch (statusTag) {
-      case "Idle":
-        return "Success";
-      case "Busy":
-      case "Connecting":
-      case "SleepingBeforeReconnect":
-      case "WaitingForReload":
-        return "Waiting";
-      case "CompileError":
-      case "ElmJsonError":
-      case "EvalError":
-      case "UnexpectedError":
-        return "Error";
+
+    return result;
+});
+
+var _JsArray_indexedMap = F3(function(func, offset, array)
+{
+    var length = array.length;
+    var result = new Array(length);
+
+    for (var i = 0; i < length; i++)
+    {
+        result[i] = A2(func, offset + i, array[i]);
     }
-  }
-  function statusToSpecialCaseSendKey(status) {
-    switch (status.tag) {
-      case "CompileError":
-      case "Idle":
-        return status.sendKey;
-      case "Busy":
-        return SEND_KEY_DO_NOT_USE_ALL_THE_TIME;
-      case "Connecting":
-      case "SleepingBeforeReconnect":
-      case "WaitingForReload":
-      case "ElmJsonError":
-      case "EvalError":
-      case "UnexpectedError":
-        return void 0;
+
+    return result;
+});
+
+var _JsArray_slice = F3(function(from, to, array)
+{
+    return array.slice(from, to);
+});
+
+var _JsArray_appendN = F3(function(n, dest, source)
+{
+    var destLen = dest.length;
+    var itemsToCopy = n - destLen;
+
+    if (itemsToCopy > source.length)
+    {
+        itemsToCopy = source.length;
     }
-  }
-  function getOrCreateContainer() {
-    const existing = document.getElementById(CONTAINER_ID);
-    if (existing !== null) {
-      return existing;
+
+    var size = destLen + itemsToCopy;
+    var result = new Array(size);
+
+    for (var i = 0; i < destLen; i++)
+    {
+        result[i] = dest[i];
     }
-    const container = h(HTMLDivElement, { id: CONTAINER_ID });
-    container.style.all = "unset";
-    container.style.position = "fixed";
-    container.style.zIndex = "2147483647";
-    const shadowRoot = container.attachShadow({ mode: "open" });
-    shadowRoot.append(h(HTMLStyleElement, {}, CSS));
-    document.documentElement.append(container);
-    return container;
-  }
-  function getOrCreateTargetRoot() {
-    const container = getOrCreateContainer();
-    const { shadowRoot } = container;
-    if (shadowRoot === null) {
-      throw new Error(
-        `elm-watch: Cannot set up hot reload, because an element with ID ${CONTAINER_ID} exists, but \`.shadowRoot\` is null!`
-      );
+
+    for (var i = 0; i < itemsToCopy; i++)
+    {
+        result[i + destLen] = source[i];
     }
-    let overlay = shadowRoot.querySelector(`.${CLASS.overlay}`);
-    if (overlay === null) {
-      overlay = h(HTMLDivElement, {
-        className: CLASS.overlay,
-        attrs: { "data-test-id": "Overlay" }
-      });
-      shadowRoot.append(overlay);
-    }
-    let overlayCloseButton = shadowRoot.querySelector(
-      `.${CLASS.overlayCloseButton}`
-    );
-    if (overlayCloseButton === null) {
-      const closeAllErrorOverlays = () => {
-        shadowRoot.dispatchEvent(new CustomEvent(CLOSE_ALL_ERROR_OVERLAYS_EVENT));
-      };
-      overlayCloseButton = h(HTMLButtonElement, {
-        className: CLASS.overlayCloseButton,
-        attrs: {
-          "aria-label": "Close error overlay",
-          "data-test-id": "OverlayCloseButton"
-        },
-        onclick: closeAllErrorOverlays
-      });
-      shadowRoot.append(overlayCloseButton);
-      const overlayNonNull = overlay;
-      window.addEventListener(
-        "keydown",
-        (event) => {
-          if (overlayNonNull.hasChildNodes() && event.key === "Escape") {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            closeAllErrorOverlays();
-          }
-        },
-        true
-      );
-    }
-    let root = shadowRoot.querySelector(`.${CLASS.root}`);
-    if (root === null) {
-      root = h(HTMLDivElement, { className: CLASS.root });
-      shadowRoot.append(root);
-    }
-    const targetRoot = createTargetRoot(TARGET_NAME);
-    root.append(targetRoot);
-    const elements = {
-      container,
-      shadowRoot,
-      overlay,
-      overlayCloseButton,
-      root,
-      targetRoot
-    };
-    setBrowserUiPosition(ORIGINAL_BROWSER_UI_POSITION, elements);
-    return elements;
-  }
-  function createTargetRoot(targetName) {
-    return h(HTMLDivElement, {
-      className: CLASS.targetRoot,
-      attrs: { "data-target": targetName }
-    });
-  }
-  function browserUiPositionToCss(browserUiPosition) {
-    switch (browserUiPosition) {
-      case "TopLeft":
-        return { top: "-1px", bottom: "auto", left: "-1px", right: "auto" };
-      case "TopRight":
-        return { top: "-1px", bottom: "auto", left: "auto", right: "-1px" };
-      case "BottomLeft":
-        return { top: "auto", bottom: "-1px", left: "-1px", right: "auto" };
-      case "BottomRight":
-        return { top: "auto", bottom: "-1px", left: "auto", right: "-1px" };
-    }
-  }
-  function browserUiPositionToCssForChooser(browserUiPosition) {
-    switch (browserUiPosition) {
-      case "TopLeft":
-        return { top: "auto", bottom: "0", left: "auto", right: "0" };
-      case "TopRight":
-        return { top: "auto", bottom: "0", left: "0", right: "auto" };
-      case "BottomLeft":
-        return { top: "0", bottom: "auto", left: "auto", right: "0" };
-      case "BottomRight":
-        return { top: "0", bottom: "auto", left: "0", right: "auto" };
-    }
-  }
-  function setBrowserUiPosition(browserUiPosition, elements) {
-    const isFirstTargetRoot = elements.targetRoot.previousElementSibling === null;
-    if (!isFirstTargetRoot) {
-      return;
-    }
-    elements.container.dataset.position = browserUiPosition;
-    for (const [key, value] of Object.entries(
-      browserUiPositionToCss(browserUiPosition)
-    )) {
-      elements.container.style.setProperty(key, value);
-    }
-    const isInBottomHalf = browserUiPosition === "BottomLeft" || browserUiPosition === "BottomRight";
-    elements.root.classList.toggle(CLASS.rootBottomHalf, isInBottomHalf);
-    elements.shadowRoot.dispatchEvent(
-      new CustomEvent(BROWSER_UI_MOVED_EVENT, { detail: browserUiPosition })
-    );
-  }
-  var initMutable = (getNow, elements) => (dispatch, resolvePromise) => {
-    let removeListeners = [];
-    const mutable = {
-      removeListeners: () => {
-        for (const removeListener of removeListeners) {
-          removeListener();
-        }
-      },
-      webSocket: initWebSocket(
-        getNow,
-        INITIAL_ELM_COMPILED_TIMESTAMP,
-        dispatch
-      ),
-      webSocketTimeoutId: void 0
-    };
-    mutable.webSocket.addEventListener(
-      "open",
-      () => {
-        removeListeners = [
-          addEventListener(window, "focus", (event) => {
-            if (event instanceof CustomEvent && event.detail !== TARGET_NAME) {
-              return;
-            }
-            dispatch({ tag: "FocusedTab" });
-          }),
-          addEventListener(window, "visibilitychange", () => {
-            if (document.visibilityState === "visible") {
-              dispatch({
-                tag: "PageVisibilityChangedToVisible",
-                date: getNow()
-              });
-            }
-          }),
-          ...elements === void 0 ? [] : [
-            addEventListener(
-              elements.shadowRoot,
-              BROWSER_UI_MOVED_EVENT,
-              (event) => {
-                dispatch({
-                  tag: "BrowserUiMoved",
-                  browserUiPosition: fields(
-                    (field) => field("detail", parseBrowseUiPositionWithFallback)
-                  )(event)
-                });
-              }
-            ),
-            addEventListener(
-              elements.shadowRoot,
-              CLOSE_ALL_ERROR_OVERLAYS_EVENT,
-              () => {
-                dispatch({
-                  tag: "UiMsg",
-                  date: getNow(),
-                  msg: {
-                    tag: "ChangedOpenErrorOverlay",
-                    openErrorOverlay: false
-                  }
-                });
-              }
-            )
-          ]
-        ];
-      },
-      { once: true }
-    );
-    __ELM_WATCH.RELOAD_STATUSES[TARGET_NAME] = {
-      tag: "MightWantToReload"
-    };
-    const originalOnInit = __ELM_WATCH.ON_INIT;
-    __ELM_WATCH.ON_INIT = () => {
-      dispatch({ tag: "AppInit" });
-      originalOnInit();
-    };
-    const originalKillMatching = __ELM_WATCH.KILL_MATCHING;
-    __ELM_WATCH.KILL_MATCHING = (targetName) => new Promise((resolve, reject) => {
-      if (targetName.test(TARGET_NAME) && mutable.webSocket.readyState !== WebSocket.CLOSED) {
-        mutable.webSocket.addEventListener("close", () => {
-          originalKillMatching(targetName).then(resolve).catch(reject);
-        });
-        mutable.removeListeners();
-        mutable.webSocket.close();
-        if (mutable.webSocketTimeoutId !== void 0) {
-          clearTimeout(mutable.webSocketTimeoutId);
-          mutable.webSocketTimeoutId = void 0;
-        }
-        elements?.targetRoot.remove();
-        resolvePromise(void 0);
-      } else {
-        originalKillMatching(targetName).then(resolve).catch(reject);
-      }
-    });
-    const originalDisconnect = __ELM_WATCH.DISCONNECT;
-    __ELM_WATCH.DISCONNECT = (targetName) => {
-      if (targetName.test(TARGET_NAME) && mutable.webSocket.readyState !== WebSocket.CLOSED) {
-        mutable.webSocket.close();
-      } else {
-        originalDisconnect(targetName);
-      }
-    };
-    return mutable;
-  };
-  function addEventListener(target, eventName, listener) {
-    target.addEventListener(eventName, listener);
-    return () => {
-      target.removeEventListener(eventName, listener);
-    };
-  }
-  function initWebSocket(getNow, elmCompiledTimestamp, dispatch) {
-    const hostname = window.location.hostname === "" ? "localhost" : window.location.hostname;
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const url = new URL(`${protocol}://${hostname}:${WEBSOCKET_PORT}/elm-watch`);
-    url.searchParams.set("elmWatchVersion", VERSION);
-    url.searchParams.set("targetName", TARGET_NAME);
-    url.searchParams.set("elmCompiledTimestamp", elmCompiledTimestamp.toString());
-    const webSocket = new WebSocket(url);
-    webSocket.addEventListener("open", () => {
-      dispatch({ tag: "WebSocketConnected", date: getNow() });
-    });
-    webSocket.addEventListener("close", () => {
-      dispatch({
-        tag: "WebSocketClosed",
-        date: getNow()
-      });
-    });
-    webSocket.addEventListener("message", (event) => {
-      dispatch({
-        tag: "WebSocketMessageReceived",
-        date: getNow(),
-        data: event.data
-      });
-    });
-    return webSocket;
-  }
-  var init = (date, browserUiPosition, elmCompiledTimestampBeforeReload) => {
-    const model = {
-      status: { tag: "Connecting", date, attemptNumber: 1 },
-      previousStatusTag: "Idle",
-      compilationMode: ORIGINAL_COMPILATION_MODE,
-      browserUiPosition,
-      lastBrowserUiPositionChangeDate: void 0,
-      elmCompiledTimestamp: INITIAL_ELM_COMPILED_TIMESTAMP,
-      elmCompiledTimestampBeforeReload,
-      uiExpanded: false
-    };
-    return [model, [{ tag: "Render", model, manageFocus: false }]];
-  };
-  function update(msg, model) {
-    switch (msg.tag) {
-      case "AppInit":
-        return [{ ...model }, []];
-      case "BrowserUiMoved":
-        return [{ ...model, browserUiPosition: msg.browserUiPosition }, []];
-      case "EvalErrored":
-        return [
-          {
-            ...model,
-            status: { tag: "EvalError", date: msg.date },
-            uiExpanded: true
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "EvalErrored"
-            }
-          ]
-        ];
-      case "EvalNeedsReload":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "WaitingForReload",
-              date: msg.date,
-              reasons: msg.reasons
-            }
-          },
-          []
-        ];
-      case "EvalSucceeded":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "Idle",
-              date: msg.date,
-              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
-            }
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "EvalSucceeded"
-            }
-          ]
-        ];
-      case "FocusedTab":
-        return [
-          statusToStatusType(model.status.tag) === "Error" ? { ...model } : model,
-          [
-            {
-              tag: "SendMessage",
-              message: { tag: "FocusedTab" },
-              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
-            },
-            {
-              tag: "WebSocketTimeoutBegin"
-            }
-          ]
-        ];
-      case "PageVisibilityChangedToVisible":
-        return reconnect(model, msg.date, { force: true });
-      case "SleepBeforeReconnectDone":
-        return reconnect(model, msg.date, { force: false });
-      case "UiMsg":
-        return onUiMsg(msg.date, msg.msg, model);
-      case "WebSocketClosed": {
-        const attemptNumber = "attemptNumber" in model.status ? model.status.attemptNumber + 1 : 1;
-        return [
-          {
-            ...model,
-            status: {
-              tag: "SleepingBeforeReconnect",
-              date: msg.date,
-              attemptNumber
-            }
-          },
-          [{ tag: "SleepBeforeReconnect", attemptNumber }]
-        ];
-      }
-      case "WebSocketConnected":
-        return [
-          {
-            ...model,
-            status: { tag: "Busy", date: msg.date, errorOverlay: void 0 }
-          },
-          []
-        ];
-      case "WebSocketMessageReceived": {
-        const result = parseWebSocketMessageData(msg.data);
-        switch (result.tag) {
-          case "Success":
-            return onWebSocketToClientMessage(msg.date, result.message, model);
-          case "Error":
-            return [
-              {
-                ...model,
-                status: {
-                  tag: "UnexpectedError",
-                  date: msg.date,
-                  message: result.message
-                },
-                uiExpanded: true
-              },
-              []
-            ];
-        }
-      }
-    }
-  }
-  function onUiMsg(date, msg, model) {
-    switch (msg.tag) {
-      case "ChangedBrowserUiPosition":
-        return [
-          {
-            ...model,
-            browserUiPosition: msg.browserUiPosition,
-            lastBrowserUiPositionChangeDate: date
-          },
-          [
-            {
-              tag: "SendMessage",
-              message: {
-                tag: "ChangedBrowserUiPosition",
-                browserUiPosition: msg.browserUiPosition
-              },
-              sendKey: msg.sendKey
-            }
-          ]
-        ];
-      case "ChangedCompilationMode":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "Busy",
-              date,
-              errorOverlay: getErrorOverlay(model.status)
-            },
-            compilationMode: msg.compilationMode
-          },
-          [
-            {
-              tag: "SendMessage",
-              message: {
-                tag: "ChangedCompilationMode",
-                compilationMode: msg.compilationMode
-              },
-              sendKey: msg.sendKey
-            }
-          ]
-        ];
-      case "ChangedOpenErrorOverlay":
-        return "errorOverlay" in model.status && model.status.errorOverlay !== void 0 ? [
-          {
-            ...model,
-            status: {
-              ...model.status,
-              errorOverlay: {
-                ...model.status.errorOverlay,
-                openErrorOverlay: msg.openErrorOverlay
-              }
-            },
-            uiExpanded: false
-          },
-          [
-            {
-              tag: "SendMessage",
-              message: {
-                tag: "ChangedOpenErrorOverlay",
-                openErrorOverlay: msg.openErrorOverlay
-              },
-              sendKey: model.status.tag === "Busy" ? SEND_KEY_DO_NOT_USE_ALL_THE_TIME : model.status.sendKey
-            }
-          ]
-        ] : [model, []];
-      case "PressedChevron":
-        return [{ ...model, uiExpanded: !model.uiExpanded }, []];
-      case "PressedOpenEditor":
-        return [
-          model,
-          [
-            {
-              tag: "SendMessage",
-              message: {
-                tag: "PressedOpenEditor",
-                file: msg.file,
-                line: msg.line,
-                column: msg.column
-              },
-              sendKey: msg.sendKey
-            }
-          ]
-        ];
-      case "PressedReconnectNow":
-        return reconnect(model, date, { force: true });
-    }
-  }
-  function onWebSocketToClientMessage(date, msg, model) {
-    switch (msg.tag) {
-      case "FocusedTabAcknowledged":
-        return [model, [{ tag: "WebSocketTimeoutClear" }]];
-      case "OpenEditorFailed":
-        return [
-          model.status.tag === "CompileError" ? {
-            ...model,
-            status: { ...model.status, openEditorError: msg.error },
-            uiExpanded: true
-          } : model,
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "OpenEditorFailed"
-            }
-          ]
-        ];
-      case "StatusChanged":
-        return statusChanged(date, msg, model);
-      case "SuccessfullyCompiled": {
-        const justChangedBrowserUiPosition = model.lastBrowserUiPositionChangeDate !== void 0 && date.getTime() - model.lastBrowserUiPositionChangeDate.getTime() < JUST_CHANGED_BROWSER_UI_POSITION_TIMEOUT;
-        return msg.compilationMode !== ORIGINAL_COMPILATION_MODE ? [
-          {
-            ...model,
-            status: {
-              tag: "WaitingForReload",
-              date,
-              reasons: ORIGINAL_COMPILATION_MODE === "proxy" ? [] : [
-                `compilation mode changed from ${ORIGINAL_COMPILATION_MODE} to ${msg.compilationMode}.`
-              ]
-            },
-            compilationMode: msg.compilationMode
-          },
-          []
-        ] : [
-          {
-            ...model,
-            compilationMode: msg.compilationMode,
-            elmCompiledTimestamp: msg.elmCompiledTimestamp,
-            browserUiPosition: msg.browserUiPosition,
-            lastBrowserUiPositionChangeDate: void 0
-          },
-          [
-            { tag: "Eval", code: msg.code },
-            justChangedBrowserUiPosition ? {
-              tag: "SetBrowserUiPosition",
-              browserUiPosition: msg.browserUiPosition
-            } : { tag: "NoCmd" }
-          ]
-        ];
-      }
-      case "SuccessfullyCompiledButRecordFieldsChanged":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "WaitingForReload",
-              date,
-              reasons: [
-                `record field mangling in optimize mode was different than last time.`
-              ]
-            }
-          },
-          []
-        ];
-    }
-  }
-  function statusChanged(date, { status }, model) {
-    switch (status.tag) {
-      case "AlreadyUpToDate":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "Idle",
-              date,
-              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
-            },
-            compilationMode: status.compilationMode,
-            browserUiPosition: status.browserUiPosition
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "AlreadyUpToDate"
-            }
-          ]
-        ];
-      case "Busy":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "Busy",
-              date,
-              errorOverlay: getErrorOverlay(model.status)
-            },
-            compilationMode: status.compilationMode,
-            browserUiPosition: status.browserUiPosition
-          },
-          []
-        ];
-      case "ClientError":
-        return [
-          {
-            ...model,
-            status: { tag: "UnexpectedError", date, message: status.message },
-            uiExpanded: true
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "ClientError"
-            }
-          ]
-        ];
-      case "CompileError":
-        return [
-          {
-            ...model,
-            status: {
-              tag: "CompileError",
-              date,
-              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME,
-              errorOverlay: {
-                errors: new Map(
-                  status.errors.map((error) => {
-                    const overlayError = {
-                      title: error.title,
-                      location: error.location,
-                      htmlContent: error.htmlContent,
-                      foregroundColor: status.foregroundColor,
-                      backgroundColor: status.backgroundColor
-                    };
-                    const id = JSON.stringify(overlayError);
-                    return [id, overlayError];
-                  })
-                ),
-                openErrorOverlay: status.openErrorOverlay
-              },
-              openEditorError: void 0
-            },
-            compilationMode: status.compilationMode,
-            browserUiPosition: status.browserUiPosition
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "CompileError"
-            }
-          ]
-        ];
-      case "ElmJsonError":
-        return [
-          {
-            ...model,
-            status: { tag: "ElmJsonError", date, error: status.error }
-          },
-          [
-            {
-              tag: "TriggerReachedIdleState",
-              reason: "ElmJsonError"
-            }
-          ]
-        ];
-    }
-  }
-  function reconnect(model, date, { force }) {
-    return model.status.tag === "SleepingBeforeReconnect" && (date.getTime() - model.status.date.getTime() >= retryWaitMs(model.status.attemptNumber) || force) ? [
-      {
-        ...model,
-        status: {
-          tag: "Connecting",
-          date,
-          attemptNumber: model.status.attemptNumber
-        }
-      },
-      [
-        {
-          tag: "Reconnect",
-          elmCompiledTimestamp: model.elmCompiledTimestamp
-        }
-      ]
-    ] : [model, []];
-  }
-  function retryWaitMs(attemptNumber) {
-    return Math.min(1e3 + 10 * attemptNumber ** 2, 1e3 * 60);
-  }
-  function printRetryWaitMs(attemptNumber) {
-    return `${retryWaitMs(attemptNumber) / 1e3} seconds`;
-  }
-  var runCmd = (getNow, elements) => (cmd, mutable, dispatch, _resolvePromise, rejectPromise) => {
-    switch (cmd.tag) {
-      case "Eval": {
-        try {
-          const f = new Function(cmd.code);
-          f();
-          dispatch({ tag: "EvalSucceeded", date: getNow() });
-        } catch (unknownError) {
-          if (unknownError instanceof Error && unknownError.message.startsWith("ELM_WATCH_RELOAD_NEEDED")) {
-            dispatch({
-              tag: "EvalNeedsReload",
-              date: getNow(),
-              reasons: unknownError.message.split("\n\n---\n\n").slice(1)
-            });
-          } else {
-            void Promise.reject(unknownError);
-            dispatch({ tag: "EvalErrored", date: getNow() });
-          }
-        }
-        return;
-      }
-      case "NoCmd":
-        return;
-      case "Reconnect":
-        mutable.webSocket = initWebSocket(
-          getNow,
-          cmd.elmCompiledTimestamp,
-          dispatch
-        );
-        return;
-      case "Render": {
-        const { model } = cmd;
-        const info = {
-          version: VERSION,
-          webSocketUrl: new URL(mutable.webSocket.url),
-          targetName: TARGET_NAME,
-          originalCompilationMode: ORIGINAL_COMPILATION_MODE,
-          initializedElmAppsStatus: checkInitializedElmAppsStatus(),
-          errorOverlayVisible: elements !== void 0 && !elements.overlay.hidden
-        };
-        if (elements === void 0) {
-          if (model.status.tag !== model.previousStatusTag) {
-            const isError = statusToStatusType(model.status.tag) === "Error";
-            const consoleMethod = isError ? console.error : console.info;
-            consoleMethod(renderWebWorker(model, info));
-          }
-        } else {
-          const { targetRoot } = elements;
-          render(getNow, targetRoot, dispatch, model, info, cmd.manageFocus);
-        }
-        return;
-      }
-      case "SendMessage": {
-        const json = JSON.stringify(cmd.message);
-        try {
-          mutable.webSocket.send(json);
-        } catch (error) {
-          console.error("elm-watch: Failed to send WebSocket message:", error);
-        }
-        return;
-      }
-      case "SetBrowserUiPosition":
-        if (elements !== void 0) {
-          setBrowserUiPosition(cmd.browserUiPosition, elements);
-        }
-        return;
-      case "SleepBeforeReconnect":
-        setTimeout(() => {
-          if (typeof document === "undefined" || document.visibilityState === "visible") {
-            dispatch({ tag: "SleepBeforeReconnectDone", date: getNow() });
-          }
-        }, retryWaitMs(cmd.attemptNumber));
-        return;
-      case "TriggerReachedIdleState":
-        Promise.resolve().then(() => {
-          __ELM_WATCH.ON_REACHED_IDLE_STATE(cmd.reason);
-        }).catch(rejectPromise);
-        return;
-      case "UpdateErrorOverlay":
-        if (elements !== void 0) {
-          updateErrorOverlay(
-            TARGET_NAME,
-            (msg) => {
-              dispatch({ tag: "UiMsg", date: getNow(), msg });
-            },
-            cmd.sendKey,
-            cmd.errors,
-            elements.overlay,
-            elements.overlayCloseButton
-          );
-        }
-        return;
-      case "UpdateGlobalStatus":
-        __ELM_WATCH.RELOAD_STATUSES[TARGET_NAME] = cmd.reloadStatus;
-        switch (cmd.reloadStatus.tag) {
-          case "NoReloadWanted":
-          case "MightWantToReload":
-            break;
-          case "ReloadRequested":
-            try {
-              window.sessionStorage.setItem(
-                RELOAD_TARGET_NAME_KEY_PREFIX + TARGET_NAME,
-                cmd.elmCompiledTimestamp.toString()
-              );
-            } catch {
-            }
-        }
-        reloadPageIfNeeded();
-        return;
-      case "WebSocketTimeoutBegin":
-        if (mutable.webSocketTimeoutId === void 0) {
-          mutable.webSocketTimeoutId = setTimeout(() => {
-            mutable.webSocketTimeoutId = void 0;
-            mutable.webSocket.close();
-            dispatch({
-              tag: "WebSocketClosed",
-              date: getNow()
-            });
-          }, __ELM_WATCH.WEBSOCKET_TIMEOUT);
-        }
-        return;
-      case "WebSocketTimeoutClear":
-        if (mutable.webSocketTimeoutId !== void 0) {
-          clearTimeout(mutable.webSocketTimeoutId);
-          mutable.webSocketTimeoutId = void 0;
-        }
-        return;
-    }
-  };
-  function parseWebSocketMessageData(data) {
-    try {
-      return {
-        tag: "Success",
-        message: decodeWebSocketToClientMessage(string(data))
-      };
-    } catch (unknownError) {
-      return {
-        tag: "Error",
-        message: `Failed to decode web socket message sent from the server:
-${possiblyDecodeErrorToString(
-          unknownError
-        )}`
-      };
-    }
-  }
-  function possiblyDecodeErrorToString(unknownError) {
-    return unknownError instanceof DecoderError ? unknownError.format() : unknownError instanceof Error ? unknownError.message : repr(unknownError);
-  }
-  function functionToNull(value) {
-    return typeof value === "function" ? null : value;
-  }
-  var ProgramType = stringUnion({
-    "Platform.worker": null,
-    "Browser.sandbox": null,
-    "Browser.element": null,
-    "Browser.document": null,
-    "Browser.application": null,
-    Html: null
-  });
-  var ElmModule = chain(
-    record(
-      chain(
-        functionToNull,
-        multi({
-          null: () => [],
-          array: array(
-            fields((field) => field("__elmWatchProgramType", ProgramType))
-          ),
-          object: (value) => ElmModule(value)
-        })
-      )
-    ),
-    (record2) => Object.values(record2).flat()
-  );
-  var ProgramTypes = fields((field) => field("Elm", ElmModule));
-  function checkInitializedElmAppsStatus() {
-    if (window.Elm !== void 0 && "__elmWatchProxy" in window.Elm) {
-      return {
-        tag: "DebuggerModeStatus",
-        status: {
-          tag: "Disabled",
-          reason: noDebuggerYetReason
-        }
-      };
-    }
-    if (window.Elm === void 0) {
-      return { tag: "MissingWindowElm" };
-    }
-    let programTypes;
-    try {
-      programTypes = ProgramTypes(window);
-    } catch (unknownError) {
-      return {
-        tag: "DecodeError",
-        message: possiblyDecodeErrorToString(unknownError)
-      };
-    }
-    if (programTypes.length === 0) {
-      return { tag: "NoProgramsAtAll" };
-    }
-    const noDebugger = programTypes.filter((programType) => {
-      switch (programType) {
-        case "Platform.worker":
-        case "Html":
-          return true;
-        case "Browser.sandbox":
-        case "Browser.element":
-        case "Browser.document":
-        case "Browser.application":
-          return false;
-      }
-    });
-    return {
-      tag: "DebuggerModeStatus",
-      status: noDebugger.length === programTypes.length ? {
-        tag: "Disabled",
-        reason: noDebuggerReason(new Set(noDebugger))
-      } : { tag: "Enabled" }
-    };
-  }
-  function reloadPageIfNeeded() {
-    let shouldReload = false;
-    const reasons = [];
-    for (const [targetName, reloadStatus] of Object.entries(
-      __ELM_WATCH.RELOAD_STATUSES
-    )) {
-      switch (reloadStatus.tag) {
-        case "MightWantToReload":
-          return;
-        case "NoReloadWanted":
-          break;
-        case "ReloadRequested":
-          shouldReload = true;
-          if (reloadStatus.reasons.length > 0) {
-            reasons.push([targetName, reloadStatus.reasons]);
-          }
-          break;
-      }
-    }
-    if (!shouldReload) {
-      return;
-    }
-    const first = reasons[0];
-    const [separator, reasonString] = reasons.length === 1 && first !== void 0 && first[1].length === 1 ? [" ", `${first[1].join("")}
-(target: ${first[0]})`] : [
-      ":\n\n",
-      reasons.map(
-        ([targetName, subReasons]) => [
-          targetName,
-          ...subReasons.map((subReason) => `- ${subReason}`)
-        ].join("\n")
-      ).join("\n\n")
-    ];
-    const message = reasons.length === 0 ? void 0 : `elm-watch: I did a full page reload because${separator}${reasonString}`;
-    __ELM_WATCH.RELOAD_STATUSES = {};
-    __ELM_WATCH.RELOAD_PAGE(message);
-  }
-  function h(t, {
-    attrs,
-    style,
-    localName,
-    ...props
-  }, ...children) {
-    const element = document.createElement(
-      localName ?? t.name.replace(/^HTML(\w+)Element$/, "$1").replace("Anchor", "a").replace("Paragraph", "p").replace(/^([DOU])List$/, "$1l").toLowerCase()
-    );
-    Object.assign(element, props);
-    if (attrs !== void 0) {
-      for (const [key, value] of Object.entries(attrs)) {
-        element.setAttribute(key, value);
-      }
-    }
-    if (style !== void 0) {
-      for (const [key, value] of Object.entries(style)) {
-        element.style[key] = value;
-      }
-    }
-    for (const child of children) {
-      if (child !== void 0) {
-        element.append(
-          typeof child === "string" ? document.createTextNode(child) : child
-        );
-      }
-    }
-    return element;
-  }
-  function renderWebWorker(model, info) {
-    const statusData = statusIconAndText(model, info);
-    return `${statusData.icon} elm-watch: ${statusData.status} ${formatTime(
-      model.status.date
-    )} (${info.targetName})`;
-  }
-  function render(getNow, targetRoot, dispatch, model, info, manageFocus) {
-    targetRoot.replaceChildren(
-      view(
-        (msg) => {
-          dispatch({ tag: "UiMsg", date: getNow(), msg });
-        },
-        model,
-        info,
-        manageFocus
-      )
-    );
-    const firstFocusableElement = targetRoot.querySelector(`button, [tabindex]`);
-    if (manageFocus && firstFocusableElement instanceof HTMLElement) {
-      firstFocusableElement.focus();
-    }
-    __ELM_WATCH.ON_RENDER(TARGET_NAME);
-  }
-  var CLASS = {
-    browserUiPositionButton: "browserUiPositionButton",
-    browserUiPositionChooser: "browserUiPositionChooser",
-    chevronButton: "chevronButton",
-    compilationModeWithIcon: "compilationModeWithIcon",
-    container: "container",
-    debugModeIcon: "debugModeIcon",
-    envNotSet: "envNotSet",
-    errorLocationButton: "errorLocationButton",
-    errorTitle: "errorTitle",
-    expandedUiContainer: "expandedUiContainer",
-    flashError: "flashError",
-    flashSuccess: "flashSuccess",
-    overlay: "overlay",
-    overlayCloseButton: "overlayCloseButton",
-    root: "root",
-    rootBottomHalf: "rootBottomHalf",
-    shortStatusContainer: "shortStatusContainer",
-    targetName: "targetName",
-    targetRoot: "targetRoot"
-  };
-  function getStatusClass({
-    statusType,
-    statusTypeChanged,
-    hasReceivedHotReload,
-    uiRelatedUpdate,
-    errorOverlayVisible
-  }) {
-    switch (statusType) {
-      case "Success":
-        return statusTypeChanged && hasReceivedHotReload ? CLASS.flashSuccess : void 0;
-      case "Error":
-        return errorOverlayVisible ? statusTypeChanged && hasReceivedHotReload ? CLASS.flashError : void 0 : uiRelatedUpdate ? void 0 : CLASS.flashError;
-      case "Waiting":
-        return void 0;
-    }
-  }
-  var CHEVRON_UP = "\u25B2";
-  var CHEVRON_DOWN = "\u25BC";
-  var CSS = `
-input,
-button,
-select,
-textarea {
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  color: inherit;
-  margin: 0;
+
+    return result;
+});
+
+
+
+// LOG
+
+var _Debug_log_UNUSED = F2(function(tag, value)
+{
+	return value;
+});
+
+var _Debug_log = F2(function(tag, value)
+{
+	console.log(tag + ': ' + _Debug_toString(value));
+	return value;
+});
+
+
+// TODOS
+
+function _Debug_todo(moduleName, region)
+{
+	return function(message) {
+		_Debug_crash(8, moduleName, region, message);
+	};
 }
 
-fieldset {
-  display: grid;
-  gap: 0.25em;
-  margin: 0;
-  border: 1px solid var(--grey);
-  padding: 0.25em 0.75em 0.5em;
+function _Debug_todoCase(moduleName, region, value)
+{
+	return function(message) {
+		_Debug_crash(9, moduleName, region, value, message);
+	};
 }
 
-fieldset:disabled {
-  color: var(--grey);
+
+// TO STRING
+
+function _Debug_toString_UNUSED(value)
+{
+	return '<internals>';
 }
 
-p,
-dd {
-  margin: 0;
+function _Debug_toString(value)
+{
+	return _Debug_toAnsiString(false, value);
 }
 
-dl {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 0.25em 1em;
-  margin: 0;
-  white-space: nowrap;
+function _Debug_toAnsiString(ansi, value)
+{
+	if (typeof value === 'function')
+	{
+		return _Debug_internalColor(ansi, '<function>');
+	}
+
+	if (typeof value === 'boolean')
+	{
+		return _Debug_ctorColor(ansi, value ? 'True' : 'False');
+	}
+
+	if (typeof value === 'number')
+	{
+		return _Debug_numberColor(ansi, value + '');
+	}
+
+	if (value instanceof String)
+	{
+		return _Debug_charColor(ansi, "'" + _Debug_addSlashes(value, true) + "'");
+	}
+
+	if (typeof value === 'string')
+	{
+		return _Debug_stringColor(ansi, '"' + _Debug_addSlashes(value, false) + '"');
+	}
+
+	if (typeof value === 'object' && '$' in value)
+	{
+		var tag = value.$;
+
+		if (typeof tag === 'number')
+		{
+			return _Debug_internalColor(ansi, '<internals>');
+		}
+
+		if (tag[0] === '#')
+		{
+			var output = [];
+			for (var k in value)
+			{
+				if (k === '$') continue;
+				output.push(_Debug_toAnsiString(ansi, value[k]));
+			}
+			return '(' + output.join(',') + ')';
+		}
+
+		if (tag === 'Set_elm_builtin')
+		{
+			return _Debug_ctorColor(ansi, 'Set')
+				+ _Debug_fadeColor(ansi, '.fromList') + ' '
+				+ _Debug_toAnsiString(ansi, $elm$core$Set$toList(value));
+		}
+
+		if (tag === 'RBNode_elm_builtin' || tag === 'RBEmpty_elm_builtin')
+		{
+			return _Debug_ctorColor(ansi, 'Dict')
+				+ _Debug_fadeColor(ansi, '.fromList') + ' '
+				+ _Debug_toAnsiString(ansi, $elm$core$Dict$toList(value));
+		}
+
+		if (tag === 'Array_elm_builtin')
+		{
+			return _Debug_ctorColor(ansi, 'Array')
+				+ _Debug_fadeColor(ansi, '.fromList') + ' '
+				+ _Debug_toAnsiString(ansi, $elm$core$Array$toList(value));
+		}
+
+		if (tag === '::' || tag === '[]')
+		{
+			var output = '[';
+
+			value.b && (output += _Debug_toAnsiString(ansi, value.a), value = value.b)
+
+			for (; value.b; value = value.b) // WHILE_CONS
+			{
+				output += ',' + _Debug_toAnsiString(ansi, value.a);
+			}
+			return output + ']';
+		}
+
+		var output = '';
+		for (var i in value)
+		{
+			if (i === '$') continue;
+			var str = _Debug_toAnsiString(ansi, value[i]);
+			var c0 = str[0];
+			var parenless = c0 === '{' || c0 === '(' || c0 === '[' || c0 === '<' || c0 === '"' || str.indexOf(' ') < 0;
+			output += ' ' + (parenless ? str : '(' + str + ')');
+		}
+		return _Debug_ctorColor(ansi, tag) + output;
+	}
+
+	if (typeof DataView === 'function' && value instanceof DataView)
+	{
+		return _Debug_stringColor(ansi, '<' + value.byteLength + ' bytes>');
+	}
+
+	if (typeof File === 'function' && value instanceof File)
+	{
+		return _Debug_internalColor(ansi, '<' + value.name + '>');
+	}
+
+	if (typeof value === 'object')
+	{
+		var output = [];
+		for (var key in value)
+		{
+			var field = key[0] === '_' ? key.slice(1) : key;
+			output.push(_Debug_fadeColor(ansi, field) + ' = ' + _Debug_toAnsiString(ansi, value[key]));
+		}
+		if (output.length === 0)
+		{
+			return '{}';
+		}
+		return '{ ' + output.join(', ') + ' }';
+	}
+
+	return _Debug_internalColor(ansi, '<internals>');
 }
 
-dt {
-  text-align: right;
-  color: var(--grey);
+function _Debug_addSlashes(str, isChar)
+{
+	var s = str
+		.replace(/\\/g, '\\\\')
+		.replace(/\n/g, '\\n')
+		.replace(/\t/g, '\\t')
+		.replace(/\r/g, '\\r')
+		.replace(/\v/g, '\\v')
+		.replace(/\0/g, '\\0');
+
+	if (isChar)
+	{
+		return s.replace(/\'/g, '\\\'');
+	}
+	else
+	{
+		return s.replace(/\"/g, '\\"');
+	}
 }
 
-time {
-  display: inline-grid;
-  overflow: hidden;
+function _Debug_ctorColor(ansi, string)
+{
+	return ansi ? '\x1b[96m' + string + '\x1b[0m' : string;
 }
 
-time::after {
-  content: attr(data-format);
-  visibility: hidden;
-  height: 0;
+function _Debug_numberColor(ansi, string)
+{
+	return ansi ? '\x1b[95m' + string + '\x1b[0m' : string;
 }
 
-.${CLASS.overlay} {
-  position: fixed;
-  z-index: -2;
-  inset: 0;
-  overflow-y: auto;
-  padding: 2ch 0;
+function _Debug_stringColor(ansi, string)
+{
+	return ansi ? '\x1b[93m' + string + '\x1b[0m' : string;
 }
 
-.${CLASS.overlayCloseButton} {
-  position: fixed;
-  z-index: -1;
-  top: 0;
-  right: 0;
-  appearance: none;
-  padding: 1em;
-  border: none;
-  border-radius: 0;
-  background: none;
-  cursor: pointer;
-  font-size: 1.25em;
-  filter: drop-shadow(0 0 0.125em var(--backgroundColor));
+function _Debug_charColor(ansi, string)
+{
+	return ansi ? '\x1b[92m' + string + '\x1b[0m' : string;
 }
 
-.${CLASS.overlayCloseButton}::before,
-.${CLASS.overlayCloseButton}::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0.125em;
-  height: 1em;
-  background-color: var(--foregroundColor);
-  transform: translate(-50%, -50%) rotate(45deg);
+function _Debug_fadeColor(ansi, string)
+{
+	return ansi ? '\x1b[37m' + string + '\x1b[0m' : string;
 }
 
-.${CLASS.overlayCloseButton}::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
+function _Debug_internalColor(ansi, string)
+{
+	return ansi ? '\x1b[94m' + string + '\x1b[0m' : string;
 }
 
-.${CLASS.overlay},
-.${CLASS.overlay} pre {
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+function _Debug_toHexDigit(n)
+{
+	return String.fromCharCode(n < 10 ? 48 + n : 55 + n);
 }
 
-.${CLASS.overlay} details {
-  --border-thickness: 0.125em;
-  border-top: var(--border-thickness) solid;
-  margin: 2ch 0;
+
+// CRASH
+
+
+function _Debug_crash_UNUSED(identifier)
+{
+	throw new Error('https://github.com/elm/core/blob/1.0.0/hints/' + identifier + '.md');
 }
 
-.${CLASS.overlay} summary {
-  cursor: pointer;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 0 2ch;
-  word-break: break-word;
+
+function _Debug_crash(identifier, fact1, fact2, fact3, fact4)
+{
+	switch(identifier)
+	{
+		case 0:
+			throw new Error('What node should I take over? In JavaScript I need something like:\n\n    Elm.Main.init({\n        node: document.getElementById("elm-node")\n    })\n\nYou need to do this with any Browser.sandbox or Browser.element program.');
+
+		case 1:
+			throw new Error('Browser.application programs cannot handle URLs like this:\n\n    ' + document.location.href + '\n\nWhat is the root? The root of your file system? Try looking at this program with `elm reactor` or some other server.');
+
+		case 2:
+			var jsonErrorString = fact1;
+			throw new Error('Problem with the flags given to your Elm program on initialization.\n\n' + jsonErrorString);
+
+		case 3:
+			var portName = fact1;
+			throw new Error('There can only be one port named `' + portName + '`, but your program has multiple.');
+
+		case 4:
+			var portName = fact1;
+			var problem = fact2;
+			throw new Error('Trying to send an unexpected type of value through port `' + portName + '`:\n' + problem);
+
+		case 5:
+			throw new Error('Trying to use `(==)` on functions.\nThere is no way to know if functions are "the same" in the Elm sense.\nRead more about this at https://package.elm-lang.org/packages/elm/core/latest/Basics#== which describes why it is this way and what the better version will look like.');
+
+		case 6:
+			var moduleName = fact1;
+			throw new Error('Your page is loading multiple Elm scripts with a module named ' + moduleName + '. Maybe a duplicate script is getting loaded accidentally? If not, rename one of them so I know which is which!');
+
+		case 8:
+			var moduleName = fact1;
+			var region = fact2;
+			var message = fact3;
+			throw new Error('TODO in module `' + moduleName + '` ' + _Debug_regionToString(region) + '\n\n' + message);
+
+		case 9:
+			var moduleName = fact1;
+			var region = fact2;
+			var value = fact3;
+			var message = fact4;
+			throw new Error(
+				'TODO in module `' + moduleName + '` from the `case` expression '
+				+ _Debug_regionToString(region) + '\n\nIt received the following value:\n\n    '
+				+ _Debug_toString(value).replace('\n', '\n    ')
+				+ '\n\nBut the branch that handles it says:\n\n    ' + message.replace('\n', '\n    ')
+			);
+
+		case 10:
+			throw new Error('Bug in https://github.com/elm/virtual-dom/issues');
+
+		case 11:
+			throw new Error('Cannot perform mod 0. Division by zero error.');
+	}
 }
 
-.${CLASS.overlay} summary::-webkit-details-marker {
-  display: none;
+function _Debug_regionToString(region)
+{
+	if (region.start.line === region.end.line)
+	{
+		return 'on line ' + region.start.line;
+	}
+	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
 
-.${CLASS.overlay} summary::marker {
-  content: none;
+
+
+// MATH
+
+var _Basics_add = F2(function(a, b) { return a + b; });
+var _Basics_sub = F2(function(a, b) { return a - b; });
+var _Basics_mul = F2(function(a, b) { return a * b; });
+var _Basics_fdiv = F2(function(a, b) { return a / b; });
+var _Basics_idiv = F2(function(a, b) { return (a / b) | 0; });
+var _Basics_pow = F2(Math.pow);
+
+var _Basics_remainderBy = F2(function(b, a) { return a % b; });
+
+// https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/divmodnote-letter.pdf
+var _Basics_modBy = F2(function(modulus, x)
+{
+	var answer = x % modulus;
+	return modulus === 0
+		? _Debug_crash(11)
+		:
+	((answer > 0 && modulus < 0) || (answer < 0 && modulus > 0))
+		? answer + modulus
+		: answer;
+});
+
+
+// TRIGONOMETRY
+
+var _Basics_pi = Math.PI;
+var _Basics_e = Math.E;
+var _Basics_cos = Math.cos;
+var _Basics_sin = Math.sin;
+var _Basics_tan = Math.tan;
+var _Basics_acos = Math.acos;
+var _Basics_asin = Math.asin;
+var _Basics_atan = Math.atan;
+var _Basics_atan2 = F2(Math.atan2);
+
+
+// MORE MATH
+
+function _Basics_toFloat(x) { return x; }
+function _Basics_truncate(n) { return n | 0; }
+function _Basics_isInfinite(n) { return n === Infinity || n === -Infinity; }
+
+var _Basics_ceiling = Math.ceil;
+var _Basics_floor = Math.floor;
+var _Basics_round = Math.round;
+var _Basics_sqrt = Math.sqrt;
+var _Basics_log = Math.log;
+var _Basics_isNaN = isNaN;
+
+
+// BOOLEANS
+
+function _Basics_not(bool) { return !bool; }
+var _Basics_and = F2(function(a, b) { return a && b; });
+var _Basics_or  = F2(function(a, b) { return a || b; });
+var _Basics_xor = F2(function(a, b) { return a !== b; });
+
+
+
+var _String_cons = F2(function(chr, str)
+{
+	return chr + str;
+});
+
+function _String_uncons(string)
+{
+	var word = string.charCodeAt(0);
+	return word
+		? $elm$core$Maybe$Just(
+			0xD800 <= word && word <= 0xDBFF
+				? _Utils_Tuple2(_Utils_chr(string[0] + string[1]), string.slice(2))
+				: _Utils_Tuple2(_Utils_chr(string[0]), string.slice(1))
+		)
+		: $elm$core$Maybe$Nothing;
 }
 
-.${CLASS.overlay} summary > * {
-  pointer-events: auto;
+var _String_append = F2(function(a, b)
+{
+	return a + b;
+});
+
+function _String_length(str)
+{
+	return str.length;
 }
 
-.${CLASS.errorTitle} {
-  display: inline-block;
-  font-weight: bold;
-  --padding: 1ch;
-  padding: 0 var(--padding);
-  transform: translate(calc(var(--padding) * -1), calc(-50% - var(--border-thickness) / 2));
+var _String_map = F2(function(func, string)
+{
+	var len = string.length;
+	var array = new Array(len);
+	var i = 0;
+	while (i < len)
+	{
+		var word = string.charCodeAt(i);
+		if (0xD800 <= word && word <= 0xDBFF)
+		{
+			array[i] = func(_Utils_chr(string[i] + string[i+1]));
+			i += 2;
+			continue;
+		}
+		array[i] = func(_Utils_chr(string[i]));
+		i++;
+	}
+	return array.join('');
+});
+
+var _String_filter = F2(function(isGood, str)
+{
+	var arr = [];
+	var len = str.length;
+	var i = 0;
+	while (i < len)
+	{
+		var char = str[i];
+		var word = str.charCodeAt(i);
+		i++;
+		if (0xD800 <= word && word <= 0xDBFF)
+		{
+			char += str[i];
+			i++;
+		}
+
+		if (isGood(_Utils_chr(char)))
+		{
+			arr.push(char);
+		}
+	}
+	return arr.join('');
+});
+
+function _String_reverse(str)
+{
+	var len = str.length;
+	var arr = new Array(len);
+	var i = 0;
+	while (i < len)
+	{
+		var word = str.charCodeAt(i);
+		if (0xD800 <= word && word <= 0xDBFF)
+		{
+			arr[len - i] = str[i + 1];
+			i++;
+			arr[len - i] = str[i - 1];
+			i++;
+		}
+		else
+		{
+			arr[len - i] = str[i];
+			i++;
+		}
+	}
+	return arr.join('');
 }
 
-.${CLASS.errorTitle}::before {
-  content: "${CHEVRON_DOWN}";
-  display: inline-block;
-  margin-right: 1ch;
-  transform: translateY(-0.0625em);
+var _String_foldl = F3(function(func, state, string)
+{
+	var len = string.length;
+	var i = 0;
+	while (i < len)
+	{
+		var char = string[i];
+		var word = string.charCodeAt(i);
+		i++;
+		if (0xD800 <= word && word <= 0xDBFF)
+		{
+			char += string[i];
+			i++;
+		}
+		state = A2(func, _Utils_chr(char), state);
+	}
+	return state;
+});
+
+var _String_foldr = F3(function(func, state, string)
+{
+	var i = string.length;
+	while (i--)
+	{
+		var char = string[i];
+		var word = string.charCodeAt(i);
+		if (0xDC00 <= word && word <= 0xDFFF)
+		{
+			i--;
+			char = string[i] + char;
+		}
+		state = A2(func, _Utils_chr(char), state);
+	}
+	return state;
+});
+
+var _String_split = F2(function(sep, str)
+{
+	return str.split(sep);
+});
+
+var _String_join = F2(function(sep, strs)
+{
+	return strs.join(sep);
+});
+
+var _String_slice = F3(function(start, end, str) {
+	return str.slice(start, end);
+});
+
+function _String_trim(str)
+{
+	return str.trim();
 }
 
-details[open] > summary > .${CLASS.errorTitle}::before {
-  content: "${CHEVRON_UP}";
+function _String_trimLeft(str)
+{
+	return str.replace(/^\s+/, '');
 }
 
-.${CLASS.errorLocationButton} {
-  appearance: none;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: none;
-  text-align: left;
-  text-decoration: underline;
-  cursor: pointer;
+function _String_trimRight(str)
+{
+	return str.replace(/\s+$/, '');
 }
 
-.${CLASS.overlay} pre {
-  margin: 0;
-  padding: 2ch;
-  overflow-x: auto;
+function _String_words(str)
+{
+	return _List_fromArray(str.trim().split(/\s+/g));
 }
 
-.${CLASS.root} {
-  --grey: #767676;
-  display: flex;
-  align-items: start;
-  overflow: auto;
-  max-height: 100vh;
-  max-width: 100vw;
-  color: black;
-  font-family: system-ui;
+function _String_lines(str)
+{
+	return _List_fromArray(str.split(/\r\n|\r|\n/g));
 }
 
-.${CLASS.rootBottomHalf} {
-  align-items: end;
+function _String_toUpper(str)
+{
+	return str.toUpperCase();
 }
 
-.${CLASS.targetRoot} + .${CLASS.targetRoot} {
-  margin-left: -1px;
+function _String_toLower(str)
+{
+	return str.toLowerCase();
 }
 
-.${CLASS.targetRoot}:only-of-type .${CLASS.debugModeIcon},
-.${CLASS.targetRoot}:only-of-type .${CLASS.targetName} {
-  display: none;
+var _String_any = F2(function(isGood, string)
+{
+	var i = string.length;
+	while (i--)
+	{
+		var char = string[i];
+		var word = string.charCodeAt(i);
+		if (0xDC00 <= word && word <= 0xDFFF)
+		{
+			i--;
+			char = string[i] + char;
+		}
+		if (isGood(_Utils_chr(char)))
+		{
+			return true;
+		}
+	}
+	return false;
+});
+
+var _String_all = F2(function(isGood, string)
+{
+	var i = string.length;
+	while (i--)
+	{
+		var char = string[i];
+		var word = string.charCodeAt(i);
+		if (0xDC00 <= word && word <= 0xDFFF)
+		{
+			i--;
+			char = string[i] + char;
+		}
+		if (!isGood(_Utils_chr(char)))
+		{
+			return false;
+		}
+	}
+	return true;
+});
+
+var _String_contains = F2(function(sub, str)
+{
+	return str.indexOf(sub) > -1;
+});
+
+var _String_startsWith = F2(function(sub, str)
+{
+	return str.indexOf(sub) === 0;
+});
+
+var _String_endsWith = F2(function(sub, str)
+{
+	return str.length >= sub.length &&
+		str.lastIndexOf(sub) === str.length - sub.length;
+});
+
+var _String_indexes = F2(function(sub, str)
+{
+	var subLen = sub.length;
+
+	if (subLen < 1)
+	{
+		return _List_Nil;
+	}
+
+	var i = 0;
+	var is = [];
+
+	while ((i = str.indexOf(sub, i)) > -1)
+	{
+		is.push(i);
+		i = i + subLen;
+	}
+
+	return _List_fromArray(is);
+});
+
+
+// TO STRING
+
+function _String_fromNumber(number)
+{
+	return number + '';
 }
 
-.${CLASS.container} {
-  display: flex;
-  flex-direction: column-reverse;
-  background-color: white;
-  border: 1px solid var(--grey);
+
+// INT CONVERSIONS
+
+function _String_toInt(str)
+{
+	var total = 0;
+	var code0 = str.charCodeAt(0);
+	var start = code0 == 0x2B /* + */ || code0 == 0x2D /* - */ ? 1 : 0;
+
+	for (var i = start; i < str.length; ++i)
+	{
+		var code = str.charCodeAt(i);
+		if (code < 0x30 || 0x39 < code)
+		{
+			return $elm$core$Maybe$Nothing;
+		}
+		total = 10 * total + code - 0x30;
+	}
+
+	return i == start
+		? $elm$core$Maybe$Nothing
+		: $elm$core$Maybe$Just(code0 == 0x2D ? -total : total);
 }
 
-.${CLASS.rootBottomHalf} .${CLASS.container} {
-  flex-direction: column;
+
+// FLOAT CONVERSIONS
+
+function _String_toFloat(s)
+{
+	// check if it is a hex, octal, or binary number
+	if (s.length === 0 || /[\sxbo]/.test(s))
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+	var n = +s;
+	// faster isNaN check
+	return n === n ? $elm$core$Maybe$Just(n) : $elm$core$Maybe$Nothing;
 }
 
-.${CLASS.envNotSet} {
-  display: grid;
-  gap: 0.75em;
-  margin: 2em 0;
+function _String_fromList(chars)
+{
+	return _List_toArray(chars).join('');
 }
 
-.${CLASS.envNotSet},
-.${CLASS.root} pre {
-  border-left: 0.25em solid var(--grey);
-  padding-left: 0.5em;
+
+
+
+function _Char_toCode(char)
+{
+	var code = char.charCodeAt(0);
+	if (0xD800 <= code && code <= 0xDBFF)
+	{
+		return (code - 0xD800) * 0x400 + char.charCodeAt(1) - 0xDC00 + 0x10000
+	}
+	return code;
 }
 
-.${CLASS.root} pre {
-  margin: 0;
-  white-space: pre-wrap;
+function _Char_fromCode(code)
+{
+	return _Utils_chr(
+		(code < 0 || 0x10FFFF < code)
+			? '\uFFFD'
+			:
+		(code <= 0xFFFF)
+			? String.fromCharCode(code)
+			:
+		(code -= 0x10000,
+			String.fromCharCode(Math.floor(code / 0x400) + 0xD800, code % 0x400 + 0xDC00)
+		)
+	);
 }
 
-.${CLASS.expandedUiContainer} {
-  padding: 1em;
-  padding-top: 0.75em;
-  display: grid;
-  gap: 0.75em;
-  outline: none;
-  contain: paint;
+function _Char_toUpper(char)
+{
+	return _Utils_chr(char.toUpperCase());
 }
 
-.${CLASS.rootBottomHalf} .${CLASS.expandedUiContainer} {
-  padding-bottom: 0.75em;
+function _Char_toLower(char)
+{
+	return _Utils_chr(char.toLowerCase());
 }
 
-.${CLASS.expandedUiContainer}:is(.length0, .length1) {
-  grid-template-columns: min-content;
+function _Char_toLocaleUpper(char)
+{
+	return _Utils_chr(char.toLocaleUpperCase());
 }
 
-.${CLASS.expandedUiContainer} > dl {
-  justify-self: start;
+function _Char_toLocaleLower(char)
+{
+	return _Utils_chr(char.toLocaleLowerCase());
 }
 
-.${CLASS.expandedUiContainer} label {
-  display: grid;
-  grid-template-columns: min-content auto;
-  align-items: center;
-  gap: 0.25em;
+
+
+/**/
+function _Json_errorToString(error)
+{
+	return $elm$json$Json$Decode$errorToString(error);
+}
+//*/
+
+
+// CORE DECODERS
+
+function _Json_succeed(msg)
+{
+	return {
+		$: 0,
+		a: msg
+	};
 }
 
-.${CLASS.expandedUiContainer} label.Disabled {
-  color: var(--grey);
+function _Json_fail(msg)
+{
+	return {
+		$: 1,
+		a: msg
+	};
 }
 
-.${CLASS.expandedUiContainer} label > small {
-  grid-column: 2;
+function _Json_decodePrim(decoder)
+{
+	return { $: 2, b: decoder };
 }
 
-.${CLASS.compilationModeWithIcon} {
-  display: flex;
-  align-items: center;
-  gap: 0.25em;
+var _Json_decodeInt = _Json_decodePrim(function(value) {
+	return (typeof value !== 'number')
+		? _Json_expecting('an INT', value)
+		:
+	(-2147483647 < value && value < 2147483647 && (value | 0) === value)
+		? $elm$core$Result$Ok(value)
+		:
+	(isFinite(value) && !(value % 1))
+		? $elm$core$Result$Ok(value)
+		: _Json_expecting('an INT', value);
+});
+
+var _Json_decodeBool = _Json_decodePrim(function(value) {
+	return (typeof value === 'boolean')
+		? $elm$core$Result$Ok(value)
+		: _Json_expecting('a BOOL', value);
+});
+
+var _Json_decodeFloat = _Json_decodePrim(function(value) {
+	return (typeof value === 'number')
+		? $elm$core$Result$Ok(value)
+		: _Json_expecting('a FLOAT', value);
+});
+
+var _Json_decodeValue = _Json_decodePrim(function(value) {
+	return $elm$core$Result$Ok(_Json_wrap(value));
+});
+
+var _Json_decodeString = _Json_decodePrim(function(value) {
+	return (typeof value === 'string')
+		? $elm$core$Result$Ok(value)
+		: (value instanceof String)
+			? $elm$core$Result$Ok(value + '')
+			: _Json_expecting('a STRING', value);
+});
+
+function _Json_decodeList(decoder) { return { $: 3, b: decoder }; }
+function _Json_decodeArray(decoder) { return { $: 4, b: decoder }; }
+
+function _Json_decodeNull(value) { return { $: 5, c: value }; }
+
+var _Json_decodeField = F2(function(field, decoder)
+{
+	return {
+		$: 6,
+		d: field,
+		b: decoder
+	};
+});
+
+var _Json_decodeIndex = F2(function(index, decoder)
+{
+	return {
+		$: 7,
+		e: index,
+		b: decoder
+	};
+});
+
+function _Json_decodeKeyValuePairs(decoder)
+{
+	return {
+		$: 8,
+		b: decoder
+	};
 }
 
-.${CLASS.browserUiPositionChooser} {
-  position: absolute;
-  display: grid;
-  grid-template-columns: min-content min-content;
-  pointer-events: none;
+function _Json_mapMany(f, decoders)
+{
+	return {
+		$: 9,
+		f: f,
+		g: decoders
+	};
 }
 
-.${CLASS.browserUiPositionButton} {
-  appearance: none;
-  padding: 0;
-  border: none;
-  background: none;
-  border-radius: none;
-  pointer-events: auto;
-  width: 1em;
-  height: 1em;
-  text-align: center;
-  line-height: 1em;
+var _Json_andThen = F2(function(callback, decoder)
+{
+	return {
+		$: 10,
+		b: decoder,
+		h: callback
+	};
+});
+
+function _Json_oneOf(decoders)
+{
+	return {
+		$: 11,
+		g: decoders
+	};
 }
 
-.${CLASS.browserUiPositionButton}:hover {
-  background-color: rgba(0, 0, 0, 0.25);
+
+// DECODING OBJECTS
+
+var _Json_map1 = F2(function(f, d1)
+{
+	return _Json_mapMany(f, [d1]);
+});
+
+var _Json_map2 = F3(function(f, d1, d2)
+{
+	return _Json_mapMany(f, [d1, d2]);
+});
+
+var _Json_map3 = F4(function(f, d1, d2, d3)
+{
+	return _Json_mapMany(f, [d1, d2, d3]);
+});
+
+var _Json_map4 = F5(function(f, d1, d2, d3, d4)
+{
+	return _Json_mapMany(f, [d1, d2, d3, d4]);
+});
+
+var _Json_map5 = F6(function(f, d1, d2, d3, d4, d5)
+{
+	return _Json_mapMany(f, [d1, d2, d3, d4, d5]);
+});
+
+var _Json_map6 = F7(function(f, d1, d2, d3, d4, d5, d6)
+{
+	return _Json_mapMany(f, [d1, d2, d3, d4, d5, d6]);
+});
+
+var _Json_map7 = F8(function(f, d1, d2, d3, d4, d5, d6, d7)
+{
+	return _Json_mapMany(f, [d1, d2, d3, d4, d5, d6, d7]);
+});
+
+var _Json_map8 = F9(function(f, d1, d2, d3, d4, d5, d6, d7, d8)
+{
+	return _Json_mapMany(f, [d1, d2, d3, d4, d5, d6, d7, d8]);
+});
+
+
+// DECODE
+
+var _Json_runOnString = F2(function(decoder, string)
+{
+	try
+	{
+		var value = JSON.parse(string);
+		return _Json_runHelp(decoder, value);
+	}
+	catch (e)
+	{
+		return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, 'This is not valid JSON! ' + e.message, _Json_wrap(string)));
+	}
+});
+
+var _Json_run = F2(function(decoder, value)
+{
+	return _Json_runHelp(decoder, _Json_unwrap(value));
+});
+
+function _Json_runHelp(decoder, value)
+{
+	switch (decoder.$)
+	{
+		case 2:
+			return decoder.b(value);
+
+		case 5:
+			return (value === null)
+				? $elm$core$Result$Ok(decoder.c)
+				: _Json_expecting('null', value);
+
+		case 3:
+			if (!_Json_isArray(value))
+			{
+				return _Json_expecting('a LIST', value);
+			}
+			return _Json_runArrayDecoder(decoder.b, value, _List_fromArray);
+
+		case 4:
+			if (!_Json_isArray(value))
+			{
+				return _Json_expecting('an ARRAY', value);
+			}
+			return _Json_runArrayDecoder(decoder.b, value, _Json_toElmArray);
+
+		case 6:
+			var field = decoder.d;
+			if (typeof value !== 'object' || value === null || !(field in value))
+			{
+				return _Json_expecting('an OBJECT with a field named `' + field + '`', value);
+			}
+			var result = _Json_runHelp(decoder.b, value[field]);
+			return ($elm$core$Result$isOk(result)) ? result : $elm$core$Result$Err(A2($elm$json$Json$Decode$Field, field, result.a));
+
+		case 7:
+			var index = decoder.e;
+			if (!_Json_isArray(value))
+			{
+				return _Json_expecting('an ARRAY', value);
+			}
+			if (index >= value.length)
+			{
+				return _Json_expecting('a LONGER array. Need index ' + index + ' but only see ' + value.length + ' entries', value);
+			}
+			var result = _Json_runHelp(decoder.b, value[index]);
+			return ($elm$core$Result$isOk(result)) ? result : $elm$core$Result$Err(A2($elm$json$Json$Decode$Index, index, result.a));
+
+		case 8:
+			if (typeof value !== 'object' || value === null || _Json_isArray(value))
+			{
+				return _Json_expecting('an OBJECT', value);
+			}
+
+			var keyValuePairs = _List_Nil;
+			// TODO test perf of Object.keys and switch when support is good enough
+			for (var key in value)
+			{
+				if (value.hasOwnProperty(key))
+				{
+					var result = _Json_runHelp(decoder.b, value[key]);
+					if (!$elm$core$Result$isOk(result))
+					{
+						return $elm$core$Result$Err(A2($elm$json$Json$Decode$Field, key, result.a));
+					}
+					keyValuePairs = _List_Cons(_Utils_Tuple2(key, result.a), keyValuePairs);
+				}
+			}
+			return $elm$core$Result$Ok($elm$core$List$reverse(keyValuePairs));
+
+		case 9:
+			var answer = decoder.f;
+			var decoders = decoder.g;
+			for (var i = 0; i < decoders.length; i++)
+			{
+				var result = _Json_runHelp(decoders[i], value);
+				if (!$elm$core$Result$isOk(result))
+				{
+					return result;
+				}
+				answer = answer(result.a);
+			}
+			return $elm$core$Result$Ok(answer);
+
+		case 10:
+			var result = _Json_runHelp(decoder.b, value);
+			return (!$elm$core$Result$isOk(result))
+				? result
+				: _Json_runHelp(decoder.h(result.a), value);
+
+		case 11:
+			var errors = _List_Nil;
+			for (var temp = decoder.g; temp.b; temp = temp.b) // WHILE_CONS
+			{
+				var result = _Json_runHelp(temp.a, value);
+				if ($elm$core$Result$isOk(result))
+				{
+					return result;
+				}
+				errors = _List_Cons(result.a, errors);
+			}
+			return $elm$core$Result$Err($elm$json$Json$Decode$OneOf($elm$core$List$reverse(errors)));
+
+		case 1:
+			return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, decoder.a, _Json_wrap(value)));
+
+		case 0:
+			return $elm$core$Result$Ok(decoder.a);
+	}
 }
 
-.${CLASS.targetRoot}:not(:first-child) .${CLASS.browserUiPositionChooser} {
-  display: none;
+function _Json_runArrayDecoder(decoder, value, toElmValue)
+{
+	var len = value.length;
+	var array = new Array(len);
+	for (var i = 0; i < len; i++)
+	{
+		var result = _Json_runHelp(decoder, value[i]);
+		if (!$elm$core$Result$isOk(result))
+		{
+			return $elm$core$Result$Err(A2($elm$json$Json$Decode$Index, i, result.a));
+		}
+		array[i] = result.a;
+	}
+	return $elm$core$Result$Ok(toElmValue(array));
 }
 
-.${CLASS.shortStatusContainer} {
-  line-height: 1;
-  padding: 0.25em;
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 0.25em;
+function _Json_isArray(value)
+{
+	return Array.isArray(value) || (typeof FileList !== 'undefined' && value instanceof FileList);
 }
 
-.${CLASS.flashError}::before,
-.${CLASS.flashSuccess}::before {
-  content: "";
-  position: absolute;
-  margin-top: 0.5em;
-  margin-left: 0.5em;
-  --size: min(500px, 100vmin);
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  animation: flash 0.7s 0.05s ease-out both;
-  pointer-events: none;
+function _Json_toElmArray(array)
+{
+	return A2($elm$core$Array$initialize, array.length, function(i) { return array[i]; });
 }
 
-.${CLASS.flashError}::before {
-  background-color: #eb0000;
+function _Json_expecting(type, value)
+{
+	return $elm$core$Result$Err(A2($elm$json$Json$Decode$Failure, 'Expecting ' + type, _Json_wrap(value)));
 }
 
-.${CLASS.flashSuccess}::before {
-  background-color: #00b600;
+
+// EQUALITY
+
+function _Json_equality(x, y)
+{
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (x.$ !== y.$)
+	{
+		return false;
+	}
+
+	switch (x.$)
+	{
+		case 0:
+		case 1:
+			return x.a === y.a;
+
+		case 2:
+			return x.b === y.b;
+
+		case 5:
+			return x.c === y.c;
+
+		case 3:
+		case 4:
+		case 8:
+			return _Json_equality(x.b, y.b);
+
+		case 6:
+			return x.d === y.d && _Json_equality(x.b, y.b);
+
+		case 7:
+			return x.e === y.e && _Json_equality(x.b, y.b);
+
+		case 9:
+			return x.f === y.f && _Json_listEquality(x.g, y.g);
+
+		case 10:
+			return x.h === y.h && _Json_equality(x.b, y.b);
+
+		case 11:
+			return _Json_listEquality(x.g, y.g);
+	}
 }
 
-@keyframes flash {
-  from {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.9;
+function _Json_listEquality(aDecoders, bDecoders)
+{
+	var len = aDecoders.length;
+	if (len !== bDecoders.length)
+	{
+		return false;
+	}
+	for (var i = 0; i < len; i++)
+	{
+		if (!_Json_equality(aDecoders[i], bDecoders[i]))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+// ENCODE
+
+var _Json_encode = F2(function(indentLevel, value)
+{
+	return JSON.stringify(_Json_unwrap(value), null, indentLevel) + '';
+});
+
+function _Json_wrap(value) { return { $: 0, a: value }; }
+function _Json_unwrap(value) { return value.a; }
+
+function _Json_wrap_UNUSED(value) { return value; }
+function _Json_unwrap_UNUSED(value) { return value; }
+
+function _Json_emptyArray() { return []; }
+function _Json_emptyObject() { return {}; }
+
+var _Json_addField = F3(function(key, value, object)
+{
+	object[key] = _Json_unwrap(value);
+	return object;
+});
+
+function _Json_addEntry(func)
+{
+	return F2(function(entry, array)
+	{
+		array.push(_Json_unwrap(func(entry)));
+		return array;
+	});
+}
+
+var _Json_encodeNull = _Json_wrap(null);
+
+
+
+// TASKS
+
+function _Scheduler_succeed(value)
+{
+	return {
+		$: 0,
+		a: value
+	};
+}
+
+function _Scheduler_fail(error)
+{
+	return {
+		$: 1,
+		a: error
+	};
+}
+
+function _Scheduler_binding(callback)
+{
+	return {
+		$: 2,
+		b: callback,
+		c: null
+	};
+}
+
+var _Scheduler_andThen = F2(function(callback, task)
+{
+	return {
+		$: 3,
+		b: callback,
+		d: task
+	};
+});
+
+var _Scheduler_onError = F2(function(callback, task)
+{
+	return {
+		$: 4,
+		b: callback,
+		d: task
+	};
+});
+
+function _Scheduler_receive(callback)
+{
+	return {
+		$: 5,
+		b: callback
+	};
+}
+
+
+// PROCESSES
+
+var _Scheduler_guid = 0;
+
+function _Scheduler_rawSpawn(task)
+{
+	var proc = {
+		$: 0,
+		e: _Scheduler_guid++,
+		f: task,
+		g: null,
+		h: []
+	};
+
+	_Scheduler_enqueue(proc);
+
+	return proc;
+}
+
+function _Scheduler_spawn(task)
+{
+	return _Scheduler_binding(function(callback) {
+		callback(_Scheduler_succeed(_Scheduler_rawSpawn(task)));
+	});
+}
+
+function _Scheduler_rawSend(proc, msg)
+{
+	proc.h.push(msg);
+	_Scheduler_enqueue(proc);
+}
+
+var _Scheduler_send = F2(function(proc, msg)
+{
+	return _Scheduler_binding(function(callback) {
+		_Scheduler_rawSend(proc, msg);
+		callback(_Scheduler_succeed(_Utils_Tuple0));
+	});
+});
+
+function _Scheduler_kill(proc)
+{
+	return _Scheduler_binding(function(callback) {
+		var task = proc.f;
+		if (task.$ === 2 && task.c)
+		{
+			task.c();
+		}
+
+		proc.f = null;
+
+		callback(_Scheduler_succeed(_Utils_Tuple0));
+	});
+}
+
+
+/* STEP PROCESSES
+
+type alias Process =
+  { $ : tag
+  , id : unique_id
+  , root : Task
+  , stack : null | { $: SUCCEED | FAIL, a: callback, b: stack }
+  , mailbox : [msg]
   }
 
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
+*/
+
+
+var _Scheduler_working = false;
+var _Scheduler_queue = [];
+
+
+function _Scheduler_enqueue(proc)
+{
+	_Scheduler_queue.push(proc);
+	if (_Scheduler_working)
+	{
+		return;
+	}
+	_Scheduler_working = true;
+	while (proc = _Scheduler_queue.shift())
+	{
+		_Scheduler_step(proc);
+	}
+	_Scheduler_working = false;
 }
 
-@keyframes nudge {
-  from {
-    opacity: 0;
-  }
 
-  to {
-    opacity: 0.8;
-  }
+function _Scheduler_step(proc)
+{
+	while (proc.f)
+	{
+		var rootTag = proc.f.$;
+		if (rootTag === 0 || rootTag === 1)
+		{
+			while (proc.g && proc.g.$ !== rootTag)
+			{
+				proc.g = proc.g.i;
+			}
+			if (!proc.g)
+			{
+				return;
+			}
+			proc.f = proc.g.b(proc.f.a);
+			proc.g = proc.g.i;
+		}
+		else if (rootTag === 2)
+		{
+			proc.f.c = proc.f.b(function(newRoot) {
+				proc.f = newRoot;
+				_Scheduler_enqueue(proc);
+			});
+			return;
+		}
+		else if (rootTag === 5)
+		{
+			if (proc.h.length === 0)
+			{
+				return;
+			}
+			proc.f = proc.f.b(proc.h.shift());
+		}
+		else // if (rootTag === 3 || rootTag === 4)
+		{
+			proc.g = {
+				$: rootTag === 3 ? 0 : 1,
+				b: proc.f.b,
+				i: proc.g
+			};
+			proc.f = proc.f.d;
+		}
+	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .${CLASS.flashError}::before,
-  .${CLASS.flashSuccess}::before {
-    transform: translate(-50%, -50%);
-    width: 2em;
-    height: 2em;
-    animation: nudge 0.25s ease-in-out 4 alternate forwards;
-  }
+
+
+function _Process_sleep(time)
+{
+	return _Scheduler_binding(function(callback) {
+		var id = setTimeout(function() {
+			callback(_Scheduler_succeed(_Utils_Tuple0));
+		}, time);
+
+		return function() { clearTimeout(id); };
+	});
 }
 
-.${CLASS.chevronButton} {
-  appearance: none;
-  border: none;
-  border-radius: 0;
-  background: none;
-  padding: 0;
-  cursor: pointer;
+
+
+
+// PROGRAMS
+
+
+var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
+{
+	return _Platform_initialize(
+		flagDecoder,
+		args,
+		impl.init,
+		impl.update,
+		impl.subscriptions,
+		function() { return function() {} }
+	);
+});
+
+
+
+// INITIALIZE A PROGRAM
+
+
+function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
+{
+	var result = A2(_Json_run, flagDecoder, _Json_wrap(args ? args['flags'] : undefined));
+	$elm$core$Result$isOk(result) || _Debug_crash(2 /**/, _Json_errorToString(result.a) /**/);
+	var managers = {};
+	result = init(result.a);
+	var model = result.a;
+	var stepper = stepperBuilder(sendToApp, model);
+	var ports = _Platform_setupEffects(managers, sendToApp);
+
+	function sendToApp(msg, viewMetadata)
+	{
+		result = A2(update, msg, model);
+		stepper(model = result.a, viewMetadata);
+		_Platform_dispatchEffects(managers, result.b, subscriptions(model));
+	}
+
+	_Platform_dispatchEffects(managers, result.b, subscriptions(model));
+
+	return ports ? { ports: ports } : {};
 }
-`;
-  function view(dispatch, passedModel, info, manageFocus) {
-    const model = __ELM_WATCH.MOCKED_TIMINGS ? {
-      ...passedModel,
-      status: {
-        ...passedModel.status,
-        date: new Date("2022-02-05T13:10:05Z")
-      }
-    } : passedModel;
-    const statusData = {
-      ...statusIconAndText(model, info),
-      ...viewStatus(dispatch, model, info)
-    };
-    const statusType = statusToStatusType(model.status.tag);
-    const statusTypeChanged = statusType !== statusToStatusType(model.previousStatusTag);
-    const statusClass = getStatusClass({
-      statusType,
-      statusTypeChanged,
-      hasReceivedHotReload: model.elmCompiledTimestamp !== INITIAL_ELM_COMPILED_TIMESTAMP,
-      uiRelatedUpdate: manageFocus,
-      errorOverlayVisible: info.errorOverlayVisible
-    });
-    return h(
-      HTMLDivElement,
-      { className: CLASS.container },
-      model.uiExpanded ? viewExpandedUi(
-        model.status,
-        statusData,
-        info,
-        model.browserUiPosition,
-        dispatch
-      ) : void 0,
-      h(
-        HTMLDivElement,
-        {
-          className: CLASS.shortStatusContainer,
-          onclick: () => {
-            dispatch({ tag: "PressedChevron" });
-          }
-        },
-        h(
-          HTMLButtonElement,
-          {
-            className: CLASS.chevronButton,
-            attrs: { "aria-expanded": model.uiExpanded.toString() }
-          },
-          icon(
-            model.uiExpanded ? CHEVRON_UP : CHEVRON_DOWN,
-            model.uiExpanded ? "Collapse elm-watch" : "Expand elm-watch"
-          )
-        ),
-        compilationModeIcon(model.compilationMode),
-        icon(
-          statusData.icon,
-          statusData.status,
-          statusClass === void 0 ? {} : {
-            className: statusClass,
-            onanimationend: (event) => {
-              if (event.currentTarget instanceof HTMLElement) {
-                event.currentTarget.classList.remove(statusClass);
-              }
-            }
-          }
-        ),
-        h(
-          HTMLTimeElement,
-          { dateTime: model.status.date.toISOString() },
-          formatTime(model.status.date)
-        ),
-        h(HTMLSpanElement, { className: CLASS.targetName }, TARGET_NAME)
-      )
-    );
-  }
-  function icon(emoji, alt, props) {
-    return h(
-      HTMLSpanElement,
-      { attrs: { "aria-label": alt }, ...props },
-      h(HTMLSpanElement, { attrs: { "aria-hidden": "true" } }, emoji)
-    );
-  }
-  function viewExpandedUi(status, statusData, info, browserUiPosition, dispatch) {
-    const items = [
-      ["target", info.targetName],
-      ["elm-watch", info.version],
-      ["web socket", printWebSocketUrl(info.webSocketUrl)],
-      [
-        "updated",
-        h(
-          HTMLTimeElement,
-          {
-            dateTime: status.date.toISOString(),
-            attrs: { "data-format": "2044-04-30 04:44:44" }
-          },
-          `${formatDate(status.date)} ${formatTime(status.date)}`
-        )
-      ],
-      ["status", statusData.status],
-      ...statusData.dl
-    ];
-    const browserUiPositionSendKey = statusToSpecialCaseSendKey(status);
-    return h(
-      HTMLDivElement,
-      {
-        className: `${CLASS.expandedUiContainer} length${statusData.content.length}`,
-        attrs: {
-          tabindex: "-1"
-        }
-      },
-      h(
-        HTMLDListElement,
-        {},
-        ...items.flatMap(([key, value]) => [
-          h(HTMLElement, { localName: "dt" }, key),
-          h(HTMLElement, { localName: "dd" }, value)
-        ])
-      ),
-      ...statusData.content,
-      browserUiPositionSendKey === void 0 ? void 0 : viewBrowserUiPositionChooser(
-        browserUiPosition,
-        dispatch,
-        browserUiPositionSendKey
-      )
-    );
-  }
-  var allBrowserUiPositionsInOrder = [
-    "TopLeft",
-    "TopRight",
-    "BottomLeft",
-    "BottomRight"
-  ];
-  function viewBrowserUiPositionChooser(currentPosition, dispatch, sendKey) {
-    const arrows = getBrowserUiPositionArrows(currentPosition);
-    return h(
-      HTMLDivElement,
-      {
-        className: CLASS.browserUiPositionChooser,
-        style: browserUiPositionToCssForChooser(currentPosition)
-      },
-      ...allBrowserUiPositionsInOrder.map((position) => {
-        const arrow = arrows[position];
-        return arrow === void 0 ? h(HTMLDivElement, { style: { visibility: "hidden" } }, "\xB7") : h(
-          HTMLButtonElement,
-          {
-            className: CLASS.browserUiPositionButton,
-            attrs: { "data-position": position },
-            onclick: () => {
-              dispatch({
-                tag: "ChangedBrowserUiPosition",
-                browserUiPosition: position,
-                sendKey
-              });
-            }
-          },
-          arrow
-        );
-      })
-    );
-  }
-  var ARROW_UP = "\u2191";
-  var ARROW_DOWN = "\u2193";
-  var ARROW_LEFT = "\u2190";
-  var ARROW_RIGHT = "\u2192";
-  var ARROW_UP_LEFT = "\u2196";
-  var ARROW_UP_RIGHT = "\u2197";
-  var ARROW_DOWN_LEFT = "\u2199";
-  var ARROW_DOWN_RIGHT = "\u2198";
-  function getBrowserUiPositionArrows(browserUiPosition) {
-    switch (browserUiPosition) {
-      case "TopLeft":
-        return {
-          TopLeft: void 0,
-          TopRight: ARROW_RIGHT,
-          BottomLeft: ARROW_DOWN,
-          BottomRight: ARROW_DOWN_RIGHT
-        };
-      case "TopRight":
-        return {
-          TopLeft: ARROW_LEFT,
-          TopRight: void 0,
-          BottomLeft: ARROW_DOWN_LEFT,
-          BottomRight: ARROW_DOWN
-        };
-      case "BottomLeft":
-        return {
-          TopLeft: ARROW_UP,
-          TopRight: ARROW_UP_RIGHT,
-          BottomLeft: void 0,
-          BottomRight: ARROW_RIGHT
-        };
-      case "BottomRight":
-        return {
-          TopLeft: ARROW_UP_LEFT,
-          TopRight: ARROW_UP,
-          BottomLeft: ARROW_LEFT,
-          BottomRight: void 0
-        };
-    }
-  }
-  function statusIconAndText(model, info) {
-    switch (model.status.tag) {
-      case "Busy":
-        return {
-          icon: "\u23F3",
-          status: "Waiting for compilation"
-        };
-      case "CompileError":
-        return {
-          icon: "\u{1F6A8}",
-          status: "Compilation error"
-        };
-      case "Connecting":
-        return {
-          icon: "\u{1F50C}",
-          status: "Connecting"
-        };
-      case "ElmJsonError":
-        return {
-          icon: "\u{1F6A8}",
-          status: "elm.json or inputs error"
-        };
-      case "EvalError":
-        return {
-          icon: "\u26D4\uFE0F",
-          status: "Eval error"
-        };
-      case "Idle":
-        return {
-          icon: idleIcon(info.initializedElmAppsStatus),
-          status: "Successfully compiled"
-        };
-      case "SleepingBeforeReconnect":
-        return {
-          icon: "\u{1F50C}",
-          status: "Sleeping"
-        };
-      case "UnexpectedError":
-        return {
-          icon: "\u274C",
-          status: "Unexpected error"
-        };
-      case "WaitingForReload":
-        return model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? {
-          icon: "\u274C",
-          status: "Reload trouble"
-        } : {
-          icon: "\u23F3",
-          status: "Waiting for reload"
-        };
-    }
-  }
-  function viewStatus(dispatch, model, info) {
-    const { status, compilationMode } = model;
-    switch (status.tag) {
-      case "Busy":
-        return {
-          dl: [],
-          content: [
-            ...viewCompilationModeChooser({
-              dispatch,
-              sendKey: void 0,
-              compilationMode,
-              warnAboutCompilationModeMismatch: false,
-              info
-            }),
-            ...status.errorOverlay === void 0 ? [] : [viewErrorOverlayToggleButton(dispatch, status.errorOverlay)]
-          ]
-        };
-      case "CompileError":
-        return {
-          dl: [],
-          content: [
-            ...viewCompilationModeChooser({
-              dispatch,
-              sendKey: status.sendKey,
-              compilationMode,
-              warnAboutCompilationModeMismatch: true,
-              info
-            }),
-            viewErrorOverlayToggleButton(dispatch, status.errorOverlay),
-            ...status.openEditorError === void 0 ? [] : viewOpenEditorError(status.openEditorError)
-          ]
-        };
-      case "Connecting":
-        return {
-          dl: [
-            ["attempt", status.attemptNumber.toString()],
-            ["sleep", printRetryWaitMs(status.attemptNumber)]
-          ],
-          content: [
-            ...viewHttpsInfo(info.webSocketUrl),
-            h(HTMLButtonElement, { disabled: true }, "Connecting web socket\u2026")
-          ]
-        };
-      case "ElmJsonError":
-        return {
-          dl: [],
-          content: [
-            h(HTMLPreElement, { style: { minWidth: "80ch" } }, status.error)
-          ]
-        };
-      case "EvalError":
-        return {
-          dl: [],
-          content: [
-            h(
-              HTMLParagraphElement,
-              {},
-              "Check the console in the browser developer tools to see errors!"
-            )
-          ]
-        };
-      case "Idle":
-        return {
-          dl: [],
-          content: viewCompilationModeChooser({
-            dispatch,
-            sendKey: status.sendKey,
-            compilationMode,
-            warnAboutCompilationModeMismatch: true,
-            info
-          })
-        };
-      case "SleepingBeforeReconnect":
-        return {
-          dl: [
-            ["attempt", status.attemptNumber.toString()],
-            ["sleep", printRetryWaitMs(status.attemptNumber)]
-          ],
-          content: [
-            ...viewHttpsInfo(info.webSocketUrl),
-            h(
-              HTMLButtonElement,
-              {
-                onclick: () => {
-                  dispatch({ tag: "PressedReconnectNow" });
-                }
-              },
-              "Reconnect web socket now"
-            )
-          ]
-        };
-      case "UnexpectedError":
-        return {
-          dl: [],
-          content: [
-            h(
-              HTMLParagraphElement,
-              {},
-              "I ran into an unexpected error! This is the error message:"
-            ),
-            h(HTMLPreElement, {}, status.message)
-          ]
-        };
-      case "WaitingForReload":
-        return {
-          dl: [],
-          content: model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? [
-            "A while ago I reloaded the page to get new compiled JavaScript.",
-            "But it looks like after the last page reload I got the same JavaScript as before, instead of new stuff!",
-            `The old JavaScript was compiled ${new Date(
-              model.elmCompiledTimestamp
-            ).toLocaleString()}, and so was the JavaScript currently running.`,
-            "I currently need to reload the page again, but fear a reload loop if I try.",
-            "Do you have accidental HTTP caching enabled maybe?",
-            "Try hard refreshing the page and see if that helps, and consider disabling HTTP caching during development."
-          ].map((text) => h(HTMLParagraphElement, {}, text)) : [h(HTMLParagraphElement, {}, "Waiting for other targets\u2026")]
-        };
-    }
-  }
-  function viewErrorOverlayToggleButton(dispatch, errorOverlay) {
-    return h(
-      HTMLButtonElement,
-      {
-        attrs: {
-          "data-test-id": errorOverlay.openErrorOverlay ? "HideErrorOverlayButton" : "ShowErrorOverlayButton"
-        },
-        onclick: () => {
-          dispatch({
-            tag: "ChangedOpenErrorOverlay",
-            openErrorOverlay: !errorOverlay.openErrorOverlay
-          });
-        }
-      },
-      errorOverlay.openErrorOverlay ? "Hide errors" : "Show errors"
-    );
-  }
-  function viewOpenEditorError(error) {
-    switch (error.tag) {
-      case "EnvNotSet":
-        return [
-          h(
-            HTMLDivElement,
-            { className: CLASS.envNotSet },
-            h(
-              HTMLParagraphElement,
-              {},
-              "\u2139\uFE0F Clicking error locations only works if you set it up."
-            ),
-            h(
-              HTMLParagraphElement,
-              {},
-              "Check this out: ",
-              h(
-                HTMLAnchorElement,
-                {
-                  href: "https://lydell.github.io/elm-watch/browser-ui/#clickable-error-locations",
-                  target: "_blank",
-                  rel: "noreferrer"
-                },
-                h(
-                  HTMLElement,
-                  { localName: "strong" },
-                  "Clickable error locations"
-                )
-              )
-            )
-          )
-        ];
-      case "CommandFailed":
-        return [
-          h(
-            HTMLParagraphElement,
-            {},
-            h(
-              HTMLElement,
-              { localName: "strong" },
-              "Opening the location in your editor failed!"
-            )
-          ),
-          h(HTMLPreElement, {}, error.message)
-        ];
-    }
-  }
-  function idleIcon(status) {
-    switch (status.tag) {
-      case "DecodeError":
-      case "MissingWindowElm":
-        return "\u274C";
-      case "NoProgramsAtAll":
-        return "\u2753";
-      case "DebuggerModeStatus":
-        return "\u2705";
-    }
-  }
-  function compilationModeIcon(compilationMode) {
-    switch (compilationMode) {
-      case "proxy":
-        return void 0;
-      case "debug":
-        return icon("\u{1F41B}", "Debug mode", { className: CLASS.debugModeIcon });
-      case "standard":
-        return void 0;
-      case "optimize":
-        return icon("\u{1F680}", "Optimize mode");
-    }
-  }
-  function printWebSocketUrl(url) {
-    const hostname = url.hostname.endsWith(".localhost") ? "localhost" : url.hostname;
-    return `${url.protocol}//${hostname}:${url.port}`;
-  }
-  function viewHttpsInfo(webSocketUrl) {
-    return webSocketUrl.protocol === "wss:" ? [
-      h(
-        HTMLParagraphElement,
-        {},
-        h(HTMLElement, { localName: "strong" }, "Having trouble connecting?")
-      ),
-      h(
-        HTMLParagraphElement,
-        {},
-        " You might need to ",
-        h(
-          HTMLAnchorElement,
-          { href: new URL(`https://${webSocketUrl.host}/accept`).href },
-          "accept elm-watch\u2019s self-signed certificate"
-        ),
-        ". "
-      ),
-      h(
-        HTMLParagraphElement,
-        {},
-        h(
-          HTMLAnchorElement,
-          {
-            href: "https://lydell.github.io/elm-watch/https/",
-            target: "_blank",
-            rel: "noreferrer"
-          },
-          "More information"
-        ),
-        "."
-      )
-    ] : [];
-  }
-  var noDebuggerYetReason = "The Elm debugger isn't available at this point.";
-  function noDebuggerReason(noDebuggerProgramTypes) {
-    return `The Elm debugger isn't supported by ${humanList(
-      Array.from(noDebuggerProgramTypes, (programType) => `\`${programType}\``),
-      "and"
-    )} programs.`;
-  }
-  function humanList(list, joinWord) {
-    const { length } = list;
-    return length <= 1 ? list.join("") : length === 2 ? list.join(` ${joinWord} `) : `${list.slice(0, length - 2).join(", ")}, ${list.slice(-2).join(` ${joinWord} `)}`;
-  }
-  function viewCompilationModeChooser({
-    dispatch,
-    sendKey,
-    compilationMode: selectedMode,
-    warnAboutCompilationModeMismatch,
-    info
-  }) {
-    switch (info.initializedElmAppsStatus.tag) {
-      case "DecodeError":
-        return [
-          h(
-            HTMLParagraphElement,
-            {},
-            "window.Elm does not look like expected! This is the error message:"
-          ),
-          h(HTMLPreElement, {}, info.initializedElmAppsStatus.message)
-        ];
-      case "MissingWindowElm":
-        return [
-          h(
-            HTMLParagraphElement,
-            {},
-            "elm-watch requires ",
-            h(
-              HTMLAnchorElement,
-              {
-                href: "https://lydell.github.io/elm-watch/window.Elm/",
-                target: "_blank",
-                rel: "noreferrer"
-              },
-              "window.Elm"
-            ),
-            " to exist, but it is undefined!"
-          )
-        ];
-      case "NoProgramsAtAll":
-        return [
-          h(
-            HTMLParagraphElement,
-            {},
-            "It looks like no Elm apps were initialized by elm-watch. Check the console in the browser developer tools to see potential errors!"
-          )
-        ];
-      case "DebuggerModeStatus": {
-        const compilationModes = [
-          {
-            mode: "debug",
-            name: "Debug",
-            status: info.initializedElmAppsStatus.status
-          },
-          { mode: "standard", name: "Standard", status: { tag: "Enabled" } },
-          { mode: "optimize", name: "Optimize", status: { tag: "Enabled" } }
-        ];
-        return [
-          h(
-            HTMLFieldSetElement,
-            { disabled: sendKey === void 0 },
-            h(HTMLLegendElement, {}, "Compilation mode"),
-            ...compilationModes.map(({ mode, name, status }) => {
-              const nameWithIcon = h(
-                HTMLSpanElement,
-                { className: CLASS.compilationModeWithIcon },
-                name,
-                mode === selectedMode ? compilationModeIcon(mode) : void 0
-              );
-              return h(
-                HTMLLabelElement,
-                { className: status.tag },
-                h(HTMLInputElement, {
-                  type: "radio",
-                  name: `CompilationMode-${info.targetName}`,
-                  value: mode,
-                  checked: mode === selectedMode,
-                  disabled: sendKey === void 0 || status.tag === "Disabled",
-                  onchange: sendKey === void 0 ? void 0 : () => {
-                    dispatch({
-                      tag: "ChangedCompilationMode",
-                      compilationMode: mode,
-                      sendKey
-                    });
-                  }
-                }),
-                ...status.tag === "Enabled" ? [
-                  nameWithIcon,
-                  warnAboutCompilationModeMismatch && mode === selectedMode && selectedMode !== info.originalCompilationMode && info.originalCompilationMode !== "proxy" ? h(
-                    HTMLElement,
-                    { localName: "small" },
-                    `Note: The code currently running is in ${ORIGINAL_COMPILATION_MODE} mode.`
-                  ) : void 0
-                ] : [
-                  nameWithIcon,
-                  h(HTMLElement, { localName: "small" }, status.reason)
-                ]
-              );
-            })
-          )
-        ];
-      }
-    }
-  }
-  var DATA_TARGET_NAMES = "data-target-names";
-  function updateErrorOverlay(targetName, dispatch, sendKey, errors, overlay, overlayCloseButton) {
-    const existingErrorElements = new Map(
-      Array.from(overlay.children, (element) => [
-        element.id,
-        {
-          targetNames: new Set(
-            (element.getAttribute(DATA_TARGET_NAMES) ?? "").split("\n")
-          ),
-          element
-        }
-      ])
-    );
-    for (const [id, { targetNames, element }] of existingErrorElements) {
-      if (targetNames.has(targetName) && !errors.has(id)) {
-        targetNames.delete(targetName);
-        if (targetNames.size === 0) {
-          element.remove();
-        } else {
-          element.setAttribute(DATA_TARGET_NAMES, [...targetNames].join("\n"));
-        }
-      }
-    }
-    let previousElement = void 0;
-    for (const [id, error] of errors) {
-      const maybeExisting = existingErrorElements.get(id);
-      if (maybeExisting === void 0) {
-        const element = viewOverlayError(
-          targetName,
-          dispatch,
-          sendKey,
-          id,
-          error
-        );
-        if (previousElement === void 0) {
-          overlay.prepend(element);
-        } else {
-          previousElement.after(element);
-        }
-        overlay.style.backgroundColor = error.backgroundColor;
-        overlayCloseButton.style.setProperty(
-          "--foregroundColor",
-          error.foregroundColor
-        );
-        overlayCloseButton.style.setProperty(
-          "--backgroundColor",
-          error.backgroundColor
-        );
-        previousElement = element;
-      } else {
-        if (!maybeExisting.targetNames.has(targetName)) {
-          maybeExisting.element.setAttribute(
-            DATA_TARGET_NAMES,
-            [...maybeExisting.targetNames, targetName].join("\n")
-          );
-        }
-        previousElement = maybeExisting.element;
-      }
-    }
-    const hidden = !overlay.hasChildNodes();
-    overlay.hidden = hidden;
-    overlayCloseButton.hidden = hidden;
-    overlayCloseButton.style.right = `${overlay.offsetWidth - overlay.clientWidth}px`;
-  }
-  function viewOverlayError(targetName, dispatch, sendKey, id, error) {
-    return h(
-      HTMLDetailsElement,
-      {
-        open: true,
-        id,
-        style: {
-          backgroundColor: error.backgroundColor,
-          color: error.foregroundColor
-        },
-        attrs: {
-          [DATA_TARGET_NAMES]: targetName
-        }
-      },
-      h(
-        HTMLElement,
-        { localName: "summary" },
-        h(
-          HTMLSpanElement,
-          {
-            className: CLASS.errorTitle,
-            style: {
-              backgroundColor: error.backgroundColor
-            }
-          },
-          error.title
-        ),
-        error.location === void 0 ? void 0 : h(
-          HTMLParagraphElement,
-          {},
-          viewErrorLocation(dispatch, sendKey, error.location)
-        )
-      ),
-      h(HTMLPreElement, { innerHTML: error.htmlContent })
-    );
-  }
-  function viewErrorLocation(dispatch, sendKey, location) {
-    switch (location.tag) {
-      case "FileOnly":
-        return viewErrorLocationButton(
-          dispatch,
-          sendKey,
-          {
-            file: location.file,
-            line: 1,
-            column: 1
-          },
-          location.file.absolutePath
-        );
-      case "FileWithLineAndColumn": {
-        return viewErrorLocationButton(
-          dispatch,
-          sendKey,
-          location,
-          `${location.file.absolutePath}:${location.line}:${location.column}`
-        );
-      }
-      case "Target":
-        return `Target: ${location.targetName}`;
-    }
-  }
-  function viewErrorLocationButton(dispatch, sendKey, location, text) {
-    return sendKey === void 0 ? text : h(
-      HTMLButtonElement,
-      {
-        className: CLASS.errorLocationButton,
-        onclick: () => {
-          dispatch({
-            tag: "PressedOpenEditor",
-            file: location.file,
-            line: location.line,
-            column: location.column,
-            sendKey
-          });
-        }
-      },
-      text
-    );
-  }
-  if (typeof WebSocket !== "undefined") {
-    run();
-  }
-})();
 
-"use strict";
-(() => {
-  // client/proxy.ts
-  var window = globalThis;
-  var error = new Error(
-    `
-Certain parts of \`window.Elm\` aren't available yet! That's fine though!
 
-\`elm-watch\` has generated a stub file in place of Elm's compiled JS. This is
-because until just now, there was no need to spend time on generating JS!
 
-This stub file is now connecting to \`elm-watch\` via WebSocket, letting it know
-that it's time to start generating real JS. Once that's done the page should be
-automatically reloaded. But if you get compilation errors you'll need to fix
-them first.
-  `.trim()
-  );
-  error.elmWatchProxy = true;
-  var existing = window.Elm;
-  var existingObject = typeof existing === "object" && existing !== null ? existing : void 0;
-  var elmProxy = new Proxy(existingObject ?? {}, {
-    get(target, property, receiver) {
-      const value = Reflect.get(target, property, receiver);
-      if (value !== void 0 || property.toString().startsWith("_")) {
-        return value;
-      }
-      throw error;
-    },
-    getOwnPropertyDescriptor(target, property) {
-      const descriptor = Reflect.getOwnPropertyDescriptor(target, property);
-      if (descriptor !== void 0) {
-        return descriptor;
-      }
-      throw error;
-    },
-    has(target, property) {
-      if (property === "__elmWatchProxy") {
-        return true;
-      }
-      const has = Reflect.has(target, property);
-      if (has) {
-        return true;
-      }
-      throw error;
-    },
-    ownKeys() {
-      throw error;
-    }
-  });
-  window.Elm = elmProxy;
-})();
+// TRACK PRELOADS
+//
+// This is used by code in elm/browser and elm/http
+// to register any HTTP requests that are triggered by init.
+//
+
+
+var _Platform_preload;
+
+
+function _Platform_registerPreload(url)
+{
+	_Platform_preload.add(url);
+}
+
+
+
+// EFFECT MANAGERS
+
+
+var _Platform_effectManagers = {};
+
+
+function _Platform_setupEffects(managers, sendToApp)
+{
+	var ports;
+
+	// setup all necessary effect managers
+	for (var key in _Platform_effectManagers)
+	{
+		var manager = _Platform_effectManagers[key];
+
+		if (manager.a)
+		{
+			ports = ports || {};
+			ports[key] = manager.a(key, sendToApp);
+		}
+
+		managers[key] = _Platform_instantiateManager(manager, sendToApp);
+	}
+
+	return ports;
+}
+
+
+function _Platform_createManager(init, onEffects, onSelfMsg, cmdMap, subMap)
+{
+	return {
+		b: init,
+		c: onEffects,
+		d: onSelfMsg,
+		e: cmdMap,
+		f: subMap
+	};
+}
+
+
+function _Platform_instantiateManager(info, sendToApp)
+{
+	var router = {
+		g: sendToApp,
+		h: undefined
+	};
+
+	var onEffects = info.c;
+	var onSelfMsg = info.d;
+	var cmdMap = info.e;
+	var subMap = info.f;
+
+	function loop(state)
+	{
+		return A2(_Scheduler_andThen, loop, _Scheduler_receive(function(msg)
+		{
+			var value = msg.a;
+
+			if (msg.$ === 0)
+			{
+				return A3(onSelfMsg, router, value, state);
+			}
+
+			return cmdMap && subMap
+				? A4(onEffects, router, value.i, value.j, state)
+				: A3(onEffects, router, cmdMap ? value.i : value.j, state);
+		}));
+	}
+
+	return router.h = _Scheduler_rawSpawn(A2(_Scheduler_andThen, loop, info.b));
+}
+
+
+
+// ROUTING
+
+
+var _Platform_sendToApp = F2(function(router, msg)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		router.g(msg);
+		callback(_Scheduler_succeed(_Utils_Tuple0));
+	});
+});
+
+
+var _Platform_sendToSelf = F2(function(router, msg)
+{
+	return A2(_Scheduler_send, router.h, {
+		$: 0,
+		a: msg
+	});
+});
+
+
+
+// BAGS
+
+
+function _Platform_leaf(home)
+{
+	return function(value)
+	{
+		return {
+			$: 1,
+			k: home,
+			l: value
+		};
+	};
+}
+
+
+function _Platform_batch(list)
+{
+	return {
+		$: 2,
+		m: list
+	};
+}
+
+
+var _Platform_map = F2(function(tagger, bag)
+{
+	return {
+		$: 3,
+		n: tagger,
+		o: bag
+	}
+});
+
+
+
+// PIPE BAGS INTO EFFECT MANAGERS
+
+
+function _Platform_dispatchEffects(managers, cmdBag, subBag)
+{
+	var effectsDict = {};
+	_Platform_gatherEffects(true, cmdBag, effectsDict, null);
+	_Platform_gatherEffects(false, subBag, effectsDict, null);
+
+	for (var home in managers)
+	{
+		_Scheduler_rawSend(managers[home], {
+			$: 'fx',
+			a: effectsDict[home] || { i: _List_Nil, j: _List_Nil }
+		});
+	}
+}
+
+
+function _Platform_gatherEffects(isCmd, bag, effectsDict, taggers)
+{
+	switch (bag.$)
+	{
+		case 1:
+			var home = bag.k;
+			var effect = _Platform_toEffect(isCmd, home, taggers, bag.l);
+			effectsDict[home] = _Platform_insert(isCmd, effect, effectsDict[home]);
+			return;
+
+		case 2:
+			for (var list = bag.m; list.b; list = list.b) // WHILE_CONS
+			{
+				_Platform_gatherEffects(isCmd, list.a, effectsDict, taggers);
+			}
+			return;
+
+		case 3:
+			_Platform_gatherEffects(isCmd, bag.o, effectsDict, {
+				p: bag.n,
+				q: taggers
+			});
+			return;
+	}
+}
+
+
+function _Platform_toEffect(isCmd, home, taggers, value)
+{
+	function applyTaggers(x)
+	{
+		for (var temp = taggers; temp; temp = temp.q)
+		{
+			x = temp.p(x);
+		}
+		return x;
+	}
+
+	var map = isCmd
+		? _Platform_effectManagers[home].e
+		: _Platform_effectManagers[home].f;
+
+	return A2(map, applyTaggers, value)
+}
+
+
+function _Platform_insert(isCmd, newEffect, effects)
+{
+	effects = effects || { i: _List_Nil, j: _List_Nil };
+
+	isCmd
+		? (effects.i = _List_Cons(newEffect, effects.i))
+		: (effects.j = _List_Cons(newEffect, effects.j));
+
+	return effects;
+}
+
+
+
+// PORTS
+
+
+function _Platform_checkPortName(name)
+{
+	if (_Platform_effectManagers[name])
+	{
+		_Debug_crash(3, name)
+	}
+}
+
+
+
+// OUTGOING PORTS
+
+
+function _Platform_outgoingPort(name, converter)
+{
+	_Platform_checkPortName(name);
+	_Platform_effectManagers[name] = {
+		e: _Platform_outgoingPortMap,
+		r: converter,
+		a: _Platform_setupOutgoingPort
+	};
+	return _Platform_leaf(name);
+}
+
+
+var _Platform_outgoingPortMap = F2(function(tagger, value) { return value; });
+
+
+function _Platform_setupOutgoingPort(name)
+{
+	var subs = [];
+	var converter = _Platform_effectManagers[name].r;
+
+	// CREATE MANAGER
+
+	var init = _Process_sleep(0);
+
+	_Platform_effectManagers[name].b = init;
+	_Platform_effectManagers[name].c = F3(function(router, cmdList, state)
+	{
+		for ( ; cmdList.b; cmdList = cmdList.b) // WHILE_CONS
+		{
+			// grab a separate reference to subs in case unsubscribe is called
+			var currentSubs = subs;
+			var value = _Json_unwrap(converter(cmdList.a));
+			for (var i = 0; i < currentSubs.length; i++)
+			{
+				currentSubs[i](value);
+			}
+		}
+		return init;
+	});
+
+	// PUBLIC API
+
+	function subscribe(callback)
+	{
+		subs.push(callback);
+	}
+
+	function unsubscribe(callback)
+	{
+		// copy subs into a new array in case unsubscribe is called within a
+		// subscribed callback
+		subs = subs.slice();
+		var index = subs.indexOf(callback);
+		if (index >= 0)
+		{
+			subs.splice(index, 1);
+		}
+	}
+
+	return {
+		subscribe: subscribe,
+		unsubscribe: unsubscribe
+	};
+}
+
+
+
+// INCOMING PORTS
+
+
+function _Platform_incomingPort(name, converter)
+{
+	_Platform_checkPortName(name);
+	_Platform_effectManagers[name] = {
+		f: _Platform_incomingPortMap,
+		r: converter,
+		a: _Platform_setupIncomingPort
+	};
+	return _Platform_leaf(name);
+}
+
+
+var _Platform_incomingPortMap = F2(function(tagger, finalTagger)
+{
+	return function(value)
+	{
+		return tagger(finalTagger(value));
+	};
+});
+
+
+function _Platform_setupIncomingPort(name, sendToApp)
+{
+	var subs = _List_Nil;
+	var converter = _Platform_effectManagers[name].r;
+
+	// CREATE MANAGER
+
+	var init = _Scheduler_succeed(null);
+
+	_Platform_effectManagers[name].b = init;
+	_Platform_effectManagers[name].c = F3(function(router, subList, state)
+	{
+		subs = subList;
+		return init;
+	});
+
+	// PUBLIC API
+
+	function send(incomingValue)
+	{
+		var result = A2(_Json_run, converter, _Json_wrap(incomingValue));
+
+		$elm$core$Result$isOk(result) || _Debug_crash(4, name, result.a);
+
+		var value = result.a;
+		for (var temp = subs; temp.b; temp = temp.b) // WHILE_CONS
+		{
+			sendToApp(temp.a(value));
+		}
+	}
+
+	return { send: send };
+}
+
+
+
+// EXPORT ELM MODULES
+//
+// Have DEBUG and PROD versions so that we can (1) give nicer errors in
+// debug mode and (2) not pay for the bits needed for that in prod mode.
+//
+
+
+function _Platform_export_UNUSED(exports)
+{
+	scope['Elm']
+		? _Platform_mergeExportsProd(scope['Elm'], exports)
+		: scope['Elm'] = exports;
+}
+
+
+function _Platform_mergeExportsProd(obj, exports)
+{
+	for (var name in exports)
+	{
+		(name in obj)
+			? (name == 'init')
+				? _Debug_crash(6)
+				: _Platform_mergeExportsProd(obj[name], exports[name])
+			: (obj[name] = exports[name]);
+	}
+}
+
+
+function _Platform_export(exports)
+{
+	scope['Elm']
+		? _Platform_mergeExportsDebug('Elm', scope['Elm'], exports)
+		: scope['Elm'] = exports;
+}
+
+
+function _Platform_mergeExportsDebug(moduleName, obj, exports)
+{
+	for (var name in exports)
+	{
+		(name in obj)
+			? (name == 'init')
+				? _Debug_crash(6, moduleName)
+				: _Platform_mergeExportsDebug(moduleName + '.' + name, obj[name], exports[name])
+			: (obj[name] = exports[name]);
+	}
+}
+
+
+
+
+// HELPERS
+
+
+var _VirtualDom_divertHrefToApp;
+
+var _VirtualDom_doc = typeof document !== 'undefined' ? document : {};
+
+
+function _VirtualDom_appendChild(parent, child)
+{
+	parent.appendChild(child);
+}
+
+var _VirtualDom_init = F4(function(virtualNode, flagDecoder, debugMetadata, args)
+{
+	// NOTE: this function needs _Platform_export available to work
+
+	/**_UNUSED/
+	var node = args['node'];
+	//*/
+	/**/
+	var node = args && args['node'] ? args['node'] : _Debug_crash(0);
+	//*/
+
+	node.parentNode.replaceChild(
+		_VirtualDom_render(virtualNode, function() {}),
+		node
+	);
+
+	return {};
+});
+
+
+
+// TEXT
+
+
+function _VirtualDom_text(string)
+{
+	return {
+		$: 0,
+		a: string
+	};
+}
+
+
+
+// NODE
+
+
+var _VirtualDom_nodeNS = F2(function(namespace, tag)
+{
+	return F2(function(factList, kidList)
+	{
+		for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) // WHILE_CONS
+		{
+			var kid = kidList.a;
+			descendantsCount += (kid.b || 0);
+			kids.push(kid);
+		}
+		descendantsCount += kids.length;
+
+		return {
+			$: 1,
+			c: tag,
+			d: _VirtualDom_organizeFacts(factList),
+			e: kids,
+			f: namespace,
+			b: descendantsCount
+		};
+	});
+});
+
+
+var _VirtualDom_node = _VirtualDom_nodeNS(undefined);
+
+
+
+// KEYED NODE
+
+
+var _VirtualDom_keyedNodeNS = F2(function(namespace, tag)
+{
+	return F2(function(factList, kidList)
+	{
+		for (var kids = [], descendantsCount = 0; kidList.b; kidList = kidList.b) // WHILE_CONS
+		{
+			var kid = kidList.a;
+			descendantsCount += (kid.b.b || 0);
+			kids.push(kid);
+		}
+		descendantsCount += kids.length;
+
+		return {
+			$: 2,
+			c: tag,
+			d: _VirtualDom_organizeFacts(factList),
+			e: kids,
+			f: namespace,
+			b: descendantsCount
+		};
+	});
+});
+
+
+var _VirtualDom_keyedNode = _VirtualDom_keyedNodeNS(undefined);
+
+
+
+// CUSTOM
+
+
+function _VirtualDom_custom(factList, model, render, diff)
+{
+	return {
+		$: 3,
+		d: _VirtualDom_organizeFacts(factList),
+		g: model,
+		h: render,
+		i: diff
+	};
+}
+
+
+
+// MAP
+
+
+var _VirtualDom_map = F2(function(tagger, node)
+{
+	return {
+		$: 4,
+		j: tagger,
+		k: node,
+		b: 1 + (node.b || 0)
+	};
+});
+
+
+
+// LAZY
+
+
+function _VirtualDom_thunk(refs, thunk)
+{
+	return {
+		$: 5,
+		l: refs,
+		m: thunk,
+		k: undefined
+	};
+}
+
+var _VirtualDom_lazy = F2(function(func, a)
+{
+	return _VirtualDom_thunk([func, a], function() {
+		return func(a);
+	});
+});
+
+var _VirtualDom_lazy2 = F3(function(func, a, b)
+{
+	return _VirtualDom_thunk([func, a, b], function() {
+		return A2(func, a, b);
+	});
+});
+
+var _VirtualDom_lazy3 = F4(function(func, a, b, c)
+{
+	return _VirtualDom_thunk([func, a, b, c], function() {
+		return A3(func, a, b, c);
+	});
+});
+
+var _VirtualDom_lazy4 = F5(function(func, a, b, c, d)
+{
+	return _VirtualDom_thunk([func, a, b, c, d], function() {
+		return A4(func, a, b, c, d);
+	});
+});
+
+var _VirtualDom_lazy5 = F6(function(func, a, b, c, d, e)
+{
+	return _VirtualDom_thunk([func, a, b, c, d, e], function() {
+		return A5(func, a, b, c, d, e);
+	});
+});
+
+var _VirtualDom_lazy6 = F7(function(func, a, b, c, d, e, f)
+{
+	return _VirtualDom_thunk([func, a, b, c, d, e, f], function() {
+		return A6(func, a, b, c, d, e, f);
+	});
+});
+
+var _VirtualDom_lazy7 = F8(function(func, a, b, c, d, e, f, g)
+{
+	return _VirtualDom_thunk([func, a, b, c, d, e, f, g], function() {
+		return A7(func, a, b, c, d, e, f, g);
+	});
+});
+
+var _VirtualDom_lazy8 = F9(function(func, a, b, c, d, e, f, g, h)
+{
+	return _VirtualDom_thunk([func, a, b, c, d, e, f, g, h], function() {
+		return A8(func, a, b, c, d, e, f, g, h);
+	});
+});
+
+
+
+// FACTS
+
+
+var _VirtualDom_on = F2(function(key, handler)
+{
+	return {
+		$: 'a0',
+		n: key,
+		o: handler
+	};
+});
+var _VirtualDom_style = F2(function(key, value)
+{
+	return {
+		$: 'a1',
+		n: key,
+		o: value
+	};
+});
+var _VirtualDom_property = F2(function(key, value)
+{
+	return {
+		$: 'a2',
+		n: key,
+		o: value
+	};
+});
+var _VirtualDom_attribute = F2(function(key, value)
+{
+	return {
+		$: 'a3',
+		n: key,
+		o: value
+	};
+});
+var _VirtualDom_attributeNS = F3(function(namespace, key, value)
+{
+	return {
+		$: 'a4',
+		n: key,
+		o: { f: namespace, o: value }
+	};
+});
+
+
+
+// XSS ATTACK VECTOR CHECKS
+
+
+function _VirtualDom_noScript(tag)
+{
+	return tag == 'script' ? 'p' : tag;
+}
+
+function _VirtualDom_noOnOrFormAction(key)
+{
+	return /^(on|formAction$)/i.test(key) ? 'data-' + key : key;
+}
+
+function _VirtualDom_noInnerHtmlOrFormAction(key)
+{
+	return key == 'innerHTML' || key == 'formAction' ? 'data-' + key : key;
+}
+
+function _VirtualDom_noJavaScriptUri_UNUSED(value)
+{
+	return /^javascript:/i.test(value.replace(/\s/g,'')) ? '' : value;
+}
+
+function _VirtualDom_noJavaScriptUri(value)
+{
+	return /^javascript:/i.test(value.replace(/\s/g,''))
+		? 'javascript:alert("This is an XSS vector. Please use ports or web components instead.")'
+		: value;
+}
+
+function _VirtualDom_noJavaScriptOrHtmlUri_UNUSED(value)
+{
+	return /^\s*(javascript:|data:text\/html)/i.test(value) ? '' : value;
+}
+
+function _VirtualDom_noJavaScriptOrHtmlUri(value)
+{
+	return /^\s*(javascript:|data:text\/html)/i.test(value)
+		? 'javascript:alert("This is an XSS vector. Please use ports or web components instead.")'
+		: value;
+}
+
+
+
+// MAP FACTS
+
+
+var _VirtualDom_mapAttribute = F2(function(func, attr)
+{
+	return (attr.$ === 'a0')
+		? A2(_VirtualDom_on, attr.n, _VirtualDom_mapHandler(func, attr.o))
+		: attr;
+});
+
+function _VirtualDom_mapHandler(func, handler)
+{
+	var tag = $elm$virtual_dom$VirtualDom$toHandlerInt(handler);
+
+	// 0 = Normal
+	// 1 = MayStopPropagation
+	// 2 = MayPreventDefault
+	// 3 = Custom
+
+	return {
+		$: handler.$,
+		a:
+			!tag
+				? A2($elm$json$Json$Decode$map, func, handler.a)
+				:
+			A3($elm$json$Json$Decode$map2,
+				tag < 3
+					? _VirtualDom_mapEventTuple
+					: _VirtualDom_mapEventRecord,
+				$elm$json$Json$Decode$succeed(func),
+				handler.a
+			)
+	};
+}
+
+var _VirtualDom_mapEventTuple = F2(function(func, tuple)
+{
+	return _Utils_Tuple2(func(tuple.a), tuple.b);
+});
+
+var _VirtualDom_mapEventRecord = F2(function(func, record)
+{
+	return {
+		message: func(record.message),
+		stopPropagation: record.stopPropagation,
+		preventDefault: record.preventDefault
+	}
+});
+
+
+
+// ORGANIZE FACTS
+
+
+function _VirtualDom_organizeFacts(factList)
+{
+	for (var facts = {}; factList.b; factList = factList.b) // WHILE_CONS
+	{
+		var entry = factList.a;
+
+		var tag = entry.$;
+		var key = entry.n;
+		var value = entry.o;
+
+		if (tag === 'a2')
+		{
+			(key === 'className')
+				? _VirtualDom_addClass(facts, key, _Json_unwrap(value))
+				: facts[key] = _Json_unwrap(value);
+
+			continue;
+		}
+
+		var subFacts = facts[tag] || (facts[tag] = {});
+		(tag === 'a3' && key === 'class')
+			? _VirtualDom_addClass(subFacts, key, value)
+			: subFacts[key] = value;
+	}
+
+	return facts;
+}
+
+function _VirtualDom_addClass(object, key, newClass)
+{
+	var classes = object[key];
+	object[key] = classes ? classes + ' ' + newClass : newClass;
+}
+
+
+
+// RENDER
+
+
+function _VirtualDom_render(vNode, eventNode)
+{
+	var tag = vNode.$;
+
+	if (tag === 5)
+	{
+		return _VirtualDom_render(vNode.k || (vNode.k = vNode.m()), eventNode);
+	}
+
+	if (tag === 0)
+	{
+		return _VirtualDom_doc.createTextNode(vNode.a);
+	}
+
+	if (tag === 4)
+	{
+		var subNode = vNode.k;
+		var tagger = vNode.j;
+
+		while (subNode.$ === 4)
+		{
+			typeof tagger !== 'object'
+				? tagger = [tagger, subNode.j]
+				: tagger.push(subNode.j);
+
+			subNode = subNode.k;
+		}
+
+		var subEventRoot = { j: tagger, p: eventNode };
+		var domNode = _VirtualDom_render(subNode, subEventRoot);
+		domNode.elm_event_node_ref = subEventRoot;
+		return domNode;
+	}
+
+	if (tag === 3)
+	{
+		var domNode = vNode.h(vNode.g);
+		_VirtualDom_applyFacts(domNode, eventNode, vNode.d);
+		return domNode;
+	}
+
+	// at this point `tag` must be 1 or 2
+
+	var domNode = vNode.f
+		? _VirtualDom_doc.createElementNS(vNode.f, vNode.c)
+		: _VirtualDom_doc.createElement(vNode.c);
+
+	if (_VirtualDom_divertHrefToApp && vNode.c == 'a')
+	{
+		domNode.addEventListener('click', _VirtualDom_divertHrefToApp(domNode));
+	}
+
+	_VirtualDom_applyFacts(domNode, eventNode, vNode.d);
+
+	for (var kids = vNode.e, i = 0; i < kids.length; i++)
+	{
+		_VirtualDom_appendChild(domNode, _VirtualDom_render(tag === 1 ? kids[i] : kids[i].b, eventNode));
+	}
+
+	return domNode;
+}
+
+
+
+// APPLY FACTS
+
+
+function _VirtualDom_applyFacts(domNode, eventNode, facts)
+{
+	for (var key in facts)
+	{
+		var value = facts[key];
+
+		key === 'a1'
+			? _VirtualDom_applyStyles(domNode, value)
+			:
+		key === 'a0'
+			? _VirtualDom_applyEvents(domNode, eventNode, value)
+			:
+		key === 'a3'
+			? _VirtualDom_applyAttrs(domNode, value)
+			:
+		key === 'a4'
+			? _VirtualDom_applyAttrsNS(domNode, value)
+			:
+		((key !== 'value' && key !== 'checked') || domNode[key] !== value) && (domNode[key] = value);
+	}
+}
+
+
+
+// APPLY STYLES
+
+
+function _VirtualDom_applyStyles(domNode, styles)
+{
+	var domNodeStyle = domNode.style;
+
+	for (var key in styles)
+	{
+		domNodeStyle[key] = styles[key];
+	}
+}
+
+
+
+// APPLY ATTRS
+
+
+function _VirtualDom_applyAttrs(domNode, attrs)
+{
+	for (var key in attrs)
+	{
+		var value = attrs[key];
+		typeof value !== 'undefined'
+			? domNode.setAttribute(key, value)
+			: domNode.removeAttribute(key);
+	}
+}
+
+
+
+// APPLY NAMESPACED ATTRS
+
+
+function _VirtualDom_applyAttrsNS(domNode, nsAttrs)
+{
+	for (var key in nsAttrs)
+	{
+		var pair = nsAttrs[key];
+		var namespace = pair.f;
+		var value = pair.o;
+
+		typeof value !== 'undefined'
+			? domNode.setAttributeNS(namespace, key, value)
+			: domNode.removeAttributeNS(namespace, key);
+	}
+}
+
+
+
+// APPLY EVENTS
+
+
+function _VirtualDom_applyEvents(domNode, eventNode, events)
+{
+	var allCallbacks = domNode.elmFs || (domNode.elmFs = {});
+
+	for (var key in events)
+	{
+		var newHandler = events[key];
+		var oldCallback = allCallbacks[key];
+
+		if (!newHandler)
+		{
+			domNode.removeEventListener(key, oldCallback);
+			allCallbacks[key] = undefined;
+			continue;
+		}
+
+		if (oldCallback)
+		{
+			var oldHandler = oldCallback.q;
+			if (oldHandler.$ === newHandler.$)
+			{
+				oldCallback.q = newHandler;
+				continue;
+			}
+			domNode.removeEventListener(key, oldCallback);
+		}
+
+		oldCallback = _VirtualDom_makeCallback(eventNode, newHandler);
+		domNode.addEventListener(key, oldCallback,
+			_VirtualDom_passiveSupported
+			&& { passive: $elm$virtual_dom$VirtualDom$toHandlerInt(newHandler) < 2 }
+		);
+		allCallbacks[key] = oldCallback;
+	}
+}
+
+
+
+// PASSIVE EVENTS
+
+
+var _VirtualDom_passiveSupported;
+
+try
+{
+	window.addEventListener('t', null, Object.defineProperty({}, 'passive', {
+		get: function() { _VirtualDom_passiveSupported = true; }
+	}));
+}
+catch(e) {}
+
+
+
+// EVENT HANDLERS
+
+
+function _VirtualDom_makeCallback(eventNode, initialHandler)
+{
+	function callback(event)
+	{
+		var handler = callback.q;
+		var result = _Json_runHelp(handler.a, event);
+
+		if (!$elm$core$Result$isOk(result))
+		{
+			return;
+		}
+
+		var tag = $elm$virtual_dom$VirtualDom$toHandlerInt(handler);
+
+		// 0 = Normal
+		// 1 = MayStopPropagation
+		// 2 = MayPreventDefault
+		// 3 = Custom
+
+		var value = result.a;
+		var message = !tag ? value : tag < 3 ? value.a : value.message;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.stopPropagation;
+		var currentEventNode = (
+			stopPropagation && event.stopPropagation(),
+			(tag == 2 ? value.b : tag == 3 && value.preventDefault) && event.preventDefault(),
+			eventNode
+		);
+		var tagger;
+		var i;
+		while (tagger = currentEventNode.j)
+		{
+			if (typeof tagger == 'function')
+			{
+				message = tagger(message);
+			}
+			else
+			{
+				for (var i = tagger.length; i--; )
+				{
+					message = tagger[i](message);
+				}
+			}
+			currentEventNode = currentEventNode.p;
+		}
+		currentEventNode(message, stopPropagation); // stopPropagation implies isSync
+	}
+
+	callback.q = initialHandler;
+
+	return callback;
+}
+
+function _VirtualDom_equalEvents(x, y)
+{
+	return x.$ == y.$ && _Json_equality(x.a, y.a);
+}
+
+
+
+// DIFF
+
+
+// TODO: Should we do patches like in iOS?
+//
+// type Patch
+//   = At Int Patch
+//   | Batch (List Patch)
+//   | Change ...
+//
+// How could it not be better?
+//
+function _VirtualDom_diff(x, y)
+{
+	var patches = [];
+	_VirtualDom_diffHelp(x, y, patches, 0);
+	return patches;
+}
+
+
+function _VirtualDom_pushPatch(patches, type, index, data)
+{
+	var patch = {
+		$: type,
+		r: index,
+		s: data,
+		t: undefined,
+		u: undefined
+	};
+	patches.push(patch);
+	return patch;
+}
+
+
+function _VirtualDom_diffHelp(x, y, patches, index)
+{
+	if (x === y)
+	{
+		return;
+	}
+
+	var xType = x.$;
+	var yType = y.$;
+
+	// Bail if you run into different types of nodes. Implies that the
+	// structure has changed significantly and it's not worth a diff.
+	if (xType !== yType)
+	{
+		if (xType === 1 && yType === 2)
+		{
+			y = _VirtualDom_dekey(y);
+			yType = 1;
+		}
+		else
+		{
+			_VirtualDom_pushPatch(patches, 0, index, y);
+			return;
+		}
+	}
+
+	// Now we know that both nodes are the same $.
+	switch (yType)
+	{
+		case 5:
+			var xRefs = x.l;
+			var yRefs = y.l;
+			var i = xRefs.length;
+			var same = i === yRefs.length;
+			while (same && i--)
+			{
+				same = xRefs[i] === yRefs[i];
+			}
+			if (same)
+			{
+				y.k = x.k;
+				return;
+			}
+			y.k = y.m();
+			var subPatches = [];
+			_VirtualDom_diffHelp(x.k, y.k, subPatches, 0);
+			subPatches.length > 0 && _VirtualDom_pushPatch(patches, 1, index, subPatches);
+			return;
+
+		case 4:
+			// gather nested taggers
+			var xTaggers = x.j;
+			var yTaggers = y.j;
+			var nesting = false;
+
+			var xSubNode = x.k;
+			while (xSubNode.$ === 4)
+			{
+				nesting = true;
+
+				typeof xTaggers !== 'object'
+					? xTaggers = [xTaggers, xSubNode.j]
+					: xTaggers.push(xSubNode.j);
+
+				xSubNode = xSubNode.k;
+			}
+
+			var ySubNode = y.k;
+			while (ySubNode.$ === 4)
+			{
+				nesting = true;
+
+				typeof yTaggers !== 'object'
+					? yTaggers = [yTaggers, ySubNode.j]
+					: yTaggers.push(ySubNode.j);
+
+				ySubNode = ySubNode.k;
+			}
+
+			// Just bail if different numbers of taggers. This implies the
+			// structure of the virtual DOM has changed.
+			if (nesting && xTaggers.length !== yTaggers.length)
+			{
+				_VirtualDom_pushPatch(patches, 0, index, y);
+				return;
+			}
+
+			// check if taggers are "the same"
+			if (nesting ? !_VirtualDom_pairwiseRefEqual(xTaggers, yTaggers) : xTaggers !== yTaggers)
+			{
+				_VirtualDom_pushPatch(patches, 2, index, yTaggers);
+			}
+
+			// diff everything below the taggers
+			_VirtualDom_diffHelp(xSubNode, ySubNode, patches, index + 1);
+			return;
+
+		case 0:
+			if (x.a !== y.a)
+			{
+				_VirtualDom_pushPatch(patches, 3, index, y.a);
+			}
+			return;
+
+		case 1:
+			_VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKids);
+			return;
+
+		case 2:
+			_VirtualDom_diffNodes(x, y, patches, index, _VirtualDom_diffKeyedKids);
+			return;
+
+		case 3:
+			if (x.h !== y.h)
+			{
+				_VirtualDom_pushPatch(patches, 0, index, y);
+				return;
+			}
+
+			var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
+			factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
+
+			var patch = y.i(x.g, y.g);
+			patch && _VirtualDom_pushPatch(patches, 5, index, patch);
+
+			return;
+	}
+}
+
+// assumes the incoming arrays are the same length
+function _VirtualDom_pairwiseRefEqual(as, bs)
+{
+	for (var i = 0; i < as.length; i++)
+	{
+		if (as[i] !== bs[i])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function _VirtualDom_diffNodes(x, y, patches, index, diffKids)
+{
+	// Bail if obvious indicators have changed. Implies more serious
+	// structural changes such that it's not worth it to diff.
+	if (x.c !== y.c || x.f !== y.f)
+	{
+		_VirtualDom_pushPatch(patches, 0, index, y);
+		return;
+	}
+
+	var factsDiff = _VirtualDom_diffFacts(x.d, y.d);
+	factsDiff && _VirtualDom_pushPatch(patches, 4, index, factsDiff);
+
+	diffKids(x, y, patches, index);
+}
+
+
+
+// DIFF FACTS
+
+
+// TODO Instead of creating a new diff object, it's possible to just test if
+// there *is* a diff. During the actual patch, do the diff again and make the
+// modifications directly. This way, there's no new allocations. Worth it?
+function _VirtualDom_diffFacts(x, y, category)
+{
+	var diff;
+
+	// look for changes and removals
+	for (var xKey in x)
+	{
+		if (xKey === 'a1' || xKey === 'a0' || xKey === 'a3' || xKey === 'a4')
+		{
+			var subDiff = _VirtualDom_diffFacts(x[xKey], y[xKey] || {}, xKey);
+			if (subDiff)
+			{
+				diff = diff || {};
+				diff[xKey] = subDiff;
+			}
+			continue;
+		}
+
+		// remove if not in the new facts
+		if (!(xKey in y))
+		{
+			diff = diff || {};
+			diff[xKey] =
+				!category
+					? (typeof x[xKey] === 'string' ? '' : null)
+					:
+				(category === 'a1')
+					? ''
+					:
+				(category === 'a0' || category === 'a3')
+					? undefined
+					:
+				{ f: x[xKey].f, o: undefined };
+
+			continue;
+		}
+
+		var xValue = x[xKey];
+		var yValue = y[xKey];
+
+		// reference equal, so don't worry about it
+		if (xValue === yValue && xKey !== 'value' && xKey !== 'checked'
+			|| category === 'a0' && _VirtualDom_equalEvents(xValue, yValue))
+		{
+			continue;
+		}
+
+		diff = diff || {};
+		diff[xKey] = yValue;
+	}
+
+	// add new stuff
+	for (var yKey in y)
+	{
+		if (!(yKey in x))
+		{
+			diff = diff || {};
+			diff[yKey] = y[yKey];
+		}
+	}
+
+	return diff;
+}
+
+
+
+// DIFF KIDS
+
+
+function _VirtualDom_diffKids(xParent, yParent, patches, index)
+{
+	var xKids = xParent.e;
+	var yKids = yParent.e;
+
+	var xLen = xKids.length;
+	var yLen = yKids.length;
+
+	// FIGURE OUT IF THERE ARE INSERTS OR REMOVALS
+
+	if (xLen > yLen)
+	{
+		_VirtualDom_pushPatch(patches, 6, index, {
+			v: yLen,
+			i: xLen - yLen
+		});
+	}
+	else if (xLen < yLen)
+	{
+		_VirtualDom_pushPatch(patches, 7, index, {
+			v: xLen,
+			e: yKids
+		});
+	}
+
+	// PAIRWISE DIFF EVERYTHING ELSE
+
+	for (var minLen = xLen < yLen ? xLen : yLen, i = 0; i < minLen; i++)
+	{
+		var xKid = xKids[i];
+		_VirtualDom_diffHelp(xKid, yKids[i], patches, ++index);
+		index += xKid.b || 0;
+	}
+}
+
+
+
+// KEYED DIFF
+
+
+function _VirtualDom_diffKeyedKids(xParent, yParent, patches, rootIndex)
+{
+	var localPatches = [];
+
+	var changes = {}; // Dict String Entry
+	var inserts = []; // Array { index : Int, entry : Entry }
+	// type Entry = { tag : String, vnode : VNode, index : Int, data : _ }
+
+	var xKids = xParent.e;
+	var yKids = yParent.e;
+	var xLen = xKids.length;
+	var yLen = yKids.length;
+	var xIndex = 0;
+	var yIndex = 0;
+
+	var index = rootIndex;
+
+	while (xIndex < xLen && yIndex < yLen)
+	{
+		var x = xKids[xIndex];
+		var y = yKids[yIndex];
+
+		var xKey = x.a;
+		var yKey = y.a;
+		var xNode = x.b;
+		var yNode = y.b;
+
+		var newMatch = undefined;
+		var oldMatch = undefined;
+
+		// check if keys match
+
+		if (xKey === yKey)
+		{
+			index++;
+			_VirtualDom_diffHelp(xNode, yNode, localPatches, index);
+			index += xNode.b || 0;
+
+			xIndex++;
+			yIndex++;
+			continue;
+		}
+
+		// look ahead 1 to detect insertions and removals.
+
+		var xNext = xKids[xIndex + 1];
+		var yNext = yKids[yIndex + 1];
+
+		if (xNext)
+		{
+			var xNextKey = xNext.a;
+			var xNextNode = xNext.b;
+			oldMatch = yKey === xNextKey;
+		}
+
+		if (yNext)
+		{
+			var yNextKey = yNext.a;
+			var yNextNode = yNext.b;
+			newMatch = xKey === yNextKey;
+		}
+
+
+		// swap x and y
+		if (newMatch && oldMatch)
+		{
+			index++;
+			_VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
+			_VirtualDom_insertNode(changes, localPatches, xKey, yNode, yIndex, inserts);
+			index += xNode.b || 0;
+
+			index++;
+			_VirtualDom_removeNode(changes, localPatches, xKey, xNextNode, index);
+			index += xNextNode.b || 0;
+
+			xIndex += 2;
+			yIndex += 2;
+			continue;
+		}
+
+		// insert y
+		if (newMatch)
+		{
+			index++;
+			_VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
+			_VirtualDom_diffHelp(xNode, yNextNode, localPatches, index);
+			index += xNode.b || 0;
+
+			xIndex += 1;
+			yIndex += 2;
+			continue;
+		}
+
+		// remove x
+		if (oldMatch)
+		{
+			index++;
+			_VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
+			index += xNode.b || 0;
+
+			index++;
+			_VirtualDom_diffHelp(xNextNode, yNode, localPatches, index);
+			index += xNextNode.b || 0;
+
+			xIndex += 2;
+			yIndex += 1;
+			continue;
+		}
+
+		// remove x, insert y
+		if (xNext && xNextKey === yNextKey)
+		{
+			index++;
+			_VirtualDom_removeNode(changes, localPatches, xKey, xNode, index);
+			_VirtualDom_insertNode(changes, localPatches, yKey, yNode, yIndex, inserts);
+			index += xNode.b || 0;
+
+			index++;
+			_VirtualDom_diffHelp(xNextNode, yNextNode, localPatches, index);
+			index += xNextNode.b || 0;
+
+			xIndex += 2;
+			yIndex += 2;
+			continue;
+		}
+
+		break;
+	}
+
+	// eat up any remaining nodes with removeNode and insertNode
+
+	while (xIndex < xLen)
+	{
+		index++;
+		var x = xKids[xIndex];
+		var xNode = x.b;
+		_VirtualDom_removeNode(changes, localPatches, x.a, xNode, index);
+		index += xNode.b || 0;
+		xIndex++;
+	}
+
+	while (yIndex < yLen)
+	{
+		var endInserts = endInserts || [];
+		var y = yKids[yIndex];
+		_VirtualDom_insertNode(changes, localPatches, y.a, y.b, undefined, endInserts);
+		yIndex++;
+	}
+
+	if (localPatches.length > 0 || inserts.length > 0 || endInserts)
+	{
+		_VirtualDom_pushPatch(patches, 8, rootIndex, {
+			w: localPatches,
+			x: inserts,
+			y: endInserts
+		});
+	}
+}
+
+
+
+// CHANGES FROM KEYED DIFF
+
+
+var _VirtualDom_POSTFIX = '_elmW6BL';
+
+
+function _VirtualDom_insertNode(changes, localPatches, key, vnode, yIndex, inserts)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (!entry)
+	{
+		entry = {
+			c: 0,
+			z: vnode,
+			r: yIndex,
+			s: undefined
+		};
+
+		inserts.push({ r: yIndex, A: entry });
+		changes[key] = entry;
+
+		return;
+	}
+
+	// this key was removed earlier, a match!
+	if (entry.c === 1)
+	{
+		inserts.push({ r: yIndex, A: entry });
+
+		entry.c = 2;
+		var subPatches = [];
+		_VirtualDom_diffHelp(entry.z, vnode, subPatches, entry.r);
+		entry.r = yIndex;
+		entry.s.s = {
+			w: subPatches,
+			A: entry
+		};
+
+		return;
+	}
+
+	// this key has already been inserted or moved, a duplicate!
+	_VirtualDom_insertNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, yIndex, inserts);
+}
+
+
+function _VirtualDom_removeNode(changes, localPatches, key, vnode, index)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (!entry)
+	{
+		var patch = _VirtualDom_pushPatch(localPatches, 9, index, undefined);
+
+		changes[key] = {
+			c: 1,
+			z: vnode,
+			r: index,
+			s: patch
+		};
+
+		return;
+	}
+
+	// this key was inserted earlier, a match!
+	if (entry.c === 0)
+	{
+		entry.c = 2;
+		var subPatches = [];
+		_VirtualDom_diffHelp(vnode, entry.z, subPatches, index);
+
+		_VirtualDom_pushPatch(localPatches, 9, index, {
+			w: subPatches,
+			A: entry
+		});
+
+		return;
+	}
+
+	// this key has already been removed or moved, a duplicate!
+	_VirtualDom_removeNode(changes, localPatches, key + _VirtualDom_POSTFIX, vnode, index);
+}
+
+
+
+// ADD DOM NODES
+//
+// Each DOM node has an "index" assigned in order of traversal. It is important
+// to minimize our crawl over the actual DOM, so these indexes (along with the
+// descendantsCount of virtual nodes) let us skip touching entire subtrees of
+// the DOM if we know there are no patches there.
+
+
+function _VirtualDom_addDomNodes(domNode, vNode, patches, eventNode)
+{
+	_VirtualDom_addDomNodesHelp(domNode, vNode, patches, 0, 0, vNode.b, eventNode);
+}
+
+
+// assumes `patches` is non-empty and indexes increase monotonically.
+function _VirtualDom_addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
+{
+	var patch = patches[i];
+	var index = patch.r;
+
+	while (index === low)
+	{
+		var patchType = patch.$;
+
+		if (patchType === 1)
+		{
+			_VirtualDom_addDomNodes(domNode, vNode.k, patch.s, eventNode);
+		}
+		else if (patchType === 8)
+		{
+			patch.t = domNode;
+			patch.u = eventNode;
+
+			var subPatches = patch.s.w;
+			if (subPatches.length > 0)
+			{
+				_VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+			}
+		}
+		else if (patchType === 9)
+		{
+			patch.t = domNode;
+			patch.u = eventNode;
+
+			var data = patch.s;
+			if (data)
+			{
+				data.A.s = domNode;
+				var subPatches = data.w;
+				if (subPatches.length > 0)
+				{
+					_VirtualDom_addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+				}
+			}
+		}
+		else
+		{
+			patch.t = domNode;
+			patch.u = eventNode;
+		}
+
+		i++;
+
+		if (!(patch = patches[i]) || (index = patch.r) > high)
+		{
+			return i;
+		}
+	}
+
+	var tag = vNode.$;
+
+	if (tag === 4)
+	{
+		var subNode = vNode.k;
+
+		while (subNode.$ === 4)
+		{
+			subNode = subNode.k;
+		}
+
+		return _VirtualDom_addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
+	}
+
+	// tag must be 1 or 2 at this point
+
+	var vKids = vNode.e;
+	var childNodes = domNode.childNodes;
+	for (var j = 0; j < vKids.length; j++)
+	{
+		low++;
+		var vKid = tag === 1 ? vKids[j] : vKids[j].b;
+		var nextLow = low + (vKid.b || 0);
+		if (low <= index && index <= nextLow)
+		{
+			i = _VirtualDom_addDomNodesHelp(childNodes[j], vKid, patches, i, low, nextLow, eventNode);
+			if (!(patch = patches[i]) || (index = patch.r) > high)
+			{
+				return i;
+			}
+		}
+		low = nextLow;
+	}
+	return i;
+}
+
+
+
+// APPLY PATCHES
+
+
+function _VirtualDom_applyPatches(rootDomNode, oldVirtualNode, patches, eventNode)
+{
+	if (patches.length === 0)
+	{
+		return rootDomNode;
+	}
+
+	_VirtualDom_addDomNodes(rootDomNode, oldVirtualNode, patches, eventNode);
+	return _VirtualDom_applyPatchesHelp(rootDomNode, patches);
+}
+
+function _VirtualDom_applyPatchesHelp(rootDomNode, patches)
+{
+	for (var i = 0; i < patches.length; i++)
+	{
+		var patch = patches[i];
+		var localDomNode = patch.t
+		var newNode = _VirtualDom_applyPatch(localDomNode, patch);
+		if (localDomNode === rootDomNode)
+		{
+			rootDomNode = newNode;
+		}
+	}
+	return rootDomNode;
+}
+
+function _VirtualDom_applyPatch(domNode, patch)
+{
+	switch (patch.$)
+	{
+		case 0:
+			return _VirtualDom_applyPatchRedraw(domNode, patch.s, patch.u);
+
+		case 4:
+			_VirtualDom_applyFacts(domNode, patch.u, patch.s);
+			return domNode;
+
+		case 3:
+			domNode.replaceData(0, domNode.length, patch.s);
+			return domNode;
+
+		case 1:
+			return _VirtualDom_applyPatchesHelp(domNode, patch.s);
+
+		case 2:
+			if (domNode.elm_event_node_ref)
+			{
+				domNode.elm_event_node_ref.j = patch.s;
+			}
+			else
+			{
+				domNode.elm_event_node_ref = { j: patch.s, p: patch.u };
+			}
+			return domNode;
+
+		case 6:
+			var data = patch.s;
+			for (var i = 0; i < data.i; i++)
+			{
+				domNode.removeChild(domNode.childNodes[data.v]);
+			}
+			return domNode;
+
+		case 7:
+			var data = patch.s;
+			var kids = data.e;
+			var i = data.v;
+			var theEnd = domNode.childNodes[i];
+			for (; i < kids.length; i++)
+			{
+				domNode.insertBefore(_VirtualDom_render(kids[i], patch.u), theEnd);
+			}
+			return domNode;
+
+		case 9:
+			var data = patch.s;
+			if (!data)
+			{
+				domNode.parentNode.removeChild(domNode);
+				return domNode;
+			}
+			var entry = data.A;
+			if (typeof entry.r !== 'undefined')
+			{
+				domNode.parentNode.removeChild(domNode);
+			}
+			entry.s = _VirtualDom_applyPatchesHelp(domNode, data.w);
+			return domNode;
+
+		case 8:
+			return _VirtualDom_applyPatchReorder(domNode, patch);
+
+		case 5:
+			return patch.s(domNode);
+
+		default:
+			_Debug_crash(10); // 'Ran into an unknown patch!'
+	}
+}
+
+
+function _VirtualDom_applyPatchRedraw(domNode, vNode, eventNode)
+{
+	var parentNode = domNode.parentNode;
+	var newNode = _VirtualDom_render(vNode, eventNode);
+
+	if (!newNode.elm_event_node_ref)
+	{
+		newNode.elm_event_node_ref = domNode.elm_event_node_ref;
+	}
+
+	if (parentNode && newNode !== domNode)
+	{
+		parentNode.replaceChild(newNode, domNode);
+	}
+	return newNode;
+}
+
+
+function _VirtualDom_applyPatchReorder(domNode, patch)
+{
+	var data = patch.s;
+
+	// remove end inserts
+	var frag = _VirtualDom_applyPatchReorderEndInsertsHelp(data.y, patch);
+
+	// removals
+	domNode = _VirtualDom_applyPatchesHelp(domNode, data.w);
+
+	// inserts
+	var inserts = data.x;
+	for (var i = 0; i < inserts.length; i++)
+	{
+		var insert = inserts[i];
+		var entry = insert.A;
+		var node = entry.c === 2
+			? entry.s
+			: _VirtualDom_render(entry.z, patch.u);
+		domNode.insertBefore(node, domNode.childNodes[insert.r]);
+	}
+
+	// add end inserts
+	if (frag)
+	{
+		_VirtualDom_appendChild(domNode, frag);
+	}
+
+	return domNode;
+}
+
+
+function _VirtualDom_applyPatchReorderEndInsertsHelp(endInserts, patch)
+{
+	if (!endInserts)
+	{
+		return;
+	}
+
+	var frag = _VirtualDom_doc.createDocumentFragment();
+	for (var i = 0; i < endInserts.length; i++)
+	{
+		var insert = endInserts[i];
+		var entry = insert.A;
+		_VirtualDom_appendChild(frag, entry.c === 2
+			? entry.s
+			: _VirtualDom_render(entry.z, patch.u)
+		);
+	}
+	return frag;
+}
+
+
+function _VirtualDom_virtualize(node)
+{
+	// TEXT NODES
+
+	if (node.nodeType === 3)
+	{
+		return _VirtualDom_text(node.textContent);
+	}
+
+
+	// WEIRD NODES
+
+	if (node.nodeType !== 1)
+	{
+		return _VirtualDom_text('');
+	}
+
+
+	// ELEMENT NODES
+
+	var attrList = _List_Nil;
+	var attrs = node.attributes;
+	for (var i = attrs.length; i--; )
+	{
+		var attr = attrs[i];
+		var name = attr.name;
+		var value = attr.value;
+		attrList = _List_Cons( A2(_VirtualDom_attribute, name, value), attrList );
+	}
+
+	var tag = node.tagName.toLowerCase();
+	var kidList = _List_Nil;
+	var kids = node.childNodes;
+
+	for (var i = kids.length; i--; )
+	{
+		kidList = _List_Cons(_VirtualDom_virtualize(kids[i]), kidList);
+	}
+	return A3(_VirtualDom_node, tag, attrList, kidList);
+}
+
+function _VirtualDom_dekey(keyedNode)
+{
+	var keyedKids = keyedNode.e;
+	var len = keyedKids.length;
+	var kids = new Array(len);
+	for (var i = 0; i < len; i++)
+	{
+		kids[i] = keyedKids[i].b;
+	}
+
+	return {
+		$: 1,
+		c: keyedNode.c,
+		d: keyedNode.d,
+		e: kids,
+		f: keyedNode.f,
+		b: keyedNode.b
+	};
+}
+
+
+
+
+// ELEMENT
+
+
+var _Debugger_element;
+
+var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debugMetadata, args)
+{
+	return _Platform_initialize(
+		flagDecoder,
+		args,
+		impl.init,
+		impl.update,
+		impl.subscriptions,
+		function(sendToApp, initialModel) {
+			var view = impl.view;
+			/**_UNUSED/
+			var domNode = args['node'];
+			//*/
+			/**/
+			var domNode = args && args['node'] ? args['node'] : _Debug_crash(0);
+			//*/
+			var currNode = _VirtualDom_virtualize(domNode);
+
+			return _Browser_makeAnimator(initialModel, function(model)
+			{
+				var nextNode = view(model);
+				var patches = _VirtualDom_diff(currNode, nextNode);
+				domNode = _VirtualDom_applyPatches(domNode, currNode, patches, sendToApp);
+				currNode = nextNode;
+			});
+		}
+	);
+});
+
+
+
+// DOCUMENT
+
+
+var _Debugger_document;
+
+var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, debugMetadata, args)
+{
+	return _Platform_initialize(
+		flagDecoder,
+		args,
+		impl.init,
+		impl.update,
+		impl.subscriptions,
+		function(sendToApp, initialModel) {
+			var divertHrefToApp = impl.setup && impl.setup(sendToApp)
+			var view = impl.view;
+			var title = _VirtualDom_doc.title;
+			var bodyNode = _VirtualDom_doc.body;
+			var currNode = _VirtualDom_virtualize(bodyNode);
+			return _Browser_makeAnimator(initialModel, function(model)
+			{
+				_VirtualDom_divertHrefToApp = divertHrefToApp;
+				var doc = view(model);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.body);
+				var patches = _VirtualDom_diff(currNode, nextNode);
+				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
+				currNode = nextNode;
+				_VirtualDom_divertHrefToApp = 0;
+				(title !== doc.title) && (_VirtualDom_doc.title = title = doc.title);
+			});
+		}
+	);
+});
+
+
+
+// ANIMATION
+
+
+var _Browser_cancelAnimationFrame =
+	typeof cancelAnimationFrame !== 'undefined'
+		? cancelAnimationFrame
+		: function(id) { clearTimeout(id); };
+
+var _Browser_requestAnimationFrame =
+	typeof requestAnimationFrame !== 'undefined'
+		? requestAnimationFrame
+		: function(callback) { return setTimeout(callback, 1000 / 60); };
+
+
+function _Browser_makeAnimator(model, draw)
+{
+	draw(model);
+
+	var state = 0;
+
+	function updateIfNeeded()
+	{
+		state = state === 1
+			? 0
+			: ( _Browser_requestAnimationFrame(updateIfNeeded), draw(model), 1 );
+	}
+
+	return function(nextModel, isSync)
+	{
+		model = nextModel;
+
+		isSync
+			? ( draw(model),
+				state === 2 && (state = 1)
+				)
+			: ( state === 0 && _Browser_requestAnimationFrame(updateIfNeeded),
+				state = 2
+				);
+	};
+}
+
+
+
+// APPLICATION
+
+
+function _Browser_application(impl)
+{
+	var onUrlChange = impl.onUrlChange;
+	var onUrlRequest = impl.onUrlRequest;
+	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
+
+	return _Browser_document({
+		setup: function(sendToApp)
+		{
+			key.a = sendToApp;
+			_Browser_window.addEventListener('popstate', key);
+			_Browser_window.navigator.userAgent.indexOf('Trident') < 0 || _Browser_window.addEventListener('hashchange', key);
+
+			return F2(function(domNode, event)
+			{
+				if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button < 1 && !domNode.target && !domNode.hasAttribute('download'))
+				{
+					event.preventDefault();
+					var href = domNode.href;
+					var curr = _Browser_getUrl();
+					var next = $elm$url$Url$fromString(href).a;
+					sendToApp(onUrlRequest(
+						(next
+							&& curr.protocol === next.protocol
+							&& curr.host === next.host
+							&& curr.port_.a === next.port_.a
+						)
+							? $elm$browser$Browser$Internal(next)
+							: $elm$browser$Browser$External(href)
+					));
+				}
+			});
+		},
+		init: function(flags)
+		{
+			return A3(impl.init, flags, _Browser_getUrl(), key);
+		},
+		view: impl.view,
+		update: impl.update,
+		subscriptions: impl.subscriptions
+	});
+}
+
+function _Browser_getUrl()
+{
+	return $elm$url$Url$fromString(_VirtualDom_doc.location.href).a || _Debug_crash(1);
+}
+
+var _Browser_go = F2(function(key, n)
+{
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
+		n && history.go(n);
+		key();
+	}));
+});
+
+var _Browser_pushUrl = F2(function(key, url)
+{
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
+		history.pushState({}, '', url);
+		key();
+	}));
+});
+
+var _Browser_replaceUrl = F2(function(key, url)
+{
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function() {
+		history.replaceState({}, '', url);
+		key();
+	}));
+});
+
+
+
+// GLOBAL EVENTS
+
+
+var _Browser_fakeNode = { addEventListener: function() {}, removeEventListener: function() {} };
+var _Browser_doc = typeof document !== 'undefined' ? document : _Browser_fakeNode;
+var _Browser_window = typeof window !== 'undefined' ? window : _Browser_fakeNode;
+
+var _Browser_on = F3(function(node, eventName, sendToSelf)
+{
+	return _Scheduler_spawn(_Scheduler_binding(function(callback)
+	{
+		function handler(event)	{ _Scheduler_rawSpawn(sendToSelf(event)); }
+		node.addEventListener(eventName, handler, _VirtualDom_passiveSupported && { passive: true });
+		return function() { node.removeEventListener(eventName, handler); };
+	}));
+});
+
+var _Browser_decodeEvent = F2(function(decoder, event)
+{
+	var result = _Json_runHelp(decoder, event);
+	return $elm$core$Result$isOk(result) ? $elm$core$Maybe$Just(result.a) : $elm$core$Maybe$Nothing;
+});
+
+
+
+// PAGE VISIBILITY
+
+
+function _Browser_visibilityInfo()
+{
+	return (typeof _VirtualDom_doc.hidden !== 'undefined')
+		? { hidden: 'hidden', change: 'visibilitychange' }
+		:
+	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
+		? { hidden: 'mozHidden', change: 'mozvisibilitychange' }
+		:
+	(typeof _VirtualDom_doc.msHidden !== 'undefined')
+		? { hidden: 'msHidden', change: 'msvisibilitychange' }
+		:
+	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
+		? { hidden: 'webkitHidden', change: 'webkitvisibilitychange' }
+		: { hidden: 'hidden', change: 'visibilitychange' };
+}
+
+
+
+// ANIMATION FRAMES
+
+
+function _Browser_rAF()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = _Browser_requestAnimationFrame(function() {
+			callback(_Scheduler_succeed(Date.now()));
+		});
+
+		return function() {
+			_Browser_cancelAnimationFrame(id);
+		};
+	});
+}
+
+
+function _Browser_now()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(Date.now()));
+	});
+}
+
+
+
+// DOM STUFF
+
+
+function _Browser_withNode(id, doStuff)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_Browser_requestAnimationFrame(function() {
+			var node = document.getElementById(id);
+			callback(node
+				? _Scheduler_succeed(doStuff(node))
+				: _Scheduler_fail($elm$browser$Browser$Dom$NotFound(id))
+			);
+		});
+	});
+}
+
+
+function _Browser_withWindow(doStuff)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_Browser_requestAnimationFrame(function() {
+			callback(_Scheduler_succeed(doStuff()));
+		});
+	});
+}
+
+
+// FOCUS and BLUR
+
+
+var _Browser_call = F2(function(functionName, id)
+{
+	return _Browser_withNode(id, function(node) {
+		node[functionName]();
+		return _Utils_Tuple0;
+	});
+});
+
+
+
+// WINDOW VIEWPORT
+
+
+function _Browser_getViewport()
+{
+	return {
+		scene: _Browser_getScene(),
+		viewport: {
+			x: _Browser_window.pageXOffset,
+			y: _Browser_window.pageYOffset,
+			width: _Browser_doc.documentElement.clientWidth,
+			height: _Browser_doc.documentElement.clientHeight
+		}
+	};
+}
+
+function _Browser_getScene()
+{
+	var body = _Browser_doc.body;
+	var elem = _Browser_doc.documentElement;
+	return {
+		width: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		height: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+	};
+}
+
+var _Browser_setViewport = F2(function(x, y)
+{
+	return _Browser_withWindow(function()
+	{
+		_Browser_window.scroll(x, y);
+		return _Utils_Tuple0;
+	});
+});
+
+
+
+// ELEMENT VIEWPORT
+
+
+function _Browser_getViewportOf(id)
+{
+	return _Browser_withNode(id, function(node)
+	{
+		return {
+			scene: {
+				width: node.scrollWidth,
+				height: node.scrollHeight
+			},
+			viewport: {
+				x: node.scrollLeft,
+				y: node.scrollTop,
+				width: node.clientWidth,
+				height: node.clientHeight
+			}
+		};
+	});
+}
+
+
+var _Browser_setViewportOf = F3(function(id, x, y)
+{
+	return _Browser_withNode(id, function(node)
+	{
+		node.scrollLeft = x;
+		node.scrollTop = y;
+		return _Utils_Tuple0;
+	});
+});
+
+
+
+// ELEMENT
+
+
+function _Browser_getElement(id)
+{
+	return _Browser_withNode(id, function(node)
+	{
+		var rect = node.getBoundingClientRect();
+		var x = _Browser_window.pageXOffset;
+		var y = _Browser_window.pageYOffset;
+		return {
+			scene: _Browser_getScene(),
+			viewport: {
+				x: x,
+				y: y,
+				width: _Browser_doc.documentElement.clientWidth,
+				height: _Browser_doc.documentElement.clientHeight
+			},
+			element: {
+				x: x + rect.left,
+				y: y + rect.top,
+				width: rect.width,
+				height: rect.height
+			}
+		};
+	});
+}
+
+
+
+// LOAD and RELOAD
+
+
+function _Browser_reload(skipCache)
+{
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function(callback)
+	{
+		_VirtualDom_doc.location.reload(skipCache);
+	}));
+}
+
+function _Browser_load(url)
+{
+	return A2($elm$core$Task$perform, $elm$core$Basics$never, _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			_Browser_window.location = url;
+		}
+		catch(err)
+		{
+			// Only Firefox can throw a NS_ERROR_MALFORMED_URI exception here.
+			// Other browsers reload the page, so let's be consistent about that.
+			_VirtualDom_doc.location.reload(false);
+		}
+	}));
+}
+
+
+
+// SEND REQUEST
+
+var _Http_toTask = F3(function(router, toTask, request)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		function done(response) {
+			callback(toTask(request.expect.a(response)));
+		}
+
+		var xhr = new XMLHttpRequest();
+		xhr.addEventListener('error', function() { done($elm$http$Http$NetworkError_); });
+		xhr.addEventListener('timeout', function() { done($elm$http$Http$Timeout_); });
+		xhr.addEventListener('load', function() { done(_Http_toResponse(request.expect.b, xhr)); });
+		$elm$core$Maybe$isJust(request.tracker) && _Http_track(router, xhr, request.tracker.a);
+
+		try {
+			xhr.open(request.method, request.url, true);
+		} catch (e) {
+			return done($elm$http$Http$BadUrl_(request.url));
+		}
+
+		_Http_configureRequest(xhr, request);
+
+		request.body.a && xhr.setRequestHeader('Content-Type', request.body.a);
+		xhr.send(request.body.b);
+
+		return function() { xhr.c = true; xhr.abort(); };
+	});
+});
+
+
+// CONFIGURE
+
+function _Http_configureRequest(xhr, request)
+{
+	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
+	{
+		xhr.setRequestHeader(headers.a.a, headers.a.b);
+	}
+	xhr.timeout = request.timeout.a || 0;
+	xhr.responseType = request.expect.d;
+	xhr.withCredentials = request.allowCookiesFromOtherDomains;
+}
+
+
+// RESPONSES
+
+function _Http_toResponse(toBody, xhr)
+{
+	return A2(
+		200 <= xhr.status && xhr.status < 300 ? $elm$http$Http$GoodStatus_ : $elm$http$Http$BadStatus_,
+		_Http_toMetadata(xhr),
+		toBody(xhr.response)
+	);
+}
+
+
+// METADATA
+
+function _Http_toMetadata(xhr)
+{
+	return {
+		url: xhr.responseURL,
+		statusCode: xhr.status,
+		statusText: xhr.statusText,
+		headers: _Http_parseHeaders(xhr.getAllResponseHeaders())
+	};
+}
+
+
+// HEADERS
+
+function _Http_parseHeaders(rawHeaders)
+{
+	if (!rawHeaders)
+	{
+		return $elm$core$Dict$empty;
+	}
+
+	var headers = $elm$core$Dict$empty;
+	var headerPairs = rawHeaders.split('\r\n');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf(': ');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3($elm$core$Dict$update, key, function(oldValue) {
+				return $elm$core$Maybe$Just($elm$core$Maybe$isJust(oldValue)
+					? value + ', ' + oldValue.a
+					: value
+				);
+			}, headers);
+		}
+	}
+	return headers;
+}
+
+
+// EXPECT
+
+var _Http_expect = F3(function(type, toBody, toValue)
+{
+	return {
+		$: 0,
+		d: type,
+		b: toBody,
+		a: toValue
+	};
+});
+
+var _Http_mapExpect = F2(function(func, expect)
+{
+	return {
+		$: 0,
+		d: expect.d,
+		b: expect.b,
+		a: function(x) { return func(expect.a(x)); }
+	};
+});
+
+function _Http_toDataView(arrayBuffer)
+{
+	return new DataView(arrayBuffer);
+}
+
+
+// BODY and PARTS
+
+var _Http_emptyBody = { $: 0 };
+var _Http_pair = F2(function(a, b) { return { $: 0, a: a, b: b }; });
+
+function _Http_toFormData(parts)
+{
+	for (var formData = new FormData(); parts.b; parts = parts.b) // WHILE_CONS
+	{
+		var part = parts.a;
+		formData.append(part.a, part.b);
+	}
+	return formData;
+}
+
+var _Http_bytesToBlob = F2(function(mime, bytes)
+{
+	return new Blob([bytes], { type: mime });
+});
+
+
+// PROGRESS
+
+function _Http_track(router, xhr, tracker)
+{
+	// TODO check out lengthComputable on loadstart event
+
+	xhr.upload.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Sending({
+			sent: event.loaded,
+			size: event.total
+		}))));
+	});
+	xhr.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Receiving({
+			received: event.loaded,
+			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
+		}))));
+	});
+}var $elm$core$Basics$EQ = {$: 'EQ'};
+var $elm$core$Basics$GT = {$: 'GT'};
+var $elm$core$Basics$LT = {$: 'LT'};
+var $elm$core$List$cons = _List_cons;
+var $elm$core$Dict$foldr = F3(
+	function (func, acc, t) {
+		foldr:
+		while (true) {
+			if (t.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = t.b;
+				var value = t.c;
+				var left = t.d;
+				var right = t.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldr, func, acc, right)),
+					$temp$t = left;
+				func = $temp$func;
+				acc = $temp$acc;
+				t = $temp$t;
+				continue foldr;
+			}
+		}
+	});
+var $elm$core$Dict$toList = function (dict) {
+	return A3(
+		$elm$core$Dict$foldr,
+		F3(
+			function (key, value, list) {
+				return A2(
+					$elm$core$List$cons,
+					_Utils_Tuple2(key, value),
+					list);
+			}),
+		_List_Nil,
+		dict);
+};
+var $elm$core$Dict$keys = function (dict) {
+	return A3(
+		$elm$core$Dict$foldr,
+		F3(
+			function (key, value, keyList) {
+				return A2($elm$core$List$cons, key, keyList);
+			}),
+		_List_Nil,
+		dict);
+};
+var $elm$core$Set$toList = function (_v0) {
+	var dict = _v0.a;
+	return $elm$core$Dict$keys(dict);
+};
+var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var $elm$core$Array$foldr = F3(
+	function (func, baseCase, _v0) {
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			$elm$core$Elm$JsArray$foldr,
+			helper,
+			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var $elm$core$Array$toList = function (array) {
+	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
+};
+var $elm$core$Result$Err = function (a) {
+	return {$: 'Err', a: a};
+};
+var $elm$json$Json$Decode$Failure = F2(
+	function (a, b) {
+		return {$: 'Failure', a: a, b: b};
+	});
+var $elm$json$Json$Decode$Field = F2(
+	function (a, b) {
+		return {$: 'Field', a: a, b: b};
+	});
+var $elm$json$Json$Decode$Index = F2(
+	function (a, b) {
+		return {$: 'Index', a: a, b: b};
+	});
+var $elm$core$Result$Ok = function (a) {
+	return {$: 'Ok', a: a};
+};
+var $elm$json$Json$Decode$OneOf = function (a) {
+	return {$: 'OneOf', a: a};
+};
+var $elm$core$Basics$False = {$: 'False'};
+var $elm$core$Basics$add = _Basics_add;
+var $elm$core$Maybe$Just = function (a) {
+	return {$: 'Just', a: a};
+};
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
+var $elm$core$String$all = _String_all;
+var $elm$core$Basics$and = _Basics_and;
+var $elm$core$Basics$append = _Utils_append;
+var $elm$json$Json$Encode$encode = _Json_encode;
+var $elm$core$String$fromInt = _String_fromNumber;
+var $elm$core$String$join = F2(
+	function (sep, chunks) {
+		return A2(
+			_String_join,
+			sep,
+			_List_toArray(chunks));
+	});
+var $elm$core$String$split = F2(
+	function (sep, string) {
+		return _List_fromArray(
+			A2(_String_split, sep, string));
+	});
+var $elm$json$Json$Decode$indent = function (str) {
+	return A2(
+		$elm$core$String$join,
+		'\n    ',
+		A2($elm$core$String$split, '\n', str));
+};
+var $elm$core$List$foldl = F3(
+	function (func, acc, list) {
+		foldl:
+		while (true) {
+			if (!list.b) {
+				return acc;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				var $temp$func = func,
+					$temp$acc = A2(func, x, acc),
+					$temp$list = xs;
+				func = $temp$func;
+				acc = $temp$acc;
+				list = $temp$list;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$List$length = function (xs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, i) {
+				return i + 1;
+			}),
+		0,
+		xs);
+};
+var $elm$core$List$map2 = _List_map2;
+var $elm$core$Basics$le = _Utils_le;
+var $elm$core$Basics$sub = _Basics_sub;
+var $elm$core$List$rangeHelp = F3(
+	function (lo, hi, list) {
+		rangeHelp:
+		while (true) {
+			if (_Utils_cmp(lo, hi) < 1) {
+				var $temp$lo = lo,
+					$temp$hi = hi - 1,
+					$temp$list = A2($elm$core$List$cons, hi, list);
+				lo = $temp$lo;
+				hi = $temp$hi;
+				list = $temp$list;
+				continue rangeHelp;
+			} else {
+				return list;
+			}
+		}
+	});
+var $elm$core$List$range = F2(
+	function (lo, hi) {
+		return A3($elm$core$List$rangeHelp, lo, hi, _List_Nil);
+	});
+var $elm$core$List$indexedMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$map2,
+			f,
+			A2(
+				$elm$core$List$range,
+				0,
+				$elm$core$List$length(xs) - 1),
+			xs);
+	});
+var $elm$core$Char$toCode = _Char_toCode;
+var $elm$core$Char$isLower = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (97 <= code) && (code <= 122);
+};
+var $elm$core$Char$isUpper = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (code <= 90) && (65 <= code);
+};
+var $elm$core$Basics$or = _Basics_or;
+var $elm$core$Char$isAlpha = function (_char) {
+	return $elm$core$Char$isLower(_char) || $elm$core$Char$isUpper(_char);
+};
+var $elm$core$Char$isDigit = function (_char) {
+	var code = $elm$core$Char$toCode(_char);
+	return (code <= 57) && (48 <= code);
+};
+var $elm$core$Char$isAlphaNum = function (_char) {
+	return $elm$core$Char$isLower(_char) || ($elm$core$Char$isUpper(_char) || $elm$core$Char$isDigit(_char));
+};
+var $elm$core$List$reverse = function (list) {
+	return A3($elm$core$List$foldl, $elm$core$List$cons, _List_Nil, list);
+};
+var $elm$core$String$uncons = _String_uncons;
+var $elm$json$Json$Decode$errorOneOf = F2(
+	function (i, error) {
+		return '\n\n(' + ($elm$core$String$fromInt(i + 1) + (') ' + $elm$json$Json$Decode$indent(
+			$elm$json$Json$Decode$errorToString(error))));
+	});
+var $elm$json$Json$Decode$errorToString = function (error) {
+	return A2($elm$json$Json$Decode$errorToStringHelp, error, _List_Nil);
+};
+var $elm$json$Json$Decode$errorToStringHelp = F2(
+	function (error, context) {
+		errorToStringHelp:
+		while (true) {
+			switch (error.$) {
+				case 'Field':
+					var f = error.a;
+					var err = error.b;
+					var isSimple = function () {
+						var _v1 = $elm$core$String$uncons(f);
+						if (_v1.$ === 'Nothing') {
+							return false;
+						} else {
+							var _v2 = _v1.a;
+							var _char = _v2.a;
+							var rest = _v2.b;
+							return $elm$core$Char$isAlpha(_char) && A2($elm$core$String$all, $elm$core$Char$isAlphaNum, rest);
+						}
+					}();
+					var fieldName = isSimple ? ('.' + f) : ('[\'' + (f + '\']'));
+					var $temp$error = err,
+						$temp$context = A2($elm$core$List$cons, fieldName, context);
+					error = $temp$error;
+					context = $temp$context;
+					continue errorToStringHelp;
+				case 'Index':
+					var i = error.a;
+					var err = error.b;
+					var indexName = '[' + ($elm$core$String$fromInt(i) + ']');
+					var $temp$error = err,
+						$temp$context = A2($elm$core$List$cons, indexName, context);
+					error = $temp$error;
+					context = $temp$context;
+					continue errorToStringHelp;
+				case 'OneOf':
+					var errors = error.a;
+					if (!errors.b) {
+						return 'Ran into a Json.Decode.oneOf with no possibilities' + function () {
+							if (!context.b) {
+								return '!';
+							} else {
+								return ' at json' + A2(
+									$elm$core$String$join,
+									'',
+									$elm$core$List$reverse(context));
+							}
+						}();
+					} else {
+						if (!errors.b.b) {
+							var err = errors.a;
+							var $temp$error = err,
+								$temp$context = context;
+							error = $temp$error;
+							context = $temp$context;
+							continue errorToStringHelp;
+						} else {
+							var starter = function () {
+								if (!context.b) {
+									return 'Json.Decode.oneOf';
+								} else {
+									return 'The Json.Decode.oneOf at json' + A2(
+										$elm$core$String$join,
+										'',
+										$elm$core$List$reverse(context));
+								}
+							}();
+							var introduction = starter + (' failed in the following ' + ($elm$core$String$fromInt(
+								$elm$core$List$length(errors)) + ' ways:'));
+							return A2(
+								$elm$core$String$join,
+								'\n\n',
+								A2(
+									$elm$core$List$cons,
+									introduction,
+									A2($elm$core$List$indexedMap, $elm$json$Json$Decode$errorOneOf, errors)));
+						}
+					}
+				default:
+					var msg = error.a;
+					var json = error.b;
+					var introduction = function () {
+						if (!context.b) {
+							return 'Problem with the given value:\n\n';
+						} else {
+							return 'Problem with the value at json' + (A2(
+								$elm$core$String$join,
+								'',
+								$elm$core$List$reverse(context)) + ':\n\n    ');
+						}
+					}();
+					return introduction + ($elm$json$Json$Decode$indent(
+						A2($elm$json$Json$Encode$encode, 4, json)) + ('\n\n' + msg));
+			}
+		}
+	});
+var $elm$core$Array$branchFactor = 32;
+var $elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+	});
+var $elm$core$Elm$JsArray$empty = _JsArray_empty;
+var $elm$core$Basics$ceiling = _Basics_ceiling;
+var $elm$core$Basics$fdiv = _Basics_fdiv;
+var $elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var $elm$core$Basics$toFloat = _Basics_toFloat;
+var $elm$core$Array$shiftStep = $elm$core$Basics$ceiling(
+	A2($elm$core$Basics$logBase, 2, $elm$core$Array$branchFactor));
+var $elm$core$Array$empty = A4($elm$core$Array$Array_elm_builtin, 0, $elm$core$Array$shiftStep, $elm$core$Elm$JsArray$empty, $elm$core$Elm$JsArray$empty);
+var $elm$core$Elm$JsArray$initialize = _JsArray_initialize;
+var $elm$core$Array$Leaf = function (a) {
+	return {$: 'Leaf', a: a};
+};
+var $elm$core$Basics$apL = F2(
+	function (f, x) {
+		return f(x);
+	});
+var $elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
+	});
+var $elm$core$Basics$eq = _Utils_equal;
+var $elm$core$Basics$floor = _Basics_floor;
+var $elm$core$Elm$JsArray$length = _JsArray_length;
+var $elm$core$Basics$gt = _Utils_gt;
+var $elm$core$Basics$max = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) > 0) ? x : y;
+	});
+var $elm$core$Basics$mul = _Basics_mul;
+var $elm$core$Array$SubTree = function (a) {
+	return {$: 'SubTree', a: a};
+};
+var $elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
+var $elm$core$Array$compressNodes = F2(
+	function (nodes, acc) {
+		compressNodes:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, nodes);
+			var node = _v0.a;
+			var remainingNodes = _v0.b;
+			var newAcc = A2(
+				$elm$core$List$cons,
+				$elm$core$Array$SubTree(node),
+				acc);
+			if (!remainingNodes.b) {
+				return $elm$core$List$reverse(newAcc);
+			} else {
+				var $temp$nodes = remainingNodes,
+					$temp$acc = newAcc;
+				nodes = $temp$nodes;
+				acc = $temp$acc;
+				continue compressNodes;
+			}
+		}
+	});
+var $elm$core$Tuple$first = function (_v0) {
+	var x = _v0.a;
+	return x;
+};
+var $elm$core$Array$treeFromBuilder = F2(
+	function (nodeList, nodeListSize) {
+		treeFromBuilder:
+		while (true) {
+			var newNodeSize = $elm$core$Basics$ceiling(nodeListSize / $elm$core$Array$branchFactor);
+			if (newNodeSize === 1) {
+				return A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, nodeList).a;
+			} else {
+				var $temp$nodeList = A2($elm$core$Array$compressNodes, nodeList, _List_Nil),
+					$temp$nodeListSize = newNodeSize;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue treeFromBuilder;
+			}
+		}
+	});
+var $elm$core$Array$builderToArray = F2(
+	function (reverseNodeList, builder) {
+		if (!builder.nodeListSize) {
+			return A4(
+				$elm$core$Array$Array_elm_builtin,
+				$elm$core$Elm$JsArray$length(builder.tail),
+				$elm$core$Array$shiftStep,
+				$elm$core$Elm$JsArray$empty,
+				builder.tail);
+		} else {
+			var treeLen = builder.nodeListSize * $elm$core$Array$branchFactor;
+			var depth = $elm$core$Basics$floor(
+				A2($elm$core$Basics$logBase, $elm$core$Array$branchFactor, treeLen - 1));
+			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.nodeList) : builder.nodeList;
+			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.nodeListSize);
+			return A4(
+				$elm$core$Array$Array_elm_builtin,
+				$elm$core$Elm$JsArray$length(builder.tail) + treeLen,
+				A2($elm$core$Basics$max, 5, depth * $elm$core$Array$shiftStep),
+				tree,
+				builder.tail);
+		}
+	});
+var $elm$core$Basics$idiv = _Basics_idiv;
+var $elm$core$Basics$lt = _Utils_lt;
+var $elm$core$Array$initializeHelp = F5(
+	function (fn, fromIndex, len, nodeList, tail) {
+		initializeHelp:
+		while (true) {
+			if (fromIndex < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					false,
+					{nodeList: nodeList, nodeListSize: (len / $elm$core$Array$branchFactor) | 0, tail: tail});
+			} else {
+				var leaf = $elm$core$Array$Leaf(
+					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
+				var $temp$fn = fn,
+					$temp$fromIndex = fromIndex - $elm$core$Array$branchFactor,
+					$temp$len = len,
+					$temp$nodeList = A2($elm$core$List$cons, leaf, nodeList),
+					$temp$tail = tail;
+				fn = $temp$fn;
+				fromIndex = $temp$fromIndex;
+				len = $temp$len;
+				nodeList = $temp$nodeList;
+				tail = $temp$tail;
+				continue initializeHelp;
+			}
+		}
+	});
+var $elm$core$Basics$remainderBy = _Basics_remainderBy;
+var $elm$core$Array$initialize = F2(
+	function (len, fn) {
+		if (len <= 0) {
+			return $elm$core$Array$empty;
+		} else {
+			var tailLen = len % $elm$core$Array$branchFactor;
+			var tail = A3($elm$core$Elm$JsArray$initialize, tailLen, len - tailLen, fn);
+			var initialFromIndex = (len - tailLen) - $elm$core$Array$branchFactor;
+			return A5($elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
+		}
+	});
+var $elm$core$Basics$True = {$: 'True'};
+var $elm$core$Result$isOk = function (result) {
+	if (result.$ === 'Ok') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$json$Json$Decode$map = _Json_map1;
+var $elm$json$Json$Decode$map2 = _Json_map2;
+var $elm$json$Json$Decode$succeed = _Json_succeed;
+var $elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
+	switch (handler.$) {
+		case 'Normal':
+			return 0;
+		case 'MayStopPropagation':
+			return 1;
+		case 'MayPreventDefault':
+			return 2;
+		default:
+			return 3;
+	}
+};
+var $elm$browser$Browser$External = function (a) {
+	return {$: 'External', a: a};
+};
+var $elm$browser$Browser$Internal = function (a) {
+	return {$: 'Internal', a: a};
+};
+var $elm$core$Basics$identity = function (x) {
+	return x;
+};
+var $elm$browser$Browser$Dom$NotFound = function (a) {
+	return {$: 'NotFound', a: a};
+};
+var $elm$url$Url$Http = {$: 'Http'};
+var $elm$url$Url$Https = {$: 'Https'};
+var $elm$url$Url$Url = F6(
+	function (protocol, host, port_, path, query, fragment) {
+		return {fragment: fragment, host: host, path: path, port_: port_, protocol: protocol, query: query};
+	});
+var $elm$core$String$contains = _String_contains;
+var $elm$core$String$length = _String_length;
+var $elm$core$String$slice = _String_slice;
+var $elm$core$String$dropLeft = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3(
+			$elm$core$String$slice,
+			n,
+			$elm$core$String$length(string),
+			string);
+	});
+var $elm$core$String$indexes = _String_indexes;
+var $elm$core$String$isEmpty = function (string) {
+	return string === '';
+};
+var $elm$core$String$left = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3($elm$core$String$slice, 0, n, string);
+	});
+var $elm$core$String$toInt = _String_toInt;
+var $elm$url$Url$chompBeforePath = F5(
+	function (protocol, path, params, frag, str) {
+		if ($elm$core$String$isEmpty(str) || A2($elm$core$String$contains, '@', str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, ':', str);
+			if (!_v0.b) {
+				return $elm$core$Maybe$Just(
+					A6($elm$url$Url$Url, protocol, str, $elm$core$Maybe$Nothing, path, params, frag));
+			} else {
+				if (!_v0.b.b) {
+					var i = _v0.a;
+					var _v1 = $elm$core$String$toInt(
+						A2($elm$core$String$dropLeft, i + 1, str));
+					if (_v1.$ === 'Nothing') {
+						return $elm$core$Maybe$Nothing;
+					} else {
+						var port_ = _v1;
+						return $elm$core$Maybe$Just(
+							A6(
+								$elm$url$Url$Url,
+								protocol,
+								A2($elm$core$String$left, i, str),
+								port_,
+								path,
+								params,
+								frag));
+					}
+				} else {
+					return $elm$core$Maybe$Nothing;
+				}
+			}
+		}
+	});
+var $elm$url$Url$chompBeforeQuery = F4(
+	function (protocol, params, frag, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '/', str);
+			if (!_v0.b) {
+				return A5($elm$url$Url$chompBeforePath, protocol, '/', params, frag, str);
+			} else {
+				var i = _v0.a;
+				return A5(
+					$elm$url$Url$chompBeforePath,
+					protocol,
+					A2($elm$core$String$dropLeft, i, str),
+					params,
+					frag,
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$url$Url$chompBeforeFragment = F3(
+	function (protocol, frag, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '?', str);
+			if (!_v0.b) {
+				return A4($elm$url$Url$chompBeforeQuery, protocol, $elm$core$Maybe$Nothing, frag, str);
+			} else {
+				var i = _v0.a;
+				return A4(
+					$elm$url$Url$chompBeforeQuery,
+					protocol,
+					$elm$core$Maybe$Just(
+						A2($elm$core$String$dropLeft, i + 1, str)),
+					frag,
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$url$Url$chompAfterProtocol = F2(
+	function (protocol, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v0 = A2($elm$core$String$indexes, '#', str);
+			if (!_v0.b) {
+				return A3($elm$url$Url$chompBeforeFragment, protocol, $elm$core$Maybe$Nothing, str);
+			} else {
+				var i = _v0.a;
+				return A3(
+					$elm$url$Url$chompBeforeFragment,
+					protocol,
+					$elm$core$Maybe$Just(
+						A2($elm$core$String$dropLeft, i + 1, str)),
+					A2($elm$core$String$left, i, str));
+			}
+		}
+	});
+var $elm$core$String$startsWith = _String_startsWith;
+var $elm$url$Url$fromString = function (str) {
+	return A2($elm$core$String$startsWith, 'http://', str) ? A2(
+		$elm$url$Url$chompAfterProtocol,
+		$elm$url$Url$Http,
+		A2($elm$core$String$dropLeft, 7, str)) : (A2($elm$core$String$startsWith, 'https://', str) ? A2(
+		$elm$url$Url$chompAfterProtocol,
+		$elm$url$Url$Https,
+		A2($elm$core$String$dropLeft, 8, str)) : $elm$core$Maybe$Nothing);
+};
+var $elm$core$Basics$never = function (_v0) {
+	never:
+	while (true) {
+		var nvr = _v0.a;
+		var $temp$_v0 = nvr;
+		_v0 = $temp$_v0;
+		continue never;
+	}
+};
+var $elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
+};
+var $elm$core$Task$succeed = _Scheduler_succeed;
+var $elm$core$Task$init = $elm$core$Task$succeed(_Utils_Tuple0);
+var $elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							$elm$core$List$foldl,
+							fn,
+							acc,
+							$elm$core$List$reverse(r4)) : A4($elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var $elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4($elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var $elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						$elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var $elm$core$Task$andThen = _Scheduler_andThen;
+var $elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (a) {
+				return $elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var $elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					$elm$core$Task$andThen,
+					function (b) {
+						return $elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var $elm$core$Task$sequence = function (tasks) {
+	return A3(
+		$elm$core$List$foldr,
+		$elm$core$Task$map2($elm$core$List$cons),
+		$elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var $elm$core$Platform$sendToApp = _Platform_sendToApp;
+var $elm$core$Task$spawnCmd = F2(
+	function (router, _v0) {
+		var task = _v0.a;
+		return _Scheduler_spawn(
+			A2(
+				$elm$core$Task$andThen,
+				$elm$core$Platform$sendToApp(router),
+				task));
+	});
+var $elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			$elm$core$Task$map,
+			function (_v0) {
+				return _Utils_Tuple0;
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$map,
+					$elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var $elm$core$Task$onSelfMsg = F3(
+	function (_v0, _v1, _v2) {
+		return $elm$core$Task$succeed(_Utils_Tuple0);
+	});
+var $elm$core$Task$cmdMap = F2(
+	function (tagger, _v0) {
+		var task = _v0.a;
+		return $elm$core$Task$Perform(
+			A2($elm$core$Task$map, tagger, task));
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager($elm$core$Task$init, $elm$core$Task$onEffects, $elm$core$Task$onSelfMsg, $elm$core$Task$cmdMap);
+var $elm$core$Task$command = _Platform_leaf('Task');
+var $elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return $elm$core$Task$command(
+			$elm$core$Task$Perform(
+				A2($elm$core$Task$map, toMessage, task)));
+	});
+var $elm$browser$Browser$element = _Browser_element;
+var $author$project$Main$All = {$: 'All'};
+var $author$project$Main$AnyYear = {$: 'AnyYear'};
+var $author$project$Main$KeywordView = {$: 'KeywordView'};
+var $author$project$Main$Loading = {$: 'Loading'};
+var $author$project$Main$ShowInternal = {$: 'ShowInternal'};
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $author$project$Main$emptyKeywords = $elm$core$Dict$empty;
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$Area = F4(
+	function (top, left, width, height) {
+		return {height: height, left: left, top: top, width: width};
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed = {$: 'Closed'};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$State = function (a) {
+	return {$: 'State', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$initialState = $rundis$elm_bootstrap$Bootstrap$Dropdown$State(
+	{
+		menuSize: A4($rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$Area, 0, 0, 0, 0),
+		status: $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed,
+		toggleSize: A4($rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$Area, 0, 0, 0, 0)
+	});
+var $billstclair$elm_sortable_table$Table$State = F2(
+	function (a, b) {
+		return {$: 'State', a: a, b: b};
+	});
+var $billstclair$elm_sortable_table$Table$sortBy = $billstclair$elm_sortable_table$Table$State;
+var $author$project$Main$emptyModel = {
+	dateFilter: $author$project$Main$AnyYear,
+	dropdown: $rundis$elm_bootstrap$Bootstrap$Dropdown$initialState,
+	filter: $author$project$Main$All,
+	includeInternalResearch: $author$project$Main$ShowInternal,
+	includeUnpublishedResearch: true,
+	keywordDict: $author$project$Main$emptyKeywords,
+	loadingStatus: $author$project$Main$Loading,
+	query: '',
+	researchList: _List_Nil,
+	tableState: A2($billstclair$elm_sortable_table$Table$sortBy, 'Modified', true),
+	titleQuery: '',
+	viewType: $author$project$Main$KeywordView
+};
+var $author$project$Main$GotList = function (a) {
+	return {$: 'GotList', a: a};
+};
+var $author$project$Main$dataUrl = 'data/internal_research.json';
+var $author$project$Main$InProgress = {$: 'InProgress'};
+var $author$project$Main$Kcpedia = {$: 'Kcpedia'};
+var $author$project$Main$Lectorate = {$: 'Lectorate'};
+var $author$project$Main$Music = {$: 'Music'};
+var $author$project$Main$Published = {$: 'Published'};
+var $author$project$Main$Research = function (id) {
+	return function (title) {
+		return function (keywords) {
+			return function (created) {
+				return function (author) {
+					return function (researchType) {
+						return function (issueId) {
+							return function (publicationStatus) {
+								return function (publication) {
+									return function (lastChanged) {
+										return {author: author, created: created, id: id, issueId: issueId, keywords: keywords, lastChanged: lastChanged, publication: publication, publicationStatus: publicationStatus, researchType: researchType, title: title};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var $author$project$Main$Student = {$: 'Student'};
+var $author$project$Main$Teacher = {$: 'Teacher'};
+var $author$project$Main$Undecided = {$: 'Undecided'};
+var $author$project$Main$Unknown = {$: 'Unknown'};
+var $elm_community$json_extra$Json$Decode$Extra$andMap = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
+var $author$project$Main$LocalPublication = {$: 'LocalPublication'};
+var $author$project$Main$localIssueId = 534751;
+var $author$project$Main$calcStatus = function (research) {
+	var _v0 = research.publicationStatus;
+	if (_v0.$ === 'InProgress') {
+		return $author$project$Main$InProgress;
+	} else {
+		var _v1 = research.issueId;
+		if (_v1.$ === 'Just') {
+			var id = _v1.a;
+			return _Utils_eq(id, $author$project$Main$localIssueId) ? $author$project$Main$LocalPublication : $author$project$Main$Published;
+		} else {
+			return $author$project$Main$Published;
+		}
+	}
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $author$project$Main$kcpediaTag = 'kcpedia';
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $author$project$Main$isKcpediaResearch = function (research) {
+	return A2($elm$core$List$member, $author$project$Main$kcpediaTag, research.keywords);
+};
+var $author$project$Main$lectorateTag = 'KonCon Lectorate';
+var $author$project$Main$isLectorateResearch = A2(
+	$elm$core$Basics$composeL,
+	$elm$core$List$member($author$project$Main$lectorateTag),
+	function ($) {
+		return $.keywords;
+	});
+var $author$project$Main$isMusicResearch = function (research) {
+	return A2($elm$core$List$member, 'music', research.keywords);
+};
+var $author$project$Main$teacherTag = 'Research by teachers of the Royal Conservatoire';
+var $author$project$Main$isTeacherResearch = A2(
+	$elm$core$Basics$composeL,
+	$elm$core$List$member($author$project$Main$teacherTag),
+	function ($) {
+		return $.keywords;
+	});
+var $elm$json$Json$Decode$list = _Json_decodeList;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Main$entry = function () {
+	var statusFromString = function (statusString) {
+		switch (statusString) {
+			case 'published':
+				return $author$project$Main$Published;
+			case 'progress':
+				return $author$project$Main$InProgress;
+			default:
+				return $author$project$Main$Undecided;
+		}
+	};
+	var researchType = function (research) {
+		return $author$project$Main$isMusicResearch(research) ? _Utils_update(
+			research,
+			{researchType: $author$project$Main$Music}) : ($author$project$Main$isTeacherResearch(research) ? _Utils_update(
+			research,
+			{researchType: $author$project$Main$Teacher}) : ($author$project$Main$isLectorateResearch(research) ? _Utils_update(
+			research,
+			{researchType: $author$project$Main$Lectorate}) : ($author$project$Main$isKcpediaResearch(research) ? _Utils_update(
+			research,
+			{researchType: $author$project$Main$Kcpedia}) : _Utils_update(
+			research,
+			{researchType: $author$project$Main$Student}))));
+	};
+	var researchPublicationStatus = function (research) {
+		return _Utils_update(
+			research,
+			{
+				publicationStatus: $author$project$Main$calcStatus(research)
+			});
+	};
+	return A2(
+		$elm$json$Json$Decode$map,
+		A2($elm$core$Basics$composeL, researchType, researchPublicationStatus),
+		A2(
+			$elm_community$json_extra$Json$Decode$Extra$andMap,
+			A2(
+				$elm$json$Json$Decode$map,
+				$elm$core$Maybe$Just,
+				A2($elm$json$Json$Decode$field, 'last-modified', $elm$json$Json$Decode$string)),
+			A2(
+				$elm_community$json_extra$Json$Decode$Extra$andMap,
+				$elm$json$Json$Decode$maybe(
+					A2($elm$json$Json$Decode$field, 'published', $elm$json$Json$Decode$string)),
+				A2(
+					$elm_community$json_extra$Json$Decode$Extra$andMap,
+					A2(
+						$elm$json$Json$Decode$map,
+						statusFromString,
+						A2($elm$json$Json$Decode$field, 'status', $elm$json$Json$Decode$string)),
+					A2(
+						$elm_community$json_extra$Json$Decode$Extra$andMap,
+						$elm$json$Json$Decode$maybe(
+							A2(
+								$elm$json$Json$Decode$field,
+								'issue',
+								A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int))),
+						A2(
+							$elm_community$json_extra$Json$Decode$Extra$andMap,
+							$elm$json$Json$Decode$succeed($author$project$Main$Unknown),
+							A2(
+								$elm_community$json_extra$Json$Decode$Extra$andMap,
+								A2(
+									$elm$json$Json$Decode$field,
+									'author',
+									A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string)),
+								A2(
+									$elm_community$json_extra$Json$Decode$Extra$andMap,
+									A2($elm$json$Json$Decode$field, 'created', $elm$json$Json$Decode$string),
+									A2(
+										$elm_community$json_extra$Json$Decode$Extra$andMap,
+										A2(
+											$elm$json$Json$Decode$field,
+											'keywords',
+											$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
+										A2(
+											$elm_community$json_extra$Json$Decode$Extra$andMap,
+											A2($elm$json$Json$Decode$field, 'title', $elm$json$Json$Decode$string),
+											A2(
+												$elm_community$json_extra$Json$Decode$Extra$andMap,
+												A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
+												$elm$json$Json$Decode$succeed($author$project$Main$Research))))))))))));
+}();
+var $author$project$Main$decodeResearch = $elm$json$Json$Decode$list($author$project$Main$entry);
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$http$Http$BadStatus_ = F2(
+	function (a, b) {
+		return {$: 'BadStatus_', a: a, b: b};
+	});
+var $elm$http$Http$BadUrl_ = function (a) {
+	return {$: 'BadUrl_', a: a};
+};
+var $elm$http$Http$GoodStatus_ = F2(
+	function (a, b) {
+		return {$: 'GoodStatus_', a: a, b: b};
+	});
+var $elm$http$Http$NetworkError_ = {$: 'NetworkError_'};
+var $elm$http$Http$Receiving = function (a) {
+	return {$: 'Receiving', a: a};
+};
+var $elm$http$Http$Sending = function (a) {
+	return {$: 'Sending', a: a};
+};
+var $elm$http$Http$Timeout_ = {$: 'Timeout_'};
+var $elm$core$Maybe$isJust = function (maybe) {
+	if (maybe.$ === 'Just') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
+var $elm$core$Dict$Black = {$: 'Black'};
+var $elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+	});
+var $elm$core$Dict$Red = {$: 'Red'};
+var $elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+			var _v1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+				var _v3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					key,
+					value,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+				var _v5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					lK,
+					lV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
+			} else {
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var $elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1.$) {
+				case 'LT':
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 'EQ':
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var $elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$core$Dict$getMin = function (dict) {
+	getMin:
+	while (true) {
+		if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+			var left = dict.d;
+			var $temp$dict = left;
+			dict = $temp$dict;
+			continue getMin;
+		} else {
+			return dict;
+		}
+	}
+};
+var $elm$core$Dict$moveRedLeft = function (dict) {
+	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
+		if ((dict.e.d.$ === 'RBNode_elm_builtin') && (dict.e.d.a.$ === 'Red')) {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var lLeft = _v1.d;
+			var lRight = _v1.e;
+			var _v2 = dict.e;
+			var rClr = _v2.a;
+			var rK = _v2.b;
+			var rV = _v2.c;
+			var rLeft = _v2.d;
+			var _v3 = rLeft.a;
+			var rlK = rLeft.b;
+			var rlV = rLeft.c;
+			var rlL = rLeft.d;
+			var rlR = rLeft.e;
+			var rRight = _v2.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$Red,
+				rlK,
+				rlV,
+				A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					rlL),
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rlR, rRight));
+		} else {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v4 = dict.d;
+			var lClr = _v4.a;
+			var lK = _v4.b;
+			var lV = _v4.c;
+			var lLeft = _v4.d;
+			var lRight = _v4.e;
+			var _v5 = dict.e;
+			var rClr = _v5.a;
+			var rK = _v5.b;
+			var rV = _v5.c;
+			var rLeft = _v5.d;
+			var rRight = _v5.e;
+			if (clr.$ === 'Black') {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			}
+		}
+	} else {
+		return dict;
+	}
+};
+var $elm$core$Dict$moveRedRight = function (dict) {
+	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
+		if ((dict.d.d.$ === 'RBNode_elm_builtin') && (dict.d.d.a.$ === 'Red')) {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v1 = dict.d;
+			var lClr = _v1.a;
+			var lK = _v1.b;
+			var lV = _v1.c;
+			var _v2 = _v1.d;
+			var _v3 = _v2.a;
+			var llK = _v2.b;
+			var llV = _v2.c;
+			var llLeft = _v2.d;
+			var llRight = _v2.e;
+			var lRight = _v1.e;
+			var _v4 = dict.e;
+			var rClr = _v4.a;
+			var rK = _v4.b;
+			var rV = _v4.c;
+			var rLeft = _v4.d;
+			var rRight = _v4.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				$elm$core$Dict$Red,
+				lK,
+				lV,
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+				A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					lRight,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight)));
+		} else {
+			var clr = dict.a;
+			var k = dict.b;
+			var v = dict.c;
+			var _v5 = dict.d;
+			var lClr = _v5.a;
+			var lK = _v5.b;
+			var lV = _v5.c;
+			var lLeft = _v5.d;
+			var lRight = _v5.e;
+			var _v6 = dict.e;
+			var rClr = _v6.a;
+			var rK = _v6.b;
+			var rV = _v6.c;
+			var rLeft = _v6.d;
+			var rRight = _v6.e;
+			if (clr.$ === 'Black') {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Black,
+					k,
+					v,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
+			}
+		}
+	} else {
+		return dict;
+	}
+};
+var $elm$core$Dict$removeHelpPrepEQGT = F7(
+	function (targetKey, dict, color, key, value, left, right) {
+		if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+			var _v1 = left.a;
+			var lK = left.b;
+			var lV = left.c;
+			var lLeft = left.d;
+			var lRight = left.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				lK,
+				lV,
+				lLeft,
+				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, lRight, right));
+		} else {
+			_v2$2:
+			while (true) {
+				if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Black')) {
+					if (right.d.$ === 'RBNode_elm_builtin') {
+						if (right.d.a.$ === 'Black') {
+							var _v3 = right.a;
+							var _v4 = right.d;
+							var _v5 = _v4.a;
+							return $elm$core$Dict$moveRedRight(dict);
+						} else {
+							break _v2$2;
+						}
+					} else {
+						var _v6 = right.a;
+						var _v7 = right.d;
+						return $elm$core$Dict$moveRedRight(dict);
+					}
+				} else {
+					break _v2$2;
+				}
+			}
+			return dict;
+		}
+	});
+var $elm$core$Dict$removeMin = function (dict) {
+	if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
+		var color = dict.a;
+		var key = dict.b;
+		var value = dict.c;
+		var left = dict.d;
+		var lColor = left.a;
+		var lLeft = left.d;
+		var right = dict.e;
+		if (lColor.$ === 'Black') {
+			if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+				var _v3 = lLeft.a;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					key,
+					value,
+					$elm$core$Dict$removeMin(left),
+					right);
+			} else {
+				var _v4 = $elm$core$Dict$moveRedLeft(dict);
+				if (_v4.$ === 'RBNode_elm_builtin') {
+					var nColor = _v4.a;
+					var nKey = _v4.b;
+					var nValue = _v4.c;
+					var nLeft = _v4.d;
+					var nRight = _v4.e;
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						$elm$core$Dict$removeMin(nLeft),
+						nRight);
+				} else {
+					return $elm$core$Dict$RBEmpty_elm_builtin;
+				}
+			}
+		} else {
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				key,
+				value,
+				$elm$core$Dict$removeMin(left),
+				right);
+		}
+	} else {
+		return $elm$core$Dict$RBEmpty_elm_builtin;
+	}
+};
+var $elm$core$Dict$removeHelp = F2(
+	function (targetKey, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		} else {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			if (_Utils_cmp(targetKey, key) < 0) {
+				if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Black')) {
+					var _v4 = left.a;
+					var lLeft = left.d;
+					if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
+						var _v6 = lLeft.a;
+						return A5(
+							$elm$core$Dict$RBNode_elm_builtin,
+							color,
+							key,
+							value,
+							A2($elm$core$Dict$removeHelp, targetKey, left),
+							right);
+					} else {
+						var _v7 = $elm$core$Dict$moveRedLeft(dict);
+						if (_v7.$ === 'RBNode_elm_builtin') {
+							var nColor = _v7.a;
+							var nKey = _v7.b;
+							var nValue = _v7.c;
+							var nLeft = _v7.d;
+							var nRight = _v7.e;
+							return A5(
+								$elm$core$Dict$balance,
+								nColor,
+								nKey,
+								nValue,
+								A2($elm$core$Dict$removeHelp, targetKey, nLeft),
+								nRight);
+						} else {
+							return $elm$core$Dict$RBEmpty_elm_builtin;
+						}
+					}
+				} else {
+					return A5(
+						$elm$core$Dict$RBNode_elm_builtin,
+						color,
+						key,
+						value,
+						A2($elm$core$Dict$removeHelp, targetKey, left),
+						right);
+				}
+			} else {
+				return A2(
+					$elm$core$Dict$removeHelpEQGT,
+					targetKey,
+					A7($elm$core$Dict$removeHelpPrepEQGT, targetKey, dict, color, key, value, left, right));
+			}
+		}
+	});
+var $elm$core$Dict$removeHelpEQGT = F2(
+	function (targetKey, dict) {
+		if (dict.$ === 'RBNode_elm_builtin') {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			if (_Utils_eq(targetKey, key)) {
+				var _v1 = $elm$core$Dict$getMin(right);
+				if (_v1.$ === 'RBNode_elm_builtin') {
+					var minKey = _v1.b;
+					var minValue = _v1.c;
+					return A5(
+						$elm$core$Dict$balance,
+						color,
+						minKey,
+						minValue,
+						left,
+						$elm$core$Dict$removeMin(right));
+				} else {
+					return $elm$core$Dict$RBEmpty_elm_builtin;
+				}
+			} else {
+				return A5(
+					$elm$core$Dict$balance,
+					color,
+					key,
+					value,
+					left,
+					A2($elm$core$Dict$removeHelp, targetKey, right));
+			}
+		} else {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		}
+	});
+var $elm$core$Dict$remove = F2(
+	function (key, dict) {
+		var _v0 = A2($elm$core$Dict$removeHelp, key, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$core$Dict$update = F3(
+	function (targetKey, alter, dictionary) {
+		var _v0 = alter(
+			A2($elm$core$Dict$get, targetKey, dictionary));
+		if (_v0.$ === 'Just') {
+			var value = _v0.a;
+			return A3($elm$core$Dict$insert, targetKey, value, dictionary);
+		} else {
+			return A2($elm$core$Dict$remove, targetKey, dictionary);
+		}
+	});
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $elm$http$Http$expectStringResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'',
+			$elm$core$Basics$identity,
+			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
+	});
+var $elm$http$Http$BadBody = function (a) {
+	return {$: 'BadBody', a: a};
+};
+var $elm$http$Http$BadStatus = function (a) {
+	return {$: 'BadStatus', a: a};
+};
+var $elm$http$Http$BadUrl = function (a) {
+	return {$: 'BadUrl', a: a};
+};
+var $elm$http$Http$NetworkError = {$: 'NetworkError'};
+var $elm$http$Http$Timeout = {$: 'Timeout'};
+var $elm$http$Http$resolve = F2(
+	function (toResult, response) {
+		switch (response.$) {
+			case 'BadUrl_':
+				var url = response.a;
+				return $elm$core$Result$Err(
+					$elm$http$Http$BadUrl(url));
+			case 'Timeout_':
+				return $elm$core$Result$Err($elm$http$Http$Timeout);
+			case 'NetworkError_':
+				return $elm$core$Result$Err($elm$http$Http$NetworkError);
+			case 'BadStatus_':
+				var metadata = response.a;
+				return $elm$core$Result$Err(
+					$elm$http$Http$BadStatus(metadata.statusCode));
+			default:
+				var body = response.b;
+				return A2(
+					$elm$core$Result$mapError,
+					$elm$http$Http$BadBody,
+					toResult(body));
+		}
+	});
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$http$Http$Request = function (a) {
+	return {$: 'Request', a: a};
+};
+var $elm$http$Http$State = F2(
+	function (reqs, subs) {
+		return {reqs: reqs, subs: subs};
+	});
+var $elm$http$Http$init = $elm$core$Task$succeed(
+	A2($elm$http$Http$State, $elm$core$Dict$empty, _List_Nil));
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$http$Http$updateReqs = F3(
+	function (router, cmds, reqs) {
+		updateReqs:
+		while (true) {
+			if (!cmds.b) {
+				return $elm$core$Task$succeed(reqs);
+			} else {
+				var cmd = cmds.a;
+				var otherCmds = cmds.b;
+				if (cmd.$ === 'Cancel') {
+					var tracker = cmd.a;
+					var _v2 = A2($elm$core$Dict$get, tracker, reqs);
+					if (_v2.$ === 'Nothing') {
+						var $temp$router = router,
+							$temp$cmds = otherCmds,
+							$temp$reqs = reqs;
+						router = $temp$router;
+						cmds = $temp$cmds;
+						reqs = $temp$reqs;
+						continue updateReqs;
+					} else {
+						var pid = _v2.a;
+						return A2(
+							$elm$core$Task$andThen,
+							function (_v3) {
+								return A3(
+									$elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A2($elm$core$Dict$remove, tracker, reqs));
+							},
+							$elm$core$Process$kill(pid));
+					}
+				} else {
+					var req = cmd.a;
+					return A2(
+						$elm$core$Task$andThen,
+						function (pid) {
+							var _v4 = req.tracker;
+							if (_v4.$ === 'Nothing') {
+								return A3($elm$http$Http$updateReqs, router, otherCmds, reqs);
+							} else {
+								var tracker = _v4.a;
+								return A3(
+									$elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A3($elm$core$Dict$insert, tracker, pid, reqs));
+							}
+						},
+						$elm$core$Process$spawn(
+							A3(
+								_Http_toTask,
+								router,
+								$elm$core$Platform$sendToApp(router),
+								req)));
+				}
+			}
+		}
+	});
+var $elm$http$Http$onEffects = F4(
+	function (router, cmds, subs, state) {
+		return A2(
+			$elm$core$Task$andThen,
+			function (reqs) {
+				return $elm$core$Task$succeed(
+					A2($elm$http$Http$State, reqs, subs));
+			},
+			A3($elm$http$Http$updateReqs, router, cmds, state.reqs));
+	});
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $elm$http$Http$maybeSend = F4(
+	function (router, desiredTracker, progress, _v0) {
+		var actualTracker = _v0.a;
+		var toMsg = _v0.b;
+		return _Utils_eq(desiredTracker, actualTracker) ? $elm$core$Maybe$Just(
+			A2(
+				$elm$core$Platform$sendToApp,
+				router,
+				toMsg(progress))) : $elm$core$Maybe$Nothing;
+	});
+var $elm$http$Http$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var tracker = _v0.a;
+		var progress = _v0.b;
+		return A2(
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$filterMap,
+					A3($elm$http$Http$maybeSend, router, tracker, progress),
+					state.subs)));
+	});
+var $elm$http$Http$Cancel = function (a) {
+	return {$: 'Cancel', a: a};
+};
+var $elm$http$Http$cmdMap = F2(
+	function (func, cmd) {
+		if (cmd.$ === 'Cancel') {
+			var tracker = cmd.a;
+			return $elm$http$Http$Cancel(tracker);
+		} else {
+			var r = cmd.a;
+			return $elm$http$Http$Request(
+				{
+					allowCookiesFromOtherDomains: r.allowCookiesFromOtherDomains,
+					body: r.body,
+					expect: A2(_Http_mapExpect, func, r.expect),
+					headers: r.headers,
+					method: r.method,
+					timeout: r.timeout,
+					tracker: r.tracker,
+					url: r.url
+				});
+		}
+	});
+var $elm$http$Http$MySub = F2(
+	function (a, b) {
+		return {$: 'MySub', a: a, b: b};
+	});
+var $elm$http$Http$subMap = F2(
+	function (func, _v0) {
+		var tracker = _v0.a;
+		var toMsg = _v0.b;
+		return A2(
+			$elm$http$Http$MySub,
+			tracker,
+			A2($elm$core$Basics$composeR, toMsg, func));
+	});
+_Platform_effectManagers['Http'] = _Platform_createManager($elm$http$Http$init, $elm$http$Http$onEffects, $elm$http$Http$onSelfMsg, $elm$http$Http$cmdMap, $elm$http$Http$subMap);
+var $elm$http$Http$command = _Platform_leaf('Http');
+var $elm$http$Http$subscription = _Platform_leaf('Http');
+var $elm$http$Http$request = function (r) {
+	return $elm$http$Http$command(
+		$elm$http$Http$Request(
+			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
+};
+var $elm$http$Http$get = function (r) {
+	return $elm$http$Http$request(
+		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $author$project$Main$getResearch = $elm$http$Http$get(
+	{
+		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotList, $author$project$Main$decodeResearch),
+		url: $author$project$Main$dataUrl
+	});
+var $author$project$Main$init = function (_v0) {
+	return _Utils_Tuple2($author$project$Main$emptyModel, $author$project$Main$getResearch);
+};
+var $author$project$Main$DropdownMsg = function (a) {
+	return {$: 'DropdownMsg', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$ListenClicks = {$: 'ListenClicks'};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $elm$browser$Browser$AnimationManager$Time = function (a) {
+	return {$: 'Time', a: a};
+};
+var $elm$browser$Browser$AnimationManager$State = F3(
+	function (subs, request, oldTime) {
+		return {oldTime: oldTime, request: request, subs: subs};
+	});
+var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
+	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
+var $elm$browser$Browser$AnimationManager$now = _Browser_now(_Utils_Tuple0);
+var $elm$browser$Browser$AnimationManager$rAF = _Browser_rAF(_Utils_Tuple0);
+var $elm$browser$Browser$AnimationManager$onEffects = F3(
+	function (router, subs, _v0) {
+		var request = _v0.request;
+		var oldTime = _v0.oldTime;
+		var _v1 = _Utils_Tuple2(request, subs);
+		if (_v1.a.$ === 'Nothing') {
+			if (!_v1.b.b) {
+				var _v2 = _v1.a;
+				return $elm$browser$Browser$AnimationManager$init;
+			} else {
+				var _v4 = _v1.a;
+				return A2(
+					$elm$core$Task$andThen,
+					function (pid) {
+						return A2(
+							$elm$core$Task$andThen,
+							function (time) {
+								return $elm$core$Task$succeed(
+									A3(
+										$elm$browser$Browser$AnimationManager$State,
+										subs,
+										$elm$core$Maybe$Just(pid),
+										time));
+							},
+							$elm$browser$Browser$AnimationManager$now);
+					},
+					$elm$core$Process$spawn(
+						A2(
+							$elm$core$Task$andThen,
+							$elm$core$Platform$sendToSelf(router),
+							$elm$browser$Browser$AnimationManager$rAF)));
+			}
+		} else {
+			if (!_v1.b.b) {
+				var pid = _v1.a.a;
+				return A2(
+					$elm$core$Task$andThen,
+					function (_v3) {
+						return $elm$browser$Browser$AnimationManager$init;
+					},
+					$elm$core$Process$kill(pid));
+			} else {
+				return $elm$core$Task$succeed(
+					A3($elm$browser$Browser$AnimationManager$State, subs, request, oldTime));
+			}
+		}
+	});
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
+	function (router, newTime, _v0) {
+		var subs = _v0.subs;
+		var oldTime = _v0.oldTime;
+		var send = function (sub) {
+			if (sub.$ === 'Time') {
+				var tagger = sub.a;
+				return A2(
+					$elm$core$Platform$sendToApp,
+					router,
+					tagger(
+						$elm$time$Time$millisToPosix(newTime)));
+			} else {
+				var tagger = sub.a;
+				return A2(
+					$elm$core$Platform$sendToApp,
+					router,
+					tagger(newTime - oldTime));
+			}
+		};
+		return A2(
+			$elm$core$Task$andThen,
+			function (pid) {
+				return A2(
+					$elm$core$Task$andThen,
+					function (_v1) {
+						return $elm$core$Task$succeed(
+							A3(
+								$elm$browser$Browser$AnimationManager$State,
+								subs,
+								$elm$core$Maybe$Just(pid),
+								newTime));
+					},
+					$elm$core$Task$sequence(
+						A2($elm$core$List$map, send, subs)));
+			},
+			$elm$core$Process$spawn(
+				A2(
+					$elm$core$Task$andThen,
+					$elm$core$Platform$sendToSelf(router),
+					$elm$browser$Browser$AnimationManager$rAF)));
+	});
+var $elm$browser$Browser$AnimationManager$Delta = function (a) {
+	return {$: 'Delta', a: a};
+};
+var $elm$browser$Browser$AnimationManager$subMap = F2(
+	function (func, sub) {
+		if (sub.$ === 'Time') {
+			var tagger = sub.a;
+			return $elm$browser$Browser$AnimationManager$Time(
+				A2($elm$core$Basics$composeL, func, tagger));
+		} else {
+			var tagger = sub.a;
+			return $elm$browser$Browser$AnimationManager$Delta(
+				A2($elm$core$Basics$composeL, func, tagger));
+		}
+	});
+_Platform_effectManagers['Browser.AnimationManager'] = _Platform_createManager($elm$browser$Browser$AnimationManager$init, $elm$browser$Browser$AnimationManager$onEffects, $elm$browser$Browser$AnimationManager$onSelfMsg, 0, $elm$browser$Browser$AnimationManager$subMap);
+var $elm$browser$Browser$AnimationManager$subscription = _Platform_leaf('Browser.AnimationManager');
+var $elm$browser$Browser$AnimationManager$onAnimationFrame = function (tagger) {
+	return $elm$browser$Browser$AnimationManager$subscription(
+		$elm$browser$Browser$AnimationManager$Time(tagger));
+};
+var $elm$browser$Browser$Events$onAnimationFrame = $elm$browser$Browser$AnimationManager$onAnimationFrame;
+var $elm$browser$Browser$Events$Document = {$: 'Document'};
+var $elm$browser$Browser$Events$MySub = F3(
+	function (a, b, c) {
+		return {$: 'MySub', a: a, b: b, c: c};
+	});
+var $elm$browser$Browser$Events$State = F2(
+	function (subs, pids) {
+		return {pids: pids, subs: subs};
+	});
+var $elm$browser$Browser$Events$init = $elm$core$Task$succeed(
+	A2($elm$browser$Browser$Events$State, _List_Nil, $elm$core$Dict$empty));
+var $elm$browser$Browser$Events$nodeToKey = function (node) {
+	if (node.$ === 'Document') {
+		return 'd_';
+	} else {
+		return 'w_';
+	}
+};
+var $elm$browser$Browser$Events$addKey = function (sub) {
+	var node = sub.a;
+	var name = sub.b;
+	return _Utils_Tuple2(
+		_Utils_ap(
+			$elm$browser$Browser$Events$nodeToKey(node),
+			name),
+		sub);
+};
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$Dict$merge = F6(
+	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
+		var stepState = F3(
+			function (rKey, rValue, _v0) {
+				stepState:
+				while (true) {
+					var list = _v0.a;
+					var result = _v0.b;
+					if (!list.b) {
+						return _Utils_Tuple2(
+							list,
+							A3(rightStep, rKey, rValue, result));
+					} else {
+						var _v2 = list.a;
+						var lKey = _v2.a;
+						var lValue = _v2.b;
+						var rest = list.b;
+						if (_Utils_cmp(lKey, rKey) < 0) {
+							var $temp$rKey = rKey,
+								$temp$rValue = rValue,
+								$temp$_v0 = _Utils_Tuple2(
+								rest,
+								A3(leftStep, lKey, lValue, result));
+							rKey = $temp$rKey;
+							rValue = $temp$rValue;
+							_v0 = $temp$_v0;
+							continue stepState;
+						} else {
+							if (_Utils_cmp(lKey, rKey) > 0) {
+								return _Utils_Tuple2(
+									list,
+									A3(rightStep, rKey, rValue, result));
+							} else {
+								return _Utils_Tuple2(
+									rest,
+									A4(bothStep, lKey, lValue, rValue, result));
+							}
+						}
+					}
+				}
+			});
+		var _v3 = A3(
+			$elm$core$Dict$foldl,
+			stepState,
+			_Utils_Tuple2(
+				$elm$core$Dict$toList(leftDict),
+				initialResult),
+			rightDict);
+		var leftovers = _v3.a;
+		var intermediateResult = _v3.b;
+		return A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v4, result) {
+					var k = _v4.a;
+					var v = _v4.b;
+					return A3(leftStep, k, v, result);
+				}),
+			intermediateResult,
+			leftovers);
+	});
+var $elm$browser$Browser$Events$Event = F2(
+	function (key, event) {
+		return {event: event, key: key};
+	});
+var $elm$browser$Browser$Events$spawn = F3(
+	function (router, key, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
+		var actualNode = function () {
+			if (node.$ === 'Document') {
+				return _Browser_doc;
+			} else {
+				return _Browser_window;
+			}
+		}();
+		return A2(
+			$elm$core$Task$map,
+			function (value) {
+				return _Utils_Tuple2(key, value);
+			},
+			A3(
+				_Browser_on,
+				actualNode,
+				name,
+				function (event) {
+					return A2(
+						$elm$core$Platform$sendToSelf,
+						router,
+						A2($elm$browser$Browser$Events$Event, key, event));
+				}));
+	});
+var $elm$core$Dict$union = F2(
+	function (t1, t2) {
+		return A3($elm$core$Dict$foldl, $elm$core$Dict$insert, t2, t1);
+	});
+var $elm$browser$Browser$Events$onEffects = F3(
+	function (router, subs, state) {
+		var stepRight = F3(
+			function (key, sub, _v6) {
+				var deads = _v6.a;
+				var lives = _v6.b;
+				var news = _v6.c;
+				return _Utils_Tuple3(
+					deads,
+					lives,
+					A2(
+						$elm$core$List$cons,
+						A3($elm$browser$Browser$Events$spawn, router, key, sub),
+						news));
+			});
+		var stepLeft = F3(
+			function (_v4, pid, _v5) {
+				var deads = _v5.a;
+				var lives = _v5.b;
+				var news = _v5.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, pid, deads),
+					lives,
+					news);
+			});
+		var stepBoth = F4(
+			function (key, pid, _v2, _v3) {
+				var deads = _v3.a;
+				var lives = _v3.b;
+				var news = _v3.c;
+				return _Utils_Tuple3(
+					deads,
+					A3($elm$core$Dict$insert, key, pid, lives),
+					news);
+			});
+		var newSubs = A2($elm$core$List$map, $elm$browser$Browser$Events$addKey, subs);
+		var _v0 = A6(
+			$elm$core$Dict$merge,
+			stepLeft,
+			stepBoth,
+			stepRight,
+			state.pids,
+			$elm$core$Dict$fromList(newSubs),
+			_Utils_Tuple3(_List_Nil, $elm$core$Dict$empty, _List_Nil));
+		var deadPids = _v0.a;
+		var livePids = _v0.b;
+		var makeNewPids = _v0.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (pids) {
+				return $elm$core$Task$succeed(
+					A2(
+						$elm$browser$Browser$Events$State,
+						newSubs,
+						A2(
+							$elm$core$Dict$union,
+							livePids,
+							$elm$core$Dict$fromList(pids))));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$sequence(makeNewPids);
+				},
+				$elm$core$Task$sequence(
+					A2($elm$core$List$map, $elm$core$Process$kill, deadPids))));
+	});
+var $elm$browser$Browser$Events$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var key = _v0.key;
+		var event = _v0.event;
+		var toMessage = function (_v2) {
+			var subKey = _v2.a;
+			var _v3 = _v2.b;
+			var node = _v3.a;
+			var name = _v3.b;
+			var decoder = _v3.c;
+			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : $elm$core$Maybe$Nothing;
+		};
+		var messages = A2($elm$core$List$filterMap, toMessage, state.subs);
+		return A2(
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$map,
+					$elm$core$Platform$sendToApp(router),
+					messages)));
+	});
+var $elm$browser$Browser$Events$subMap = F2(
+	function (func, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
+		var decoder = _v0.c;
+		return A3(
+			$elm$browser$Browser$Events$MySub,
+			node,
+			name,
+			A2($elm$json$Json$Decode$map, func, decoder));
+	});
+_Platform_effectManagers['Browser.Events'] = _Platform_createManager($elm$browser$Browser$Events$init, $elm$browser$Browser$Events$onEffects, $elm$browser$Browser$Events$onSelfMsg, 0, $elm$browser$Browser$Events$subMap);
+var $elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
+var $elm$browser$Browser$Events$on = F3(
+	function (node, name, decoder) {
+		return $elm$browser$Browser$Events$subscription(
+			A3($elm$browser$Browser$Events$MySub, node, name, decoder));
+	});
+var $elm$browser$Browser$Events$onClick = A2($elm$browser$Browser$Events$on, $elm$browser$Browser$Events$Document, 'click');
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$updateStatus = F2(
+	function (status, _v0) {
+		var stateRec = _v0.a;
+		return $rundis$elm_bootstrap$Bootstrap$Dropdown$State(
+			_Utils_update(
+				stateRec,
+				{status: status}));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$subscriptions = F2(
+	function (state, toMsg) {
+		var status = state.a.status;
+		switch (status.$) {
+			case 'Open':
+				return $elm$browser$Browser$Events$onAnimationFrame(
+					function (_v1) {
+						return toMsg(
+							A2($rundis$elm_bootstrap$Bootstrap$Dropdown$updateStatus, $rundis$elm_bootstrap$Bootstrap$Dropdown$ListenClicks, state));
+					});
+			case 'ListenClicks':
+				return $elm$browser$Browser$Events$onClick(
+					$elm$json$Json$Decode$succeed(
+						toMsg(
+							A2($rundis$elm_bootstrap$Bootstrap$Dropdown$updateStatus, $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed, state))));
+			default:
+				return $elm$core$Platform$Sub$none;
+		}
+	});
+var $author$project$Main$subscriptions = function (model) {
+	return A2($rundis$elm_bootstrap$Bootstrap$Dropdown$subscriptions, model.dropdown, $author$project$Main$DropdownMsg);
+};
+var $author$project$Main$Failure = function (a) {
+	return {$: 'Failure', a: a};
+};
+var $author$project$Main$Success = {$: 'Success'};
+var $author$project$Main$TableView = {$: 'TableView'};
+var $author$project$Main$Year = function (a) {
+	return {$: 'Year', a: a};
+};
+var $elm$core$String$append = _String_append;
+var $elm$core$String$toUpper = _String_toUpper;
+var $author$project$Main$capitalize = function (string) {
+	var tail = A2($elm$core$String$dropLeft, 1, string);
+	var head = A2($elm$core$String$left, 1, string);
+	return A2(
+		$elm$core$String$append,
+		$elm$core$String$toUpper(head),
+		tail);
+};
+var $author$project$Main$fillKeywordsDict = function (research) {
+	var updateKey = F3(
+		function (res, key, dct) {
+			var capitalizedKey = $author$project$Main$capitalize(key);
+			var _v0 = A2($elm$core$Dict$get, capitalizedKey, dct);
+			if (_v0.$ === 'Just') {
+				var v = _v0.a;
+				return A3(
+					$elm$core$Dict$insert,
+					capitalizedKey,
+					A2($elm$core$List$cons, res, v),
+					dct);
+			} else {
+				return A3(
+					$elm$core$Dict$insert,
+					capitalizedKey,
+					_List_fromArray(
+						[res]),
+					dct);
+			}
+		});
+	var updateDict = F2(
+		function (res, dict) {
+			return A3(
+				$elm$core$List$foldr,
+				updateKey(res),
+				dict,
+				res.keywords);
+		});
+	return A3($elm$core$List$foldr, updateDict, $author$project$Main$emptyKeywords, research);
+};
+var $elm$core$Debug$log = _Debug_log;
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$Set$Set_elm_builtin = function (a) {
+	return {$: 'Set_elm_builtin', a: a};
+};
+var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
+var $elm$core$Set$insert = F2(
+	function (key, _v0) {
+		var dict = _v0.a;
+		return $elm$core$Set$Set_elm_builtin(
+			A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict));
+	});
+var $elm$core$Dict$member = F2(
+	function (key, dict) {
+		var _v0 = A2($elm$core$Dict$get, key, dict);
+		if (_v0.$ === 'Just') {
+			return true;
+		} else {
+			return false;
+		}
+	});
+var $elm$core$Set$member = F2(
+	function (key, _v0) {
+		var dict = _v0.a;
+		return A2($elm$core$Dict$member, key, dict);
+	});
+var $elm_community$list_extra$List$Extra$uniqueHelp = F4(
+	function (f, existing, remaining, accumulator) {
+		uniqueHelp:
+		while (true) {
+			if (!remaining.b) {
+				return $elm$core$List$reverse(accumulator);
+			} else {
+				var first = remaining.a;
+				var rest = remaining.b;
+				var computedFirst = f(first);
+				if (A2($elm$core$Set$member, computedFirst, existing)) {
+					var $temp$f = f,
+						$temp$existing = existing,
+						$temp$remaining = rest,
+						$temp$accumulator = accumulator;
+					f = $temp$f;
+					existing = $temp$existing;
+					remaining = $temp$remaining;
+					accumulator = $temp$accumulator;
+					continue uniqueHelp;
+				} else {
+					var $temp$f = f,
+						$temp$existing = A2($elm$core$Set$insert, computedFirst, existing),
+						$temp$remaining = rest,
+						$temp$accumulator = A2($elm$core$List$cons, first, accumulator);
+					f = $temp$f;
+					existing = $temp$existing;
+					remaining = $temp$remaining;
+					accumulator = $temp$accumulator;
+					continue uniqueHelp;
+				}
+			}
+		}
+	});
+var $elm_community$list_extra$List$Extra$uniqueBy = F2(
+	function (f, list) {
+		return A4($elm_community$list_extra$List$Extra$uniqueHelp, f, $elm$core$Set$empty, list, _List_Nil);
+	});
+var $author$project$Main$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'Go':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{loadingStatus: $author$project$Main$Loading}),
+					$author$project$Main$getResearch);
+			case 'GotList':
+				var result = msg.a;
+				if (result.$ === 'Ok') {
+					var list = result.a;
+					var unique = A2(
+						$elm_community$list_extra$List$Extra$uniqueBy,
+						function ($) {
+							return $.id;
+						},
+						list);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								keywordDict: $author$project$Main$fillKeywordsDict(list),
+								loadingStatus: $author$project$Main$Success,
+								researchList: unique
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = result.a;
+					var message = function () {
+						switch (err.$) {
+							case 'BadUrl':
+								var string = err.a;
+								return $author$project$Main$Failure('bad url' + string);
+							case 'Timeout':
+								return $author$project$Main$Failure('timeout');
+							case 'NetworkError':
+								return $author$project$Main$Failure('network error');
+							case 'BadStatus':
+								var _int = err.a;
+								return $author$project$Main$Failure(
+									'bad status' + $elm$core$String$fromInt(_int));
+							default:
+								var string = err.a;
+								return $author$project$Main$Failure('body of improper format' + string);
+						}
+					}();
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{loadingStatus: message}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'SetQuery':
+				var newQuery = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{query: newQuery}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetTitleQuery':
+				var newTitle = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{titleQuery: newTitle}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetTableState':
+				var newState = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{tableState: newState}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetViewType':
+				var newType = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{query: '', titleQuery: '', viewType: newType}),
+					$elm$core$Platform$Cmd$none);
+			case 'SetFilter':
+				var filter = msg.a;
+				var newView = function () {
+					_v3$2:
+					while (true) {
+						if (filter.$ === 'Only') {
+							switch (filter.a.$) {
+								case 'Teacher':
+									var _v4 = filter.a;
+									return $author$project$Main$TableView;
+								case 'Lectorate':
+									var _v5 = filter.a;
+									return $author$project$Main$TableView;
+								default:
+									break _v3$2;
+							}
+						} else {
+							break _v3$2;
+						}
+					}
+					return model.viewType;
+				}();
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{filter: filter, viewType: newView}),
+					$elm$core$Platform$Cmd$none);
+			case 'ScopeFilter':
+				var state = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{includeInternalResearch: state}),
+					$elm$core$Platform$Cmd$none);
+			case 'TogglePublishedFilter':
+				var includeUnpublished = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{includeUnpublishedResearch: includeUnpublished}),
+					$elm$core$Platform$Cmd$none);
+			case 'DropdownMsg':
+				var newstate = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{dropdown: newstate}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var year = msg.a;
+				var _v6 = A2($elm$core$Debug$log, 'year', year);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							dateFilter: $author$project$Main$Year(year)
+						}),
+					$elm$core$Platform$Cmd$none);
+		}
+	});
+var $author$project$Main$Go = {$: 'Go'};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Main$HideInternal = {$: 'HideInternal'};
+var $author$project$Main$Only = function (a) {
+	return {$: 'Only', a: a};
+};
+var $author$project$Main$ScopeFilter = function (a) {
+	return {$: 'ScopeFilter', a: a};
+};
+var $author$project$Main$SetFilter = function (a) {
+	return {$: 'SetFilter', a: a};
+};
+var $author$project$Main$SetViewType = function (a) {
+	return {$: 'SetViewType', a: a};
+};
+var $author$project$Main$SetYearFilter = function (a) {
+	return {$: 'SetYearFilter', a: a};
+};
+var $author$project$Main$TogglePublishedFilter = function (a) {
+	return {$: 'TogglePublishedFilter', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$AlignMenuRight = {$: 'AlignMenuRight'};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$alignMenuRight = $rundis$elm_bootstrap$Bootstrap$Dropdown$AlignMenuRight;
+var $elm$html$Html$br = _VirtualDom_node('br');
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$DropdownItem = function (a) {
+	return {$: 'DropdownItem', a: a};
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$buttonItem = F2(
+	function (attributes, children) {
+		return $rundis$elm_bootstrap$Bootstrap$Dropdown$DropdownItem(
+			A2(
+				$elm$html$Html$button,
+				_Utils_ap(
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('button'),
+							$elm$html$Html$Attributes$class('dropdown-item')
+						]),
+					attributes),
+				children));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Checkbox = function (a) {
+	return {$: 'Checkbox', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$create = F2(
+	function (options, label_) {
+		return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Checkbox(
+			{label: label_, options: options});
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Label = function (a) {
+	return {$: 'Label', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$label = F2(
+	function (attributes, children) {
+		return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Label(
+			{attributes: attributes, children: children});
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier = F2(
+	function (modifier, options) {
+		switch (modifier.$) {
+			case 'Id':
+				var val = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						id: $elm$core$Maybe$Just(val)
+					});
+			case 'Value':
+				var val = modifier.a;
+				return _Utils_update(
+					options,
+					{state: val});
+			case 'Inline':
+				return _Utils_update(
+					options,
+					{inline: true});
+			case 'OnChecked':
+				var toMsg = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						onChecked: $elm$core$Maybe$Just(toMsg)
+					});
+			case 'Custom':
+				return _Utils_update(
+					options,
+					{custom: true});
+			case 'Disabled':
+				var val = modifier.a;
+				return _Utils_update(
+					options,
+					{disabled: val});
+			case 'Validation':
+				var validation = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						validation: $elm$core$Maybe$Just(validation)
+					});
+			default:
+				var attrs_ = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						attributes: _Utils_ap(options.attributes, attrs_)
+					});
+		}
+	});
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Off = {$: 'Off'};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions = {attributes: _List_Nil, custom: false, disabled: false, id: $elm$core$Maybe$Nothing, inline: false, onChecked: $elm$core$Maybe$Nothing, state: $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Off, validation: $elm$core$Maybe$Nothing};
+var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$core$Basics$not = _Basics_not;
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $elm$html$Html$Events$targetChecked = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'checked']),
+	$elm$json$Json$Decode$bool);
+var $elm$html$Html$Events$onCheck = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'change',
+		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
+};
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$html$Html$Attributes$checked = $elm$html$Html$Attributes$boolProperty('checked');
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$stateAttribute = function (state) {
+	switch (state.$) {
+		case 'On':
+			return $elm$html$Html$Attributes$checked(true);
+		case 'Off':
+			return $elm$html$Html$Attributes$checked(false);
+		default:
+			return A2($elm$html$Html$Attributes$attribute, 'indeterminate', 'true');
+	}
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$FormInternal$validationToString = function (validation) {
+	if (validation.$ === 'Success') {
+		return 'is-valid';
+	} else {
+		return 'is-invalid';
+	}
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes = function (options) {
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$classList(
+				_List_fromArray(
+					[
+						_Utils_Tuple2('form-check-input', !options.custom),
+						_Utils_Tuple2('custom-control-input', options.custom)
+					])),
+				$elm$html$Html$Attributes$type_('checkbox'),
+				$elm$html$Html$Attributes$disabled(options.disabled),
+				$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$stateAttribute(options.state)
+			]),
+		_Utils_ap(
+			A2(
+				$elm$core$List$filterMap,
+				$elm$core$Basics$identity,
+				_List_fromArray(
+					[
+						A2($elm$core$Maybe$map, $elm$html$Html$Events$onCheck, options.onChecked),
+						A2($elm$core$Maybe$map, $elm$html$Html$Attributes$id, options.id)
+					])),
+			_Utils_ap(
+				function () {
+					var _v0 = options.validation;
+					if (_v0.$ === 'Just') {
+						var v = _v0.a;
+						return _List_fromArray(
+							[
+								$elm$html$Html$Attributes$class(
+								$rundis$elm_bootstrap$Bootstrap$Form$FormInternal$validationToString(v))
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}(),
+				options.attributes)));
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view = function (_v0) {
+	var chk = _v0.a;
+	var opts = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$applyModifier, $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$defaultOptions, chk.options);
+	var _v1 = chk.label;
+	var label_ = _v1.a;
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$classList(
+				_List_fromArray(
+					[
+						_Utils_Tuple2('form-check', !opts.custom),
+						_Utils_Tuple2('form-check-inline', (!opts.custom) && opts.inline),
+						_Utils_Tuple2('custom-control', opts.custom),
+						_Utils_Tuple2('custom-checkbox', opts.custom),
+						_Utils_Tuple2('custom-control-inline', opts.inline && opts.custom)
+					]))
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$input,
+				$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$toAttributes(opts),
+				_List_Nil),
+				A2(
+				$elm$html$Html$label,
+				_Utils_ap(
+					label_.attributes,
+					_Utils_ap(
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('form-check-label', !opts.custom),
+										_Utils_Tuple2('custom-control-label', opts.custom)
+									]))
+							]),
+						function () {
+							var _v2 = opts.id;
+							if (_v2.$ === 'Just') {
+								var v = _v2.a;
+								return _List_fromArray(
+									[
+										$elm$html$Html$Attributes$for(v)
+									]);
+							} else {
+								return _List_Nil;
+							}
+						}())),
+				label_.children)
+			]));
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checkbox = F2(
+	function (options, labelText) {
+		return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$view(
+			A2(
+				$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$create,
+				options,
+				A2(
+					$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$label,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(labelText)
+						]))));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$On = {$: 'On'};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Value = function (a) {
+	return {$: 'Value', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checked = function (isCheck) {
+	return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Value(
+		isCheck ? $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$On : $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Off);
+};
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$dropDir = function (maybeDir) {
+	var toAttrs = function (dir) {
+		return _List_fromArray(
+			[
+				$elm$html$Html$Attributes$class(
+				'drop' + function () {
+					if (dir.$ === 'Dropleft') {
+						return 'left';
+					} else {
+						return 'right';
+					}
+				}())
+			]);
+	};
+	return A2(
+		$elm$core$Maybe$withDefault,
+		_List_Nil,
+		A2($elm$core$Maybe$map, toAttrs, maybeDir));
+};
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$dropdownAttributes = F2(
+	function (status, config) {
+		return _Utils_ap(
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('btn-group', true),
+							_Utils_Tuple2(
+							'show',
+							!_Utils_eq(status, $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed)),
+							_Utils_Tuple2('dropup', config.isDropUp)
+						]))
+				]),
+			_Utils_ap(
+				$rundis$elm_bootstrap$Bootstrap$Dropdown$dropDir(config.dropDirection),
+				config.attributes));
+	});
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$menuStyles = F2(
+	function (_v0, config) {
+		var status = _v0.a.status;
+		var toggleSize = _v0.a.toggleSize;
+		var menuSize = _v0.a.menuSize;
+		var px = function (n) {
+			return $elm$core$String$fromFloat(n) + 'px';
+		};
+		var translate = F3(
+			function (x, y, z) {
+				return 'translate3d(' + (px(x) + (',' + (px(y) + (',' + (px(z) + ')')))));
+			});
+		var _default = _List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'top', '0'),
+				A2($elm$html$Html$Attributes$style, 'left', '0')
+			]);
+		var _v1 = _Utils_Tuple2(config.isDropUp, config.dropDirection);
+		_v1$0:
+		while (true) {
+			if (_v1.b.$ === 'Just') {
+				if (_v1.b.a.$ === 'Dropright') {
+					if (_v1.a) {
+						break _v1$0;
+					} else {
+						var _v2 = _v1.b.a;
+						return _default;
+					}
+				} else {
+					if (_v1.a) {
+						break _v1$0;
+					} else {
+						var _v3 = _v1.b.a;
+						return _Utils_ap(
+							_default,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$Attributes$style,
+									'transform',
+									A3(translate, (-toggleSize.width) - menuSize.width, 0, 0))
+								]));
+					}
+				}
+			} else {
+				if (_v1.a) {
+					break _v1$0;
+				} else {
+					return _Utils_ap(
+						_default,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$Attributes$style,
+								'transform',
+								A3(translate, -toggleSize.width, toggleSize.height, 0))
+							]));
+				}
+			}
+		}
+		return _Utils_ap(
+			_default,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$Attributes$style,
+					'transform',
+					A3(translate, -toggleSize.width, -menuSize.height, 0))
+				]));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$dropdownMenu = F3(
+	function (state, config, items) {
+		var status = state.a.status;
+		var menuSize = state.a.menuSize;
+		var wrapperStyles = _Utils_eq(status, $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed) ? _List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'height', '0'),
+				A2($elm$html$Html$Attributes$style, 'overflow', 'hidden'),
+				A2($elm$html$Html$Attributes$style, 'position', 'relative')
+			]) : _List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'position', 'relative')
+			]);
+		return A2(
+			$elm$html$Html$div,
+			wrapperStyles,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_Utils_ap(
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('dropdown-menu', true),
+										_Utils_Tuple2('dropdown-menu-right', config.hasMenuRight),
+										_Utils_Tuple2(
+										'show',
+										!_Utils_eq(status, $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed))
+									]))
+							]),
+						_Utils_ap(
+							A2($rundis$elm_bootstrap$Bootstrap$Dropdown$menuStyles, state, config),
+							config.menuAttrs)),
+					A2(
+						$elm$core$List$map,
+						function (_v0) {
+							var x = _v0.a;
+							return x;
+						},
+						items))
+				]));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$applyModifier = F2(
+	function (option, options) {
+		switch (option.$) {
+			case 'AlignMenuRight':
+				return _Utils_update(
+					options,
+					{hasMenuRight: true});
+			case 'Dropup':
+				return _Utils_update(
+					options,
+					{isDropUp: true});
+			case 'Attrs':
+				var attrs_ = option.a;
+				return _Utils_update(
+					options,
+					{attributes: attrs_});
+			case 'DropToDir':
+				var dir = option.a;
+				return _Utils_update(
+					options,
+					{
+						dropDirection: $elm$core$Maybe$Just(dir)
+					});
+			default:
+				var attrs_ = option.a;
+				return _Utils_update(
+					options,
+					{menuAttrs: attrs_});
+		}
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$defaultOptions = {attributes: _List_Nil, dropDirection: $elm$core$Maybe$Nothing, hasMenuRight: false, isDropUp: false, menuAttrs: _List_Nil};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$toConfig = function (options) {
+	return A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Dropdown$applyModifier, $rundis$elm_bootstrap$Bootstrap$Dropdown$defaultOptions, options);
+};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$dropdown = F2(
+	function (state, _v0) {
+		var status = state.a.status;
+		var toggleMsg = _v0.toggleMsg;
+		var toggleButton = _v0.toggleButton;
+		var items = _v0.items;
+		var options = _v0.options;
+		var config = $rundis$elm_bootstrap$Bootstrap$Dropdown$toConfig(options);
+		var _v1 = toggleButton;
+		var buttonFn = _v1.a;
+		return A2(
+			$elm$html$Html$div,
+			A2($rundis$elm_bootstrap$Bootstrap$Dropdown$dropdownAttributes, status, config),
+			_List_fromArray(
+				[
+					A2(buttonFn, toggleMsg, state),
+					A3($rundis$elm_bootstrap$Bootstrap$Dropdown$dropdownMenu, state, config, items)
+				]));
+	});
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Main$filterByYear = F2(
+	function (year, research) {
+		var getYear = function (r) {
+			return A2(
+				$elm$core$Maybe$withDefault,
+				0,
+				A2(
+					$elm$core$Maybe$andThen,
+					$elm$core$String$toInt,
+					A2(
+						$elm$core$Maybe$andThen,
+						function (str) {
+							return $elm$core$List$head(
+								$elm$core$List$reverse(
+									A2($elm$core$String$split, '/', str)));
+						},
+						r.publication)));
+		};
+		return A2(
+			$elm$core$List$filter,
+			function (rs) {
+				return _Utils_eq(
+					getYear(rs),
+					year);
+			},
+			research);
+	});
+var $author$project$Main$filterResearch = F2(
+	function (filter, list) {
+		if (filter.$ === 'All') {
+			return list;
+		} else {
+			var filterType = filter.a;
+			return A2(
+				$elm$core$List$filter,
+				A2(
+					$elm$core$Basics$composeL,
+					$elm$core$Basics$eq(filterType),
+					function ($) {
+						return $.researchType;
+					}),
+				list);
+		}
+	});
+var $elm$html$Html$h4 = _VirtualDom_node('h4');
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Id = function (a) {
+	return {$: 'Id', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$id = function (theId) {
+	return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$Id(theId);
+};
+var $author$project$Main$isPublished = function (pubStatus) {
+	switch (pubStatus.$) {
+		case 'Published':
+			return true;
+		case 'LocalPublication':
+			return true;
+		case 'Undecided':
+			return false;
+		default:
+			return false;
+	}
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring = function (a) {
+	return {$: 'Coloring', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Light = {$: 'Light'};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled = function (a) {
+	return {$: 'Roled', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Button$light = $rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring(
+	$rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled($rundis$elm_bootstrap$Bootstrap$Internal$Button$Light));
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$OnChecked = function (a) {
+	return {$: 'OnChecked', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$onCheck = function (toMsg) {
+	return $rundis$elm_bootstrap$Bootstrap$Form$Checkbox$OnChecked(toMsg);
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs = function (a) {
+	return {$: 'Attrs', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Button$attrs = function (attrs_) {
+	return $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs(attrs_);
+};
+var $elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var $elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Button$onClick = function (message) {
+	return $rundis$elm_bootstrap$Bootstrap$Button$attrs(
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$Events$preventDefaultOn,
+				'click',
+				$elm$json$Json$Decode$succeed(
+					_Utils_Tuple2(message, true)))
+			]));
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Primary = {$: 'Primary'};
+var $rundis$elm_bootstrap$Bootstrap$Button$primary = $rundis$elm_bootstrap$Bootstrap$Internal$Button$Coloring(
+	$rundis$elm_bootstrap$Bootstrap$Internal$Button$Roled($rundis$elm_bootstrap$Bootstrap$Internal$Button$Primary));
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$RadioButtonItem = function (a) {
+	return {$: 'RadioButtonItem', a: a};
+};
+var $elm$html$Html$Attributes$autocomplete = function (bool) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'autocomplete',
+		bool ? 'on' : 'off');
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier = F2(
+	function (modifier, options) {
+		switch (modifier.$) {
+			case 'Size':
+				var size = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						size: $elm$core$Maybe$Just(size)
+					});
+			case 'Coloring':
+				var coloring = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						coloring: $elm$core$Maybe$Just(coloring)
+					});
+			case 'Block':
+				return _Utils_update(
+					options,
+					{block: true});
+			case 'Disabled':
+				var val = modifier.a;
+				return _Utils_update(
+					options,
+					{disabled: val});
+			default:
+				var attrs = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						attributes: _Utils_ap(options.attributes, attrs)
+					});
+		}
+	});
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions = {attributes: _List_Nil, block: false, coloring: $elm$core$Maybe$Nothing, disabled: false, size: $elm$core$Maybe$Nothing};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass = function (role) {
+	switch (role.$) {
+		case 'Primary':
+			return 'primary';
+		case 'Secondary':
+			return 'secondary';
+		case 'Success':
+			return 'success';
+		case 'Info':
+			return 'info';
+		case 'Warning':
+			return 'warning';
+		case 'Danger':
+			return 'danger';
+		case 'Dark':
+			return 'dark';
+		case 'Light':
+			return 'light';
+		default:
+			return 'link';
+	}
+};
+var $rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption = function (size) {
+	switch (size.$) {
+		case 'XS':
+			return $elm$core$Maybe$Nothing;
+		case 'SM':
+			return $elm$core$Maybe$Just('sm');
+		case 'MD':
+			return $elm$core$Maybe$Just('md');
+		case 'LG':
+			return $elm$core$Maybe$Just('lg');
+		default:
+			return $elm$core$Maybe$Just('xl');
+	}
+};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes = function (modifiers) {
+	var options = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Internal$Button$applyModifier, $rundis$elm_bootstrap$Bootstrap$Internal$Button$defaultOptions, modifiers);
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$classList(
+				_List_fromArray(
+					[
+						_Utils_Tuple2('btn', true),
+						_Utils_Tuple2('btn-block', options.block),
+						_Utils_Tuple2('disabled', options.disabled)
+					])),
+				$elm$html$Html$Attributes$disabled(options.disabled)
+			]),
+		_Utils_ap(
+			function () {
+				var _v0 = A2($elm$core$Maybe$andThen, $rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.size);
+				if (_v0.$ === 'Just') {
+					var s = _v0.a;
+					return _List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('btn-' + s)
+						]);
+				} else {
+					return _List_Nil;
+				}
+			}(),
+			_Utils_ap(
+				function () {
+					var _v1 = options.coloring;
+					if (_v1.$ === 'Just') {
+						if (_v1.a.$ === 'Roled') {
+							var role = _v1.a.a;
+							return _List_fromArray(
+								[
+									$elm$html$Html$Attributes$class(
+									'btn-' + $rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass(role))
+								]);
+						} else {
+							var role = _v1.a.a;
+							return _List_fromArray(
+								[
+									$elm$html$Html$Attributes$class(
+									'btn-outline-' + $rundis$elm_bootstrap$Bootstrap$Internal$Button$roleClass(role))
+								]);
+						}
+					} else {
+						return _List_Nil;
+					}
+				}(),
+				options.attributes)));
+};
+var $rundis$elm_bootstrap$Bootstrap$Button$radioButton = F3(
+	function (checked, options, children) {
+		var hideRadio = A2($elm$html$Html$Attributes$attribute, 'data-toggle', 'button');
+		return A2(
+			$elm$html$Html$label,
+			A2(
+				$elm$core$List$cons,
+				$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('active', checked)
+						])),
+				A2(
+					$elm$core$List$cons,
+					hideRadio,
+					$rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes(options))),
+			A2(
+				$elm$core$List$cons,
+				A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('radio'),
+							$elm$html$Html$Attributes$checked(checked),
+							$elm$html$Html$Attributes$autocomplete(false)
+						]),
+					_List_Nil),
+				children));
+	});
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton = F3(
+	function (checked, options, children) {
+		return $rundis$elm_bootstrap$Bootstrap$ButtonGroup$RadioButtonItem(
+			A3($rundis$elm_bootstrap$Bootstrap$Button$radioButton, checked, options, children));
+	});
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$GroupItem = function (a) {
+	return {$: 'GroupItem', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$applyModifier = F2(
+	function (modifier, options) {
+		switch (modifier.$) {
+			case 'Size':
+				var size = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						size: $elm$core$Maybe$Just(size)
+					});
+			case 'Vertical':
+				return _Utils_update(
+					options,
+					{vertical: true});
+			default:
+				var attrs_ = modifier.a;
+				return _Utils_update(
+					options,
+					{
+						attributes: _Utils_ap(options.attributes, attrs_)
+					});
+		}
+	});
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$defaultOptions = {attributes: _List_Nil, size: $elm$core$Maybe$Nothing, vertical: false};
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$groupAttributes = F2(
+	function (toggle, modifiers) {
+		var options = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$ButtonGroup$applyModifier, $rundis$elm_bootstrap$Bootstrap$ButtonGroup$defaultOptions, modifiers);
+		return _Utils_ap(
+			_List_fromArray(
+				[
+					A2($elm$html$Html$Attributes$attribute, 'role', 'group'),
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('btn-group', true),
+							_Utils_Tuple2('btn-group-toggle', toggle),
+							_Utils_Tuple2('btn-group-vertical', options.vertical)
+						])),
+					A2($elm$html$Html$Attributes$attribute, 'data-toggle', 'buttons')
+				]),
+			_Utils_ap(
+				function () {
+					var _v0 = A2($elm$core$Maybe$andThen, $rundis$elm_bootstrap$Bootstrap$General$Internal$screenSizeOption, options.size);
+					if (_v0.$ === 'Just') {
+						var s = _v0.a;
+						return _List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn-group-' + s)
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}(),
+				options.attributes));
+	});
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroupItem = F2(
+	function (options, items) {
+		return $rundis$elm_bootstrap$Bootstrap$ButtonGroup$GroupItem(
+			A2(
+				$elm$html$Html$div,
+				A2($rundis$elm_bootstrap$Bootstrap$ButtonGroup$groupAttributes, true, options),
+				A2(
+					$elm$core$List$map,
+					function (_v0) {
+						var elem = _v0.a;
+						return elem;
+					},
+					items)));
+	});
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$renderGroup = function (_v0) {
+	var elem = _v0.a;
+	return elem;
+};
+var $rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup = F2(
+	function (options, items) {
+		return $rundis$elm_bootstrap$Bootstrap$ButtonGroup$renderGroup(
+			A2($rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroupItem, options, items));
+	});
+var $author$project$Main$SetQuery = function (a) {
+	return {$: 'SetQuery', a: a};
+};
+var $author$project$Main$allTags = _List_fromArray(
+	[$author$project$Main$teacherTag, $author$project$Main$lectorateTag, $author$project$Main$kcpediaTag]);
+var $author$project$Util$flip = F3(
+	function (f, x, y) {
+		return A2(f, y, x);
+	});
+var $author$project$Main$isTag = A2($author$project$Util$flip, $elm$core$List$member, $author$project$Main$allTags);
+var $author$project$Main$excludeTags = $elm$core$List$filter(
+	A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$Main$isTag));
+var $elm$html$Html$form = _VirtualDom_node('form');
+var $rundis$elm_bootstrap$Bootstrap$Form$form = F2(
+	function (attributes, children) {
+		return A2($elm$html$Html$form, attributes, children);
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$applyModifier = F2(
+	function (modifier, options) {
+		var value = modifier.a;
+		return _Utils_update(
+			options,
+			{
+				attributes: _Utils_ap(options.attributes, value)
+			});
+	});
+var $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions = {attributes: _List_Nil};
+var $rundis$elm_bootstrap$Bootstrap$Form$toAttributes = function (modifiers) {
+	var options = A3($elm$core$List$foldl, $rundis$elm_bootstrap$Bootstrap$Form$applyModifier, $rundis$elm_bootstrap$Bootstrap$Form$defaultOptions, modifiers);
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('form-group')
+			]),
+		options.attributes);
+};
+var $rundis$elm_bootstrap$Bootstrap$Form$group = F2(
+	function (options, children) {
+		return A2(
+			$elm$html$Html$div,
+			$rundis$elm_bootstrap$Bootstrap$Form$toAttributes(options),
+			children);
+	});
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$html$Html$h5 = _VirtualDom_node('h5');
+var $elm$html$Html$hr = _VirtualDom_node('hr');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$core$String$concat = function (strings) {
+	return A2($elm$core$String$join, '', strings);
+};
+var $elm$core$String$fromList = _String_fromList;
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $rtfeldman$elm_hex$Hex$unsafeToDigit = function (num) {
+	unsafeToDigit:
+	while (true) {
+		switch (num) {
+			case 0:
+				return _Utils_chr('0');
+			case 1:
+				return _Utils_chr('1');
+			case 2:
+				return _Utils_chr('2');
+			case 3:
+				return _Utils_chr('3');
+			case 4:
+				return _Utils_chr('4');
+			case 5:
+				return _Utils_chr('5');
+			case 6:
+				return _Utils_chr('6');
+			case 7:
+				return _Utils_chr('7');
+			case 8:
+				return _Utils_chr('8');
+			case 9:
+				return _Utils_chr('9');
+			case 10:
+				return _Utils_chr('a');
+			case 11:
+				return _Utils_chr('b');
+			case 12:
+				return _Utils_chr('c');
+			case 13:
+				return _Utils_chr('d');
+			case 14:
+				return _Utils_chr('e');
+			case 15:
+				return _Utils_chr('f');
+			default:
+				var $temp$num = num;
+				num = $temp$num;
+				continue unsafeToDigit;
+		}
+	}
+};
+var $rtfeldman$elm_hex$Hex$unsafePositiveToDigits = F2(
+	function (digits, num) {
+		unsafePositiveToDigits:
+		while (true) {
+			if (num < 16) {
+				return A2(
+					$elm$core$List$cons,
+					$rtfeldman$elm_hex$Hex$unsafeToDigit(num),
+					digits);
+			} else {
+				var $temp$digits = A2(
+					$elm$core$List$cons,
+					$rtfeldman$elm_hex$Hex$unsafeToDigit(
+						A2($elm$core$Basics$modBy, 16, num)),
+					digits),
+					$temp$num = (num / 16) | 0;
+				digits = $temp$digits;
+				num = $temp$num;
+				continue unsafePositiveToDigits;
+			}
+		}
+	});
+var $rtfeldman$elm_hex$Hex$toString = function (num) {
+	return $elm$core$String$fromList(
+		(num < 0) ? A2(
+			$elm$core$List$cons,
+			_Utils_chr('-'),
+			A2($rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, -num)) : A2($rtfeldman$elm_hex$Hex$unsafePositiveToDigits, _List_Nil, num));
+};
+var $author$project$Util$hexColor = function (color) {
+	var r = color.a;
+	var g = color.b;
+	var b = color.c;
+	return $elm$core$String$concat(
+		A2(
+			$elm$core$List$cons,
+			'#',
+			A2(
+				$elm$core$List$map,
+				$rtfeldman$elm_hex$Hex$toString,
+				_List_fromArray(
+					[r, g, b]))));
+};
+var $author$project$Util$Color = F3(
+	function (a, b, c) {
+		return {$: 'Color', a: a, b: b, c: c};
+	});
+var $author$project$Util$stringToColor = function (string) {
+	var offset = F2(
+		function (o, _v3) {
+			var a = _v3.a;
+			var b = _v3.b;
+			var c = _v3.c;
+			return _Utils_Tuple3(o + a, o + b, o + c);
+		});
+	var mup = F2(
+		function (m, _v2) {
+			var a = _v2.a;
+			var b = _v2.b;
+			var c = _v2.c;
+			return _Utils_Tuple3(a * m, b * m, c * m);
+		});
+	var mapTriple = F2(
+		function (f, _v1) {
+			var a = _v1.a;
+			var b = _v1.b;
+			var c = _v1.c;
+			return _Utils_Tuple3(
+				f(a),
+				f(b),
+				f(c));
+		});
+	var countLetter = function (letter) {
+		return $elm$core$List$length(
+			A2($elm$core$String$indexes, letter, string));
+	};
+	var countCommon = function () {
+		var c = countLetter('i') + countLetter('m');
+		var b = countLetter('a') + countLetter('r');
+		var a = countLetter('e') + countLetter('d');
+		return A2(
+			mapTriple,
+			$elm$core$Basics$toFloat,
+			_Utils_Tuple3(a, b, c));
+	}();
+	var _v0 = A2(
+		mapTriple,
+		$elm$core$Basics$floor,
+		A2(
+			offset,
+			32,
+			A2(mup, 64, countCommon)));
+	var red = _v0.a;
+	var green = _v0.b;
+	var blue = _v0.c;
+	return A3($author$project$Util$Color, red, green, blue);
+};
+var $author$project$Main$viewKeywordLink = function (keyword) {
+	return A2(
+		$elm$html$Html$a,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('keyword'),
+				$elm$html$Html$Attributes$href(keyword.url),
+				A2(
+				$elm$html$Html$Attributes$style,
+				'color',
+				$author$project$Util$hexColor(
+					$author$project$Util$stringToColor(keyword.title)))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(keyword.title)
+			]));
+};
+var $elm$html$Html$Attributes$height = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'height',
+		$elm$core$String$fromInt(n));
+};
+var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
+var $elm$html$Html$Attributes$width = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'width',
+		$elm$core$String$fromInt(n));
+};
+var $author$project$Main$keyIcon = A2(
+	$elm$html$Html$img,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('key-icon'),
+			$elm$html$Html$Attributes$src('./key.svg'),
+			$elm$html$Html$Attributes$width(25),
+			$elm$html$Html$Attributes$height(25),
+			$elm$html$Html$Attributes$title('this research is only accessible for students and staff')
+		]),
+	_List_Nil);
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
+var $author$project$Main$viewResearchLink = F2(
+	function (link, vis) {
+		if (vis.$ === 'PublicLink') {
+			return A2(
+				$elm$html$Html$a,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$href(link.url),
+						$elm$html$Html$Attributes$target('_blank')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(link.title)
+					]));
+		} else {
+			return A2(
+				$elm$html$Html$a,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$href(link.url),
+						$elm$html$Html$Attributes$target('_blank')
+					]),
+				_List_fromArray(
+					[
+						$author$project$Main$keyIcon,
+						$elm$html$Html$text(link.title)
+					]));
+		}
+	});
+var $author$project$Main$hyperlink = function (link) {
+	if (link.$ === 'ResearchLink') {
+		var l = link.a;
+		var status = link.b;
+		return A2($author$project$Main$viewResearchLink, l, status);
+	} else {
+		var l = link.a;
+		return $author$project$Main$viewKeywordLink(l);
+	}
+};
+var $author$project$Main$KeywordLink = function (a) {
+	return {$: 'KeywordLink', a: a};
+};
+var $author$project$Main$LinkInfo = F2(
+	function (title, url) {
+		return {title: title, url: url};
+	});
+var $elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			$elm$core$String$join,
+			after,
+			A2($elm$core$String$split, before, string));
+	});
+var $author$project$Main$keywordLink = function (keyword) {
+	return A3($elm$core$String$replace, ' ', '-', keyword);
+};
+var $author$project$Main$keyToLinkInfo = function (key) {
+	return $author$project$Main$KeywordLink(
+		A2(
+			$author$project$Main$LinkInfo,
+			key,
+			'#' + $author$project$Main$keywordLink(key)));
+};
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$h3 = _VirtualDom_node('h3');
+var $author$project$Main$scaleLink = F3(
+	function (amount, attrs, html) {
+		switch (amount) {
+			case 5:
+				return A2(
+					$elm$html$Html$h1,
+					attrs,
+					_List_fromArray(
+						[html]));
+			case 4:
+				return A2(
+					$elm$html$Html$h2,
+					attrs,
+					_List_fromArray(
+						[html]));
+			case 3:
+				return A2(
+					$elm$html$Html$h3,
+					attrs,
+					_List_fromArray(
+						[html]));
+			case 2:
+				return A2(
+					$elm$html$Html$h4,
+					attrs,
+					_List_fromArray(
+						[html]));
+			case 1:
+				return A2(
+					$elm$html$Html$h5,
+					attrs,
+					_List_fromArray(
+						[html]));
+			default:
+				return A2(
+					$elm$html$Html$h1,
+					attrs,
+					_List_fromArray(
+						[html]));
+		}
+	});
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $author$project$Main$attrsFromResearch = function (research) {
+	var _v0 = research.publicationStatus;
+	if (_v0.$ === 'LocalPublication') {
+		return _List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('local-publication')
+			]);
+	} else {
+		return _List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('global-publication')
+			]);
+	}
+};
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $author$project$Main$InternalLink = {$: 'InternalLink'};
+var $author$project$Main$PublicLink = {$: 'PublicLink'};
+var $author$project$Main$ResearchLink = F2(
+	function (a, b) {
+		return {$: 'ResearchLink', a: a, b: b};
+	});
+var $author$project$Main$baseExpoUrl = 'https://www.researchcatalogue.net/profile/show-exposition?exposition=';
+var $author$project$Main$displayTitle = function (research) {
+	return A3($elm$core$String$replace, '&amp;', '&', research.title);
+};
+var $author$project$Main$makeLink = function (research) {
+	var vis = function () {
+		var _v0 = research.publicationStatus;
+		if (_v0.$ === 'LocalPublication') {
+			return $author$project$Main$InternalLink;
+		} else {
+			return $author$project$Main$PublicLink;
+		}
+	}();
+	var link = _Utils_ap(
+		$author$project$Main$baseExpoUrl,
+		$elm$core$String$fromInt(
+			function ($) {
+				return $.id;
+			}(research)));
+	return A2(
+		$author$project$Main$ResearchLink,
+		A2(
+			$author$project$Main$LinkInfo,
+			$author$project$Main$displayTitle(research),
+			link),
+		vis);
+};
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $author$project$Util$parenthesize = function (x) {
+	return '(' + (x + ')');
+};
+var $author$project$Main$statusToString = function (status) {
+	switch (status.$) {
+		case 'InProgress':
+			return 'in progress';
+		case 'Published':
+			return 'public';
+		case 'LocalPublication':
+			return 'KonCon portal members only!';
+		default:
+			return '...';
+	}
+};
+var $author$project$Main$typeToString = function (researchType) {
+	switch (researchType.$) {
+		case 'Teacher':
+			return 'Teacher';
+		case 'Student':
+			return 'Student';
+		case 'Lectorate':
+			return 'Lectorate';
+		case 'Kcpedia':
+			return 'KCPedia';
+		case 'Unknown':
+			return 'Unknown';
+		default:
+			return 'music';
+	}
+};
+var $author$project$Main$viewShortMeta = function (research) {
+	return A2(
+		$elm$html$Html$li,
+		A2(
+			$elm$core$List$cons,
+			$elm$html$Html$Attributes$class('research-meta'),
+			$author$project$Main$attrsFromResearch(research)),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('research-meta-title')
+					]),
+				_List_fromArray(
+					[
+						$author$project$Main$hyperlink(
+						$author$project$Main$makeLink(research))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('research-meta-status'),
+						$elm$html$Html$Attributes$title('publication status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Main$statusToString(research.publicationStatus))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('research-meta-author')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(research.author),
+						A2(
+						$elm$html$Html$span,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('research-meta-type')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								' ' + $author$project$Util$parenthesize(
+									$author$project$Main$typeToString(research.researchType)))
+							]))
+					]))
+			]));
+};
+var $author$project$Main$researchByKeywordList = F2(
+	function (sortedKeys, dict) {
+		var renderRecord = F2(
+			function (key, research) {
+				if (research.$ === 'Just') {
+					if (!research.a.b) {
+						return A2(
+							$elm$html$Html$span,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('empty keyword')
+								]));
+					} else {
+						var list = research.a;
+						return A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$id(
+									$author$project$Main$keywordLink(key))
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$h5,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('keyword-header')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text(key)
+										])),
+									A2(
+									$elm$html$Html$a,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('back-to-top'),
+											$elm$html$Html$Attributes$href('#top'),
+											$elm$html$Html$Attributes$title('back to top')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('back to top')
+										])),
+									A2(
+									$elm$html$Html$ul,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('research-for-keyword')
+										]),
+									A2($elm$core$List$map, $author$project$Main$viewShortMeta, list))
+								]));
+					}
+				} else {
+					return A2($elm$html$Html$span, _List_Nil, _List_Nil);
+				}
+			});
+		var renderKeyWithResearch = function (key) {
+			return A2(
+				renderRecord,
+				key,
+				A2($elm$core$Dict$get, key, dict));
+		};
+		var renderKey = function (key) {
+			var list = A2($elm$core$Dict$get, key, dict);
+			var n = function () {
+				if (list.$ === 'Just') {
+					if (!list.a.b) {
+						return 0;
+					} else {
+						var l = list.a;
+						return $elm$core$List$length(l);
+					}
+				} else {
+					return 0;
+				}
+			}();
+			var mkLink = A2(
+				$elm$core$Basics$composeL,
+				A2(
+					$elm$core$Basics$composeL,
+					A2(
+						$author$project$Main$scaleLink,
+						n,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('keywordlink')
+							])),
+					$author$project$Main$hyperlink),
+				$author$project$Main$keyToLinkInfo);
+			return mkLink(key);
+		};
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			$elm$core$List$concat(
+				_List_fromArray(
+					[
+						A2($elm$core$List$map, renderKey, sortedKeys),
+						_List_fromArray(
+						[
+							A2($elm$html$Html$hr, _List_Nil, _List_Nil)
+						]),
+						_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('keyword-research-list')
+								]),
+							A2($elm$core$List$map, renderKeyWithResearch, sortedKeys))
+						])
+					])));
+	});
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$List$sort = function (xs) {
+	return A2($elm$core$List$sortBy, $elm$core$Basics$identity, xs);
+};
+var $elm$core$String$toLower = _String_toLower;
+var $author$project$Main$renderKeywords = F2(
+	function (query, dict) {
+		var queryForm = A2(
+			$rundis$elm_bootstrap$Bootstrap$Form$form,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('form-inline')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$rundis$elm_bootstrap$Bootstrap$Form$group,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('form-control'),
+									$elm$html$Html$Attributes$placeholder('Search keywords'),
+									$elm$html$Html$Events$onInput($author$project$Main$SetQuery),
+									A2($elm$html$Html$Attributes$style, 'margin', '.5rem 0')
+								]),
+							_List_Nil)
+						]))
+				]));
+		var lowerQuery = $elm$core$String$toLower(query);
+		var allKeys = $elm$core$Dict$keys(dict);
+		var acceptableKeys = A2(
+			$elm$core$List$filter,
+			A2(
+				$elm$core$Basics$composeL,
+				$elm$core$String$contains(lowerQuery),
+				$elm$core$String$toLower),
+			allKeys);
+		var sortedKeys = $elm$core$List$sort(acceptableKeys);
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					queryForm,
+					A2(
+					$author$project$Main$researchByKeywordList,
+					$author$project$Main$excludeTags(sortedKeys),
+					dict)
+				]));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$DropdownToggle = function (a) {
+	return {$: 'DropdownToggle', a: a};
+};
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$Open = {$: 'Open'};
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$nextStatus = function (status) {
+	switch (status.$) {
+		case 'Open':
+			return $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed;
+		case 'ListenClicks':
+			return $rundis$elm_bootstrap$Bootstrap$Dropdown$Closed;
+		default:
+			return $rundis$elm_bootstrap$Bootstrap$Dropdown$Open;
+	}
+};
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $elm$json$Json$Decode$float = _Json_decodeFloat;
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetHeight = A2($elm$json$Json$Decode$field, 'offsetHeight', $elm$json$Json$Decode$float);
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetWidth = A2($elm$json$Json$Decode$field, 'offsetWidth', $elm$json$Json$Decode$float);
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetLeft = A2($elm$json$Json$Decode$field, 'offsetLeft', $elm$json$Json$Decode$float);
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetParent = F2(
+	function (x, decoder) {
+		return $elm$json$Json$Decode$oneOf(
+			_List_fromArray(
+				[
+					A2(
+					$elm$json$Json$Decode$field,
+					'offsetParent',
+					$elm$json$Json$Decode$null(x)),
+					A2($elm$json$Json$Decode$field, 'offsetParent', decoder)
+				]));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetTop = A2($elm$json$Json$Decode$field, 'offsetTop', $elm$json$Json$Decode$float);
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$scrollLeft = A2($elm$json$Json$Decode$field, 'scrollLeft', $elm$json$Json$Decode$float);
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$scrollTop = A2($elm$json$Json$Decode$field, 'scrollTop', $elm$json$Json$Decode$float);
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$position = F2(
+	function (x, y) {
+		return A2(
+			$elm$json$Json$Decode$andThen,
+			function (_v0) {
+				var x_ = _v0.a;
+				var y_ = _v0.b;
+				return A2(
+					$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetParent,
+					_Utils_Tuple2(x_, y_),
+					A2($rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$position, x_, y_));
+			},
+			A5(
+				$elm$json$Json$Decode$map4,
+				F4(
+					function (scrollLeft_, scrollTop_, offsetLeft_, offsetTop_) {
+						return _Utils_Tuple2((x + offsetLeft_) - scrollLeft_, (y + offsetTop_) - scrollTop_);
+					}),
+				$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$scrollLeft,
+				$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$scrollTop,
+				$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetLeft,
+				$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetTop));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$boundingArea = A4(
+	$elm$json$Json$Decode$map3,
+	F3(
+		function (_v0, width, height) {
+			var x = _v0.a;
+			var y = _v0.b;
+			return {height: height, left: x, top: y, width: width};
+		}),
+	A2($rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$position, 0, 0),
+	$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetWidth,
+	$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$offsetHeight);
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$childNode = function (idx) {
+	return $elm$json$Json$Decode$at(
+		_List_fromArray(
+			[
+				'childNodes',
+				$elm$core$String$fromInt(idx)
+			]));
+};
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$nextSibling = function (decoder) {
+	return A2($elm$json$Json$Decode$field, 'nextSibling', decoder);
+};
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$className = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['className']),
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$isToggle = A2(
+	$elm$json$Json$Decode$andThen,
+	function (_class) {
+		return A2($elm$core$String$contains, 'dropdown-toggle', _class) ? $elm$json$Json$Decode$succeed(true) : $elm$json$Json$Decode$succeed(false);
+	},
+	$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$className);
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$toggler = F2(
+	function (path, decoder) {
+		return $elm$json$Json$Decode$oneOf(
+			_List_fromArray(
+				[
+					A2(
+					$elm$json$Json$Decode$andThen,
+					function (res) {
+						return res ? A2($elm$json$Json$Decode$at, path, decoder) : $elm$json$Json$Decode$fail('');
+					},
+					A2($elm$json$Json$Decode$at, path, $rundis$elm_bootstrap$Bootstrap$Dropdown$isToggle)),
+					A2(
+					$elm$json$Json$Decode$andThen,
+					function (_v0) {
+						return A2(
+							$rundis$elm_bootstrap$Bootstrap$Dropdown$toggler,
+							_Utils_ap(
+								path,
+								_List_fromArray(
+									['parentElement'])),
+							decoder);
+					},
+					A2(
+						$elm$json$Json$Decode$at,
+						_Utils_ap(
+							path,
+							_List_fromArray(
+								['parentElement'])),
+						$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$className)),
+					$elm$json$Json$Decode$fail('No toggler found')
+				]));
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$sizeDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	$elm$core$Tuple$pair,
+	A2(
+		$rundis$elm_bootstrap$Bootstrap$Dropdown$toggler,
+		_List_fromArray(
+			['target']),
+		$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$boundingArea),
+	A2(
+		$rundis$elm_bootstrap$Bootstrap$Dropdown$toggler,
+		_List_fromArray(
+			['target']),
+		$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$nextSibling(
+			A2($rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$childNode, 0, $rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$boundingArea))));
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$clickHandler = F2(
+	function (toMsg, state) {
+		var status = state.a.status;
+		return A2(
+			$elm$json$Json$Decode$andThen,
+			function (_v0) {
+				var b = _v0.a;
+				var m = _v0.b;
+				return $elm$json$Json$Decode$succeed(
+					toMsg(
+						$rundis$elm_bootstrap$Bootstrap$Dropdown$State(
+							{
+								menuSize: m,
+								status: $rundis$elm_bootstrap$Bootstrap$Dropdown$nextStatus(status),
+								toggleSize: b
+							})));
+			},
+			$rundis$elm_bootstrap$Bootstrap$Dropdown$sizeDecoder);
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$togglePrivate = F4(
+	function (buttonOptions, children, toggleMsg, state) {
+		return A2(
+			$elm$html$Html$button,
+			_Utils_ap(
+				$rundis$elm_bootstrap$Bootstrap$Internal$Button$buttonAttributes(buttonOptions),
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('dropdown-toggle'),
+						$elm$html$Html$Attributes$type_('button'),
+						A2(
+						$elm$html$Html$Events$on,
+						'click',
+						A2($rundis$elm_bootstrap$Bootstrap$Dropdown$clickHandler, toggleMsg, state))
+					])),
+			children);
+	});
+var $rundis$elm_bootstrap$Bootstrap$Dropdown$toggle = F2(
+	function (buttonOptions, children) {
+		return $rundis$elm_bootstrap$Bootstrap$Dropdown$DropdownToggle(
+			A2($rundis$elm_bootstrap$Bootstrap$Dropdown$togglePrivate, buttonOptions, children));
+	});
+var $author$project$Main$SetTitleQuery = function (a) {
+	return {$: 'SetTitleQuery', a: a};
+};
+var $author$project$Main$SetTableState = function (a) {
+	return {$: 'SetTableState', a: a};
+};
+var $billstclair$elm_sortable_table$Table$Config = function (a) {
+	return {$: 'Config', a: a};
+};
+var $billstclair$elm_sortable_table$Table$customConfig = function (_v0) {
+	var toId = _v0.toId;
+	var toMsg = _v0.toMsg;
+	var columns = _v0.columns;
+	var customizations = _v0.customizations;
+	return $billstclair$elm_sortable_table$Table$Config(
+		{
+			columns: A2(
+				$elm$core$List$map,
+				function (_v1) {
+					var cData = _v1.a;
+					return cData;
+				},
+				columns),
+			customizations: customizations,
+			toId: toId,
+			toMsg: toMsg
+		});
+};
+var $billstclair$elm_sortable_table$Table$Column = function (a) {
+	return {$: 'Column', a: a};
+};
+var $billstclair$elm_sortable_table$Table$ColumnData = F3(
+	function (name, viewData, sorter) {
+		return {name: name, sorter: sorter, viewData: viewData};
+	});
+var $billstclair$elm_sortable_table$Table$HtmlDetails = F2(
+	function (attributes, children) {
+		return {attributes: attributes, children: children};
+	});
+var $billstclair$elm_sortable_table$Table$textDetails = function (str) {
+	return A2(
+		$billstclair$elm_sortable_table$Table$HtmlDetails,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text(str)
+			]));
+};
+var $billstclair$elm_sortable_table$Table$customColumn = function (_v0) {
+	var name = _v0.name;
+	var viewData = _v0.viewData;
+	var sorter = _v0.sorter;
+	return $billstclair$elm_sortable_table$Table$Column(
+		A3(
+			$billstclair$elm_sortable_table$Table$ColumnData,
+			name,
+			A2($elm$core$Basics$composeL, $billstclair$elm_sortable_table$Table$textDetails, viewData),
+			sorter));
+};
+var $billstclair$elm_sortable_table$Table$IncOrDec = function (a) {
+	return {$: 'IncOrDec', a: a};
+};
+var $billstclair$elm_sortable_table$Table$increasingOrDecreasingBy = function (toComparable) {
+	return $billstclair$elm_sortable_table$Table$IncOrDec(
+		$elm$core$List$sortBy(toComparable));
+};
+var $author$project$Main$dateColumn = F2(
+	function (name, toCreated) {
+		var sortableDateString = function (mstr) {
+			return A2(
+				$elm$core$String$join,
+				'/',
+				$elm$core$List$reverse(
+					A2(
+						$elm$core$String$split,
+						'/',
+						A2($elm$core$Maybe$withDefault, '?', mstr))));
+		};
+		return $billstclair$elm_sortable_table$Table$customColumn(
+			{
+				name: name,
+				sorter: $billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
+					A2($elm$core$Basics$composeR, toCreated, sortableDateString)),
+				viewData: A2(
+					$elm$core$Basics$composeR,
+					toCreated,
+					$elm$core$Maybe$withDefault('no date'))
+			});
+	});
+var $billstclair$elm_sortable_table$Table$simpleRowAttrs = function (_v0) {
+	return _List_Nil;
+};
+var $elm$core$Char$fromCode = _Char_fromCode;
+var $billstclair$elm_sortable_table$Table$nbsp = $elm$core$String$fromList(
+	_List_fromArray(
+		[
+			$elm$core$Char$fromCode(160)
+		]));
+var $billstclair$elm_sortable_table$Table$darkGrey = function (symbol) {
+	return A2(
+		$elm$html$Html$span,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', '#555')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				_Utils_ap($billstclair$elm_sortable_table$Table$nbsp, symbol))
+			]));
+};
+var $billstclair$elm_sortable_table$Table$lightGrey = function (symbol) {
+	return A2(
+		$elm$html$Html$span,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', '#ccc')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				_Utils_ap($billstclair$elm_sortable_table$Table$nbsp, symbol))
+			]));
+};
+var $elm$html$Html$th = _VirtualDom_node('th');
+var $billstclair$elm_sortable_table$Table$simpleTheadHelp = function (_v0) {
+	var name = _v0.a;
+	var status = _v0.b;
+	var click = _v0.c;
+	var content = function () {
+		switch (status.$) {
+			case 'Unsortable':
+				return _List_fromArray(
+					[
+						$elm$html$Html$text(name)
+					]);
+			case 'Sortable':
+				var selected = status.a;
+				return _List_fromArray(
+					[
+						$elm$html$Html$text(name),
+						selected ? $billstclair$elm_sortable_table$Table$darkGrey('↓') : $billstclair$elm_sortable_table$Table$lightGrey('↓')
+					]);
+			default:
+				if (status.a.$ === 'Nothing') {
+					var _v2 = status.a;
+					return _List_fromArray(
+						[
+							$elm$html$Html$text(name),
+							$billstclair$elm_sortable_table$Table$lightGrey('↕')
+						]);
+				} else {
+					var isReversed = status.a.a;
+					return _List_fromArray(
+						[
+							$elm$html$Html$text(name),
+							$billstclair$elm_sortable_table$Table$darkGrey(
+							isReversed ? '↑' : '↓')
+						]);
+				}
+		}
+	}();
+	return A2(
+		$elm$html$Html$th,
+		_List_fromArray(
+			[click]),
+		content);
+};
+var $billstclair$elm_sortable_table$Table$simpleThead = function (headers) {
+	return A2(
+		$billstclair$elm_sortable_table$Table$HtmlDetails,
+		_List_Nil,
+		A2($elm$core$List$map, $billstclair$elm_sortable_table$Table$simpleTheadHelp, headers));
+};
+var $billstclair$elm_sortable_table$Table$defaultCustomizations = {caption: $elm$core$Maybe$Nothing, rowAttrs: $billstclair$elm_sortable_table$Table$simpleRowAttrs, tableAttrs: _List_Nil, tbodyAttrs: _List_Nil, tfoot: $elm$core$Maybe$Nothing, thead: $billstclair$elm_sortable_table$Table$simpleThead};
+var $author$project$Main$getDate = function (research) {
+	var _v0 = research.publicationStatus;
+	switch (_v0.$) {
+		case 'InProgress':
+			return $elm$core$Maybe$Just('in progress');
+		case 'Undecided':
+			return $elm$core$Maybe$Just('unknown');
+		case 'Published':
+			return research.publication;
+		default:
+			return research.publication;
+	}
+};
+var $author$project$Main$getModified = function ($) {
+	return $.lastChanged;
+};
+var $author$project$Main$getTitle = function (l) {
+	if (l.$ === 'ResearchLink') {
+		var i = l.a;
+		return i.title;
+	} else {
+		var i = l.a;
+		return i.title;
+	}
+};
+var $billstclair$elm_sortable_table$Table$veryCustomColumn = $billstclair$elm_sortable_table$Table$Column;
+var $author$project$Main$viewLink = function (link) {
+	return A2(
+		$billstclair$elm_sortable_table$Table$HtmlDetails,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$author$project$Main$hyperlink(link)
+			]));
+};
+var $author$project$Main$linkColumn = F2(
+	function (name, toLink) {
+		return $billstclair$elm_sortable_table$Table$veryCustomColumn(
+			{
+				name: name,
+				sorter: $billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
+					A2($elm$core$Basics$composeL, $author$project$Main$getTitle, toLink)),
+				viewData: A2($elm$core$Basics$composeL, $author$project$Main$viewLink, toLink)
+			});
+	});
+var $billstclair$elm_sortable_table$Table$stringColumn = F2(
+	function (name, toStr) {
+		return $billstclair$elm_sortable_table$Table$Column(
+			{
+				name: name,
+				sorter: $billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(toStr),
+				viewData: A2($elm$core$Basics$composeL, $billstclair$elm_sortable_table$Table$textDetails, toStr)
+			});
+	});
+var $author$project$Main$typeColumn = F2(
+	function (name, getType) {
+		return $billstclair$elm_sortable_table$Table$customColumn(
+			{
+				name: name,
+				sorter: $billstclair$elm_sortable_table$Table$increasingOrDecreasingBy(
+					A2($elm$core$Basics$composeL, $author$project$Main$typeToString, getType)),
+				viewData: A2($elm$core$Basics$composeL, $author$project$Main$typeToString, getType)
+			});
+	});
+var $author$project$Main$config = $billstclair$elm_sortable_table$Table$customConfig(
+	{
+		columns: _List_fromArray(
+			[
+				A2(
+				$author$project$Main$typeColumn,
+				'Type',
+				function ($) {
+					return $.researchType;
+				}),
+				A2($author$project$Main$linkColumn, 'Title', $author$project$Main$makeLink),
+				A2(
+				$billstclair$elm_sortable_table$Table$stringColumn,
+				'Author',
+				function ($) {
+					return $.author;
+				}),
+				A2($author$project$Main$dateColumn, 'Published', $author$project$Main$getDate),
+				A2($author$project$Main$dateColumn, 'Modified', $author$project$Main$getModified),
+				A2(
+				$billstclair$elm_sortable_table$Table$stringColumn,
+				'Keywords',
+				A2(
+					$elm$core$Basics$composeL,
+					A2(
+						$elm$core$Basics$composeL,
+						A2(
+							$elm$core$Basics$composeL,
+							$elm$core$String$join(', '),
+							$elm$core$List$map($author$project$Main$capitalize)),
+						$author$project$Main$excludeTags),
+					function ($) {
+						return $.keywords;
+					})),
+				A2(
+				$billstclair$elm_sortable_table$Table$stringColumn,
+				'Visibility',
+				A2(
+					$elm$core$Basics$composeL,
+					$author$project$Main$statusToString,
+					function ($) {
+						return $.publicationStatus;
+					}))
+			]),
+		customizations: _Utils_update(
+			$billstclair$elm_sortable_table$Table$defaultCustomizations,
+			{
+				rowAttrs: $author$project$Main$attrsFromResearch,
+				tableAttrs: _List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('table')
+					])
+			}),
+		toId: A2(
+			$elm$core$Basics$composeL,
+			$elm$core$String$fromInt,
+			function ($) {
+				return $.id;
+			}),
+		toMsg: $author$project$Main$SetTableState
+	});
+var $rundis$elm_bootstrap$Bootstrap$Utilities$Display$inline = $elm$html$Html$Attributes$class('d-inline');
+var $rundis$elm_bootstrap$Bootstrap$Utilities$Spacing$m1 = $elm$html$Html$Attributes$class('m-1');
+var $elm$html$Html$caption = _VirtualDom_node('caption');
+var $billstclair$elm_sortable_table$Table$applySorter = F3(
+	function (isReversed, sorter, data) {
+		switch (sorter.$) {
+			case 'None':
+				return data;
+			case 'Increasing':
+				var srt = sorter.a;
+				return srt(data);
+			case 'Decreasing':
+				var srt = sorter.a;
+				return $elm$core$List$reverse(
+					srt(data));
+			case 'IncOrDec':
+				var srt = sorter.a;
+				return isReversed ? $elm$core$List$reverse(
+					srt(data)) : srt(data);
+			default:
+				var srt = sorter.a;
+				return isReversed ? srt(data) : $elm$core$List$reverse(
+					srt(data));
+		}
+	});
+var $billstclair$elm_sortable_table$Table$findSorter = F2(
+	function (selectedColumn, columnData) {
+		findSorter:
+		while (true) {
+			if (!columnData.b) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var name = columnData.a.name;
+				var sorter = columnData.a.sorter;
+				var remainingColumnData = columnData.b;
+				if (_Utils_eq(name, selectedColumn)) {
+					return $elm$core$Maybe$Just(sorter);
+				} else {
+					var $temp$selectedColumn = selectedColumn,
+						$temp$columnData = remainingColumnData;
+					selectedColumn = $temp$selectedColumn;
+					columnData = $temp$columnData;
+					continue findSorter;
+				}
+			}
+		}
+	});
+var $billstclair$elm_sortable_table$Table$sort = F3(
+	function (_v0, columnData, data) {
+		var selectedColumn = _v0.a;
+		var isReversed = _v0.b;
+		var _v1 = A2($billstclair$elm_sortable_table$Table$findSorter, selectedColumn, columnData);
+		if (_v1.$ === 'Nothing') {
+			return data;
+		} else {
+			var sorter = _v1.a;
+			return A3($billstclair$elm_sortable_table$Table$applySorter, isReversed, sorter, data);
+		}
+	});
+var $billstclair$elm_sortable_table$Table$getSortedData = F3(
+	function (_v0, state, data) {
+		var toId = _v0.a.toId;
+		var toMsg = _v0.a.toMsg;
+		var columns = _v0.a.columns;
+		var customizations = _v0.a.customizations;
+		return A3($billstclair$elm_sortable_table$Table$sort, state, columns, data);
+	});
+var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
+	return _VirtualDom_keyedNode(
+		_VirtualDom_noScript(tag));
+};
+var $elm$html$Html$Keyed$node = $elm$virtual_dom$VirtualDom$keyedNode;
+var $elm$html$Html$table = _VirtualDom_node('table');
+var $elm$html$Html$tfoot = _VirtualDom_node('tfoot');
+var $elm$html$Html$thead = _VirtualDom_node('thead');
+var $billstclair$elm_sortable_table$Table$Reversible = function (a) {
+	return {$: 'Reversible', a: a};
+};
+var $billstclair$elm_sortable_table$Table$Sortable = function (a) {
+	return {$: 'Sortable', a: a};
+};
+var $billstclair$elm_sortable_table$Table$Unsortable = {$: 'Unsortable'};
+var $billstclair$elm_sortable_table$Table$onClick = F3(
+	function (name, isReversed, toMsg) {
+		return A2(
+			$elm$html$Html$Events$on,
+			'click',
+			A2(
+				$elm$json$Json$Decode$map,
+				toMsg,
+				A3(
+					$elm$json$Json$Decode$map2,
+					$billstclair$elm_sortable_table$Table$State,
+					$elm$json$Json$Decode$succeed(name),
+					$elm$json$Json$Decode$succeed(isReversed))));
+	});
+var $billstclair$elm_sortable_table$Table$toHeaderInfo = F3(
+	function (_v0, toMsg, _v1) {
+		var sortName = _v0.a;
+		var isReversed = _v0.b;
+		var name = _v1.name;
+		var sorter = _v1.sorter;
+		switch (sorter.$) {
+			case 'None':
+				return _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Unsortable,
+					A3($billstclair$elm_sortable_table$Table$onClick, sortName, isReversed, toMsg));
+			case 'Increasing':
+				return _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Sortable(
+						!_Utils_eq(name, sortName)),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, false, toMsg));
+			case 'Decreasing':
+				return _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Sortable(
+						_Utils_eq(name, sortName)),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, false, toMsg));
+			case 'IncOrDec':
+				return _Utils_eq(name, sortName) ? _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Reversible(
+						$elm$core$Maybe$Just(!isReversed)),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, !isReversed, toMsg)) : _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Reversible($elm$core$Maybe$Nothing),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, false, toMsg));
+			default:
+				return _Utils_eq(name, sortName) ? _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Reversible(
+						$elm$core$Maybe$Just(isReversed)),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, !isReversed, toMsg)) : _Utils_Tuple3(
+					name,
+					$billstclair$elm_sortable_table$Table$Reversible($elm$core$Maybe$Nothing),
+					A3($billstclair$elm_sortable_table$Table$onClick, name, false, toMsg));
+		}
+	});
+var $elm$html$Html$tr = _VirtualDom_node('tr');
+var $elm$virtual_dom$VirtualDom$lazy3 = _VirtualDom_lazy3;
+var $elm$html$Html$Lazy$lazy3 = $elm$virtual_dom$VirtualDom$lazy3;
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $billstclair$elm_sortable_table$Table$viewCell = F2(
+	function (data, _v0) {
+		var viewData = _v0.viewData;
+		var details = viewData(data);
+		return A2($elm$html$Html$td, details.attributes, details.children);
+	});
+var $billstclair$elm_sortable_table$Table$viewRowHelp = F3(
+	function (columns, toRowAttrs, data) {
+		return A2(
+			$elm$html$Html$tr,
+			toRowAttrs(data),
+			A2(
+				$elm$core$List$map,
+				$billstclair$elm_sortable_table$Table$viewCell(data),
+				columns));
+	});
+var $billstclair$elm_sortable_table$Table$viewRow = F4(
+	function (toId, columns, toRowAttrs, data) {
+		return _Utils_Tuple2(
+			toId(data),
+			A4($elm$html$Html$Lazy$lazy3, $billstclair$elm_sortable_table$Table$viewRowHelp, columns, toRowAttrs, data));
+	});
+var $billstclair$elm_sortable_table$Table$view = F3(
+	function (conf, state, data) {
+		var toId = conf.a.toId;
+		var toMsg = conf.a.toMsg;
+		var columns = conf.a.columns;
+		var customizations = conf.a.customizations;
+		var theadDetails = customizations.thead(
+			A2(
+				$elm$core$List$map,
+				A2($billstclair$elm_sortable_table$Table$toHeaderInfo, state, toMsg),
+				columns));
+		var thead = A2(
+			$elm$html$Html$thead,
+			theadDetails.attributes,
+			_List_fromArray(
+				[
+					A2($elm$html$Html$tr, _List_Nil, theadDetails.children)
+				]));
+		var sortedData = A3($billstclair$elm_sortable_table$Table$getSortedData, conf, state, data);
+		var tbody = A3(
+			$elm$html$Html$Keyed$node,
+			'tbody',
+			customizations.tbodyAttrs,
+			A2(
+				$elm$core$List$map,
+				A3($billstclair$elm_sortable_table$Table$viewRow, toId, columns, customizations.rowAttrs),
+				sortedData));
+		var withFoot = function () {
+			var _v1 = customizations.tfoot;
+			if (_v1.$ === 'Nothing') {
+				return A2($elm$core$List$cons, tbody, _List_Nil);
+			} else {
+				var attributes = _v1.a.attributes;
+				var children = _v1.a.children;
+				return A2(
+					$elm$core$List$cons,
+					A2($elm$html$Html$tfoot, attributes, children),
+					A2($elm$core$List$cons, tbody, _List_Nil));
+			}
+		}();
+		return A2(
+			$elm$html$Html$table,
+			customizations.tableAttrs,
+			function () {
+				var _v0 = customizations.caption;
+				if (_v0.$ === 'Nothing') {
+					return A2($elm$core$List$cons, thead, withFoot);
+				} else {
+					var attributes = _v0.a.attributes;
+					var children = _v0.a.children;
+					return A2(
+						$elm$core$List$cons,
+						A2($elm$html$Html$caption, attributes, children),
+						A2($elm$core$List$cons, thead, withFoot));
+				}
+			}());
+	});
+var $author$project$Main$viewResearchList = F4(
+	function (tableState, titleQuery, query, researchList) {
+		var lowerTitle = $elm$core$String$toLower(titleQuery);
+		var lowerQuery = $elm$core$String$toLower(query);
+		var acceptableResearch = A2(
+			$elm$core$List$filter,
+			A2(
+				$elm$core$Basics$composeL,
+				A2(
+					$elm$core$Basics$composeL,
+					$elm$core$String$contains(lowerTitle),
+					$elm$core$String$toLower),
+				function ($) {
+					return $.title;
+				}),
+			A2(
+				$elm$core$List$filter,
+				A2(
+					$elm$core$Basics$composeL,
+					A2(
+						$elm$core$Basics$composeL,
+						$elm$core$String$contains(lowerQuery),
+						$elm$core$String$toLower),
+					function ($) {
+						return $.author;
+					}),
+				researchList));
+		var statistics = function (numString) {
+			return numString + ' results';
+		}(
+			$elm$core$String$fromInt(
+				$elm$core$List$length(acceptableResearch)));
+		return _List_fromArray(
+			[
+				A2(
+				$rundis$elm_bootstrap$Bootstrap$Form$form,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('form-inline')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$rundis$elm_bootstrap$Bootstrap$Form$group,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('form-control'),
+										$elm$html$Html$Attributes$placeholder('Search by author'),
+										$elm$html$Html$Events$onInput($author$project$Main$SetQuery),
+										A2($elm$html$Html$Attributes$style, 'margin', '.5rem 0')
+									]),
+								_List_Nil),
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$rundis$elm_bootstrap$Bootstrap$Utilities$Display$inline,
+										$elm$html$Html$Attributes$class('form-control'),
+										$rundis$elm_bootstrap$Bootstrap$Utilities$Spacing$m1,
+										$elm$html$Html$Attributes$placeholder('Search by title'),
+										$elm$html$Html$Events$onInput($author$project$Main$SetTitleQuery),
+										A2($elm$html$Html$Attributes$style, 'margin', '.5rem 0')
+									]),
+								_List_Nil)
+							]))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('table-statistics')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(statistics)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('table-responsive')
+					]),
+				_List_fromArray(
+					[
+						A3($billstclair$elm_sortable_table$Table$view, $author$project$Main$config, tableState, acceptableResearch)
+					]))
+			]);
+	});
+var $author$project$Main$viewResearch = function (model) {
+	var radioSwitchView = A2(
+		$elm$html$Html$label,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Switch view:'),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('mb-1')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A3(
+								$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+								_Utils_eq(model.viewType, $author$project$Main$TableView),
+								_List_fromArray(
+									[
+										$rundis$elm_bootstrap$Bootstrap$Button$primary,
+										$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+										$author$project$Main$SetViewType($author$project$Main$TableView))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('list view')
+									])),
+								A3(
+								$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+								_Utils_eq(model.viewType, $author$project$Main$KeywordView),
+								_List_fromArray(
+									[
+										$rundis$elm_bootstrap$Bootstrap$Button$primary,
+										$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+										$author$project$Main$SetViewType($author$project$Main$KeywordView))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('keyword view')
+									]))
+							]))
+					]))
+			]));
+	var publishedSwitch = A2(
+		$elm$html$Html$label,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('ml-1')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Include unpublished expositions: '),
+				A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checkbox,
+						_List_fromArray(
+							[
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$id('show-published-toggle'),
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$onCheck($author$project$Main$TogglePublishedFilter),
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checked(model.includeUnpublishedResearch)
+							]),
+						'include unpublished expositions')
+					]))
+			]));
+	var publicInternalSwitch2 = A2(
+		$elm$html$Html$label,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('mb-1')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checkbox,
+						_List_fromArray(
+							[
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$checked(
+								_Utils_eq(model.includeInternalResearch, $author$project$Main$ShowInternal)),
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$id('internal-switch'),
+								$rundis$elm_bootstrap$Bootstrap$Form$Checkbox$onCheck(
+								function (checked) {
+									return checked ? $author$project$Main$ScopeFilter($author$project$Main$ShowInternal) : $author$project$Main$ScopeFilter($author$project$Main$HideInternal);
+								})
+							]),
+						'Show all research (including internal)')
+					])),
+				function () {
+				var _v5 = model.includeInternalResearch;
+				if (_v5.$ === 'ShowInternal') {
+					return $elm$html$Html$text('internal works are visible to KC portal members only.');
+				} else {
+					return $elm$html$Html$text('');
+				}
+			}()
+			]));
+	var filtered = A2($author$project$Main$filterResearch, model.filter, model.researchList);
+	var filteredByYear = function () {
+		var _v4 = model.dateFilter;
+		if (_v4.$ === 'AnyYear') {
+			return filtered;
+		} else {
+			var y = _v4.a;
+			return A2($author$project$Main$filterByYear, y, filtered);
+		}
+	}();
+	var filteredOnStatus = function () {
+		var _v2 = model.includeInternalResearch;
+		if (_v2.$ === 'ShowInternal') {
+			return filteredByYear;
+		} else {
+			return A2(
+				$elm$core$List$filter,
+				function (research) {
+					var _v3 = research.publicationStatus;
+					if (_v3.$ === 'LocalPublication') {
+						return false;
+					} else {
+						return true;
+					}
+				},
+				filteredByYear);
+		}
+	}();
+	var filteredOnPublication = model.includeUnpublishedResearch ? filteredOnStatus : A2(
+		$elm$core$List$filter,
+		function (r) {
+			return $author$project$Main$isPublished(r.publicationStatus);
+		},
+		filteredOnStatus);
+	var filterSwitch = function () {
+		var current = model.filter;
+		return A2(
+			$elm$html$Html$label,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Show research by:'),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('mb-1')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButtonGroup,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(current, $author$project$Main$All),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter($author$project$Main$All))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('All')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(
+										current,
+										$author$project$Main$Only($author$project$Main$Teacher)),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter(
+												$author$project$Main$Only($author$project$Main$Teacher)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Teachers')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(
+										current,
+										$author$project$Main$Only($author$project$Main$Student)),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter(
+												$author$project$Main$Only($author$project$Main$Student)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Students')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(
+										current,
+										$author$project$Main$Only($author$project$Main$Lectorate)),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter(
+												$author$project$Main$Only($author$project$Main$Lectorate)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('The lectorate \'Music, Education and Society\'')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(
+										current,
+										$author$project$Main$Only($author$project$Main$Kcpedia)),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter(
+												$author$project$Main$Only($author$project$Main$Kcpedia)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('KCPedia')
+										])),
+									A3(
+									$rundis$elm_bootstrap$Bootstrap$ButtonGroup$radioButton,
+									_Utils_eq(
+										current,
+										$author$project$Main$Only($author$project$Main$Music)),
+									_List_fromArray(
+										[
+											$rundis$elm_bootstrap$Bootstrap$Button$light,
+											$rundis$elm_bootstrap$Bootstrap$Button$onClick(
+											$author$project$Main$SetFilter(
+												$author$project$Main$Only($author$project$Main$Music)))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Music')
+										]))
+								]))
+						]))
+				]));
+	}();
+	var dateFilterToString = function (dateFilterState) {
+		if (dateFilterState.$ === 'AnyYear') {
+			return 'any';
+		} else {
+			var x = dateFilterState.a;
+			return $elm$core$String$fromInt(x);
+		}
+	};
+	var yearFilter = A2(
+		$elm$html$Html$label,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text('filter by year'),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('mb-1')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$rundis$elm_bootstrap$Bootstrap$Dropdown$dropdown,
+						model.dropdown,
+						{
+							items: _List_fromArray(
+								[
+									A2(
+									$rundis$elm_bootstrap$Bootstrap$Dropdown$buttonItem,
+									_List_fromArray(
+										[
+											$elm$html$Html$Events$onClick(
+											$author$project$Main$SetYearFilter(2024))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('2024')
+										])),
+									A2(
+									$rundis$elm_bootstrap$Bootstrap$Dropdown$buttonItem,
+									_List_fromArray(
+										[
+											$elm$html$Html$Events$onClick(
+											$author$project$Main$SetYearFilter(2023))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('2023')
+										])),
+									A2(
+									$rundis$elm_bootstrap$Bootstrap$Dropdown$buttonItem,
+									_List_fromArray(
+										[
+											$elm$html$Html$Events$onClick(
+											$author$project$Main$SetYearFilter(2022))
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('2022')
+										]))
+								]),
+							options: _List_fromArray(
+								[$rundis$elm_bootstrap$Bootstrap$Dropdown$alignMenuRight]),
+							toggleButton: A2(
+								$rundis$elm_bootstrap$Bootstrap$Dropdown$toggle,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										dateFilterToString(model.dateFilter))
+									])),
+							toggleMsg: $author$project$Main$DropdownMsg
+						})
+					]))
+			]));
+	var content = function () {
+		var _v0 = model.viewType;
+		if (_v0.$ === 'TableView') {
+			return A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				A4($author$project$Main$viewResearchList, model.tableState, model.titleQuery, model.query, filteredOnPublication));
+		} else {
+			var filteredDict = $author$project$Main$fillKeywordsDict(filteredOnStatus);
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('keywords')
+					]),
+				_List_fromArray(
+					[
+						A2($author$project$Main$renderKeywords, model.query, filteredDict)
+					]));
+		}
+	}();
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$id('top'),
+				$elm$html$Html$Attributes$class('container')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('headers')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h1,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Research Results')
+							])),
+						A2(
+						$elm$html$Html$h4,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Royal Conservatoire in The Hague')
+							]))
+					])),
+				filterSwitch,
+				A2($elm$html$Html$br, _List_Nil, _List_Nil),
+				yearFilter,
+				A2($elm$html$Html$br, _List_Nil, _List_Nil),
+				publicInternalSwitch2,
+				A2($elm$html$Html$br, _List_Nil, _List_Nil),
+				radioSwitchView,
+				content
+			]));
+};
+var $author$project$Main$view = function (model) {
+	var _v0 = model.loadingStatus;
+	switch (_v0.$) {
+		case 'Failure':
+			var details = _v0.a;
+			return A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Could not load the list -> ' + details),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick($author$project$Main$Go)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Try Again!')
+							]))
+					]));
+		case 'Loading':
+			return A2(
+				$elm$html$Html$h1,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Loading...')
+					]));
+		default:
+			return $author$project$Main$viewResearch(model);
+	}
+};
+var $author$project$Main$main = $elm$browser$Browser$element(
+	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
+_Platform_export({'Main':{'init':$author$project$Main$main(
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
