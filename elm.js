@@ -1,1 +1,2922 @@
-!function(M){"use strict";function B(n,r,t){return t.a=n,t.f=r,t}function o(t){return B(2,t,function(r){return function(n){return t(r,n)}})}function r(e){return B(3,e,function(t){return function(r){return function(n){return e(t,r,n)}}})}function n(u){return B(4,u,function(e){return function(t){return function(r){return function(n){return u(e,t,r,n)}}}})}function H(a){return B(5,a,function(u){return function(e){return function(t){return function(r){return function(n){return a(u,e,t,r,n)}}}}})}function q(i){return B(7,i,function(c){return function(a){return function(u){return function(e){return function(t){return function(r){return function(n){return i(c,a,u,e,t,r,n)}}}}}}})}function b(n,r,t){return 2===n.a?n.f(r,t):n(r)(t)}function d(n,r,t,e){return 3===n.a?n.f(r,t,e):n(r)(t)(e)}function l(n,r,t,e,u){return 4===n.a?n.f(r,t,e,u):n(r)(t)(e)(u)}function s(n,r,t,e,u,a){return 5===n.a?n.f(r,t,e,u,a):n(r)(t)(e)(u)(a)}function K(n,r,t,e,u,a,c,i){return 7===n.a?n.f(r,t,e,u,a,c,i):n(r)(t)(e)(u)(a)(c)(i)}function i(n,r){for(var t,e=[],u=V(n,r,0,e);u&&(t=e.pop());u=V(t.a,t.b,0,e));return u}function V(n,r,t,e){if(100<t)e.push({a:n,b:r});else if(n!==r){if("object"!=typeof n||null===n||null===r)return"function"==typeof n&&U(5),!1;for(var u in n.$<0&&(n=Mr(n),r=Mr(r)),n)if(!V(n[u],r[u],t+1,e))return!1}return!0}var J=o(i);function f(n,r,t){if("object"!=typeof n)return n===r?0:n<r?-1:1;if(void 0===n.$)return(t=(t=f(n.a,r.a))||f(n.b,r.b))||f(n.c,r.c);for(;n.b&&r.b&&!(t=f(n.a,r.a));n=n.b,r=r.b);return t||(n.b?1:r.b?-1:0)}var P=o(function(n,r){n=f(n,r);return n<0?Sr:n?Or:Rr}),X=0;function c(n,r){var t,e={};for(t in n)e[t]=n[t];for(t in r)e[t]=r[t];return e}function a(n,r){if("string"==typeof n)return n+r;if(!n.b)return r;var t={$:1,a:n.a,b:r};n=n.b;for(var e=t;n.b;n=n.b)e=e.b={$:1,a:n.a,b:r};return t}var v={$:0};function z(n,r){return{$:1,a:n,b:r}}var D=o(z);function $(n){for(var r=v,t=n.length;t--;)r={$:1,a:n[t],b:r};return r}function W(n){for(var r=[];n.b;n=n.b)r.push(n.a);return r}var G=r(function(n,r,t){for(var e=[];r.b&&t.b;r=r.b,t=t.b)e.push(b(n,r.a,t.a));return $(e)}),Y=o(function(t,n){return $(W(n).sort(function(n,r){return f(t(n),t(r))}))});var I=r(function(n,r,t){for(var e=Array(n),u=0;u<n;u++)e[u]=t(r+u);return e}),Z=o(function(n,r){for(var t=Array(n),e=0;e<n&&r.b;e++)t[e]=r.a,r=r.b;return t.length=e,{a:t,b:r}});function U(n){throw Error("https://github.com/elm/core/blob/1.0.0/hints/"+n+".md")}var Q=o(function(n,r){r%=n;return 0===n?U(11):0<r&&n<0||r<0&&0<n?r+n:r});var t=Math.ceil,e=Math.floor,nn=Math.log;var rn=o(function(n,r){return n+r});var tn=o(function(n,r){return r.split(n)}),en=o(function(n,r){return r.join(n)}),un=r(function(n,r,t){return t.slice(n,r)});var an=o(function(n,r){for(var t=r.length;t--;){var e=r[t],u=r.charCodeAt(t);if(!n(e=u<56320||57343<u?e:r[--t]+e))return!1}return!0}),cn=o(function(n,r){return!!~r.indexOf(n)}),on=o(function(n,r){var t=n.length;if(t<1)return v;for(var e=0,u=[];-1<(e=r.indexOf(n,e));)u.push(e),e+=t;return $(u)});var fn={$:2,b:function(n){return"number"!=typeof n||(n<=-2147483647||2147483647<=n||(0|n)!==n)&&(!isFinite(n)||n%1)?p("an INT",n):k(n)}},sn={$:2,b:function(n){return"boolean"==typeof n?k(n):p("a BOOL",n)}},bn={$:2,b:function(n){return"string"==typeof n?k(n):n instanceof String?k(n+""):p("a STRING",n)}};var dn=o(function(n,r){return{$:6,d:n,b:r}});var ln=o(function(n,r){return{$:9,f:n,g:[r]}}),vn=r(function(n,r,t){return{$:9,f:n,g:[r,t]}}),$n=o(function(n,r){try{return h(n,JSON.parse(r))}catch(n){return w(b(Br,"This is not valid JSON! "+n.message,r))}}),hn=o(h);function h(n,r){switch(n.$){case 2:return n.b(r);case 5:return null===r?k(n.c):p("null",r);case 3:return gn(r)?pn(n.b,r,$):p("a LIST",r);case 4:return gn(r)?pn(n.b,r,mn):p("an ARRAY",r);case 6:var t=n.d;return"object"==typeof r&&null!==r&&t in r?(a=h(n.b,r[t]),gt(a)?a:w(b(Hr,t,a.a))):p("an OBJECT with a field named `"+t+"`",r);case 7:t=n.e;return gn(r)?t<r.length?(a=h(n.b,r[t]),gt(a)?a:w(b(qr,t,a.a))):p("a LONGER array. Need index "+t+" but only see "+r.length+" entries",r):p("an ARRAY",r);case 8:if("object"!=typeof r||null===r||gn(r))return p("an OBJECT",r);var e,u=v;for(e in r)if(r.hasOwnProperty(e)){var a=h(n.b,r[e]);if(!gt(a))return w(b(Hr,e,a.a));u={$:1,a:{a:e,b:a.a},b:u}}return k(C(u));case 9:for(var c=n.f,i=n.g,o=0;o<i.length;o++){a=h(i[o],r);if(!gt(a))return a;c=c(a.a)}return k(c);case 10:a=h(n.b,r);return gt(a)?h(n.h(a.a),r):a;case 11:for(var f=v,s=n.g;s.b;s=s.b){a=h(s.a,r);if(gt(a))return a;f={$:1,a:a.a,b:f}}return w(Kr(C(f)));case 1:return w(b(Br,n.a,r));case 0:return k(n.a)}}function pn(n,r,t){for(var e=r.length,u=Array(e),a=0;a<e;a++){var c=h(n,r[a]);if(!gt(c))return w(b(qr,a,c.a));u[a]=c.a}return k(t(u))}function gn(n){return Array.isArray(n)||"undefined"!=typeof FileList&&n instanceof FileList}function mn(r){return b(pt,r.length,function(n){return r[n]})}function p(n,r){return w(b(Br,"Expecting "+n,r))}function wn(n,r){if(n===r)return!0;if(n.$!==r.$)return!1;switch(n.$){case 0:case 1:return n.a===r.a;case 2:return n.b===r.b;case 5:return n.c===r.c;case 3:case 4:case 8:return wn(n.b,r.b);case 6:return n.d===r.d&&wn(n.b,r.b);case 7:return n.e===r.e&&wn(n.b,r.b);case 9:return n.f===r.f&&kn(n.g,r.g);case 10:return n.h===r.h&&wn(n.b,r.b);case 11:return kn(n.g,r.g)}}function kn(n,r){var t=n.length;if(t!==r.length)return!1;for(var e=0;e<t;e++)if(!wn(n[e],r[e]))return!1;return!0}var yn=o(function(n,r){return JSON.stringify(r,null,n)+""});function jn(n){return n}function En(n){return{$:0,a:n}}var Nn=o(function(n,r){return{$:3,b:n,d:r}});var Cn=0;function An(n){n={$:0,e:Cn++,f:n,g:null,h:[]};return On(n),n}function _n(r){return{$:2,b:function(n){n({$:0,a:An(r)})},c:null}}function Tn(n,r){n.h.push(r),On(n)}var Ln=o(function(r,t){return{$:2,b:function(n){Tn(r,t),n({$:0,a:X})},c:null}});var xn=!1,Rn=[];function On(n){if(Rn.push(n),!xn){for(xn=!0;n=Rn.shift();)!function(r){for(;r.f;){var n=r.f.$;if(0===n||1===n){for(;r.g&&r.g.$!==n;)r.g=r.g.i;if(!r.g)return;r.f=r.g.b(r.f.a),r.g=r.g.i}else{if(2===n)return r.f.c=r.f.b(function(n){r.f=n,On(r)});if(5===n){if(0===r.h.length)return;r.f=r.f.b(r.h.shift())}else r.g={$:3===n?0:1,b:r.f.b,i:r.g},r.f=r.f.d}}}(n);xn=!1}}function Sn(n,r,t,e,u,a){var c=b(hn,n,r?r.flags:void 0),i=(gt(c)||U(2),{}),o=(c=t(c.a)).a,f=a(s,o),n=function(n,r){var t,e;for(e in Fn){var u=Fn[e];u.a&&((t=t||{})[e]=u.a(e,r)),n[e]=function(n,r){var e={g:r,h:void 0},u=n.c,a=n.d,c=n.e,i=n.f;function o(t){return b(Nn,o,{$:5,b:function(n){var r=n.a;return 0===n.$?d(a,e,r,t):c&&i?l(u,e,r.i,r.j,t):d(u,e,c?r.i:r.j,t)}})}return e.h=An(b(Nn,o,n.b))}(u,r)}return t}(i,s);function s(n,r){f(o=(c=b(e,n,o)).a,r),Kn(i,c.b,u(o))}return Kn(i,c.b,u(o)),n?{ports:n}:{}}var Fn={};var Mn=o(function(r,t){return{$:2,b:function(n){r.g(t),n({$:0,a:X})},c:null}}),Bn=o(function(n,r){return b(Ln,n.h,{$:0,a:r})});function Hn(r){return function(n){return{$:1,k:r,l:n}}}function qn(n){return{$:2,m:n}}function Kn(n,r,t){var e,u={};for(e in Vn(!0,r,u,null),Vn(!1,t,u,null),n)Tn(n[e],{$:"fx",a:u[e]||{i:v,j:v}})}function Vn(n,r,t,e){switch(r.$){case 1:var u=r.k,a=function(n,r,t,e){function u(n){for(var r=t;r;r=r.q)n=r.p(n);return n}return b(n?Fn[r].e:Fn[r].f,u,e)}(n,u,e,r.l);return void(t[u]=function(n,r,t){return t=t||{i:v,j:v},n?t.i={$:1,a:r,b:t.i}:t.j={$:1,a:r,b:t.j},t}(n,a,t[u]));case 2:for(var c=r.m;c.b;c=c.b)Vn(n,c.a,t,e);return;case 3:Vn(n,r.o,t,{p:r.n,q:e})}}var Jn;var Pn="undefined"!=typeof document?document:{};function Xn(n){return{$:0,a:n}}var g=o(function(a,c){return o(function(n,r){for(var t=[],e=0;r.b;r=r.b){var u=r.a;e+=u.b||0,t.push(u)}return e+=t.length,{$:1,c:c,d:Qn(n),e:t,f:a,b:e}})})(void 0),zn=o(function(a,c){return o(function(n,r){for(var t=[],e=0;r.b;r=r.b){var u=r.a;e+=u.b.b||0,t.push(u)}return e+=t.length,{$:2,c:c,d:Qn(n),e:t,f:a,b:e}})})(void 0);var Dn=n(function(n,r,t,e){return{$:5,l:[n,r,t,e],m:function(){return d(n,r,t,e)},k:void 0}}),Wn=o(function(n,r){return{$:"a0",n:n,o:r}}),Gn=o(function(n,r){return{$:"a1",n:n,o:r}}),Yn=o(function(n,r){return{$:"a2",n:n,o:r}}),In=o(function(n,r){return{$:"a3",n:n,o:r}});function Zn(n){return/^\s*(javascript:|data:text\/html)/i.test(n)?"":n}var Un;function Qn(n){for(var r={};n.b;n=n.b){var t,e=n.a,u=e.$,a=e.n,e=e.o;"a2"===u?"className"===a?nr(r,a,e):r[a]=e:(t=r[u]||(r[u]={}),"a3"===u&&"class"===a?nr(t,a,e):t[a]=e)}return r}function nr(n,r,t){var e=n[r];n[r]=e?e+" "+t:t}function rr(n,r){var t=n.$;if(5===t)return rr(n.k||(n.k=n.m()),r);if(0===t)return Pn.createTextNode(n.a);if(4===t){for(var e=n.k,u=n.j;4===e.$;)"object"!=typeof u?u=[u,e.j]:u.push(e.j),e=e.k;var a={j:u,p:r};(c=rr(e,a)).elm_event_node_ref=a}else if(3===t)tr(c=n.h(n.g),r,n.d);else{var c=n.f?Pn.createElementNS(n.f,n.c):Pn.createElement(n.c);Jn&&"a"==n.c&&c.addEventListener("click",Jn(c)),tr(c,r,n.d);for(var i=n.e,o=0;o<i.length;o++)c.appendChild(rr(1===t?i[o]:i[o].b,r))}return c}function tr(n,r,t){for(var e in t){var u=t[e];"a1"===e?function(n,r){var t,e=n.style;for(t in r)e[t]=r[t]}(n,u):"a0"===e?function(n,r,t){var e,u=n.elmFs||(n.elmFs={});for(e in t){var a=t[e],c=u[e];if(a){if(c){if(c.q.$===a.$){c.q=a;continue}n.removeEventListener(e,c)}c=function(o,n){function f(n){var r=f.q,t=h(r.a,n);if(gt(t)){for(var e,r=yt(r),t=t.a,u=r?r<3?t.a:t.z:t,a=1==r?t.b:3==r&&t.cB,c=(a&&n.stopPropagation(),(2==r?t.b:3==r&&t.ct)&&n.preventDefault(),o);e=c.j;){if("function"==typeof e)u=e(u);else for(var i=e.length;i--;)u=e[i](u);c=c.p}c(u,a)}}return f.q=n,f}(r,a),n.addEventListener(e,c,Un&&{passive:yt(a)<2}),u[e]=c}else n.removeEventListener(e,c),u[e]=void 0}}(n,r,u):"a3"===e?function(n,r){for(var t in r){var e=r[t];void 0!==e?n.setAttribute(t,e):n.removeAttribute(t)}}(n,u):"a4"===e?function(n,r){for(var t in r){var e=r[t],u=e.f,e=e.o;void 0!==e?n.setAttributeNS(u,t,e):n.removeAttributeNS(u,t)}}(n,u):("value"!==e&&"checked"!==e||n[e]!==u)&&(n[e]=u)}}try{window.addEventListener("t",null,Object.defineProperty({},"passive",{get:function(){Un=!0}}))}catch(n){}function er(n,r){var t=[];return L(n,r,t,0),t}function T(n,r,t,e){r={$:r,r:t,s:e,t:void 0,u:void 0};return n.push(r),r}function L(n,r,t,e){if(n!==r){var u=n.$,a=r.$;if(u!==a){if(1!==u||2!==a)return void T(t,0,e,r);r=function(n){for(var r=n.e,t=r.length,e=Array(t),u=0;u<t;u++)e[u]=r[u].b;return{$:1,c:n.c,d:n.d,e:e,f:n.f,b:n.b}}(r),a=1}switch(a){case 5:for(var c=n.l,i=r.l,o=c.length,f=o===i.length;f&&o--;)f=c[o]===i[o];if(f)return void(r.k=n.k);r.k=r.m();var s=[];return L(n.k,r.k,s,0),void(0<s.length&&T(t,1,e,s));case 4:for(var b=n.j,d=r.j,l=!1,v=n.k;4===v.$;)l=!0,"object"!=typeof b?b=[b,v.j]:b.push(v.j),v=v.k;for(var $=r.k;4===$.$;)l=!0,"object"!=typeof d?d=[d,$.j]:d.push($.j),$=$.k;return l&&b.length!==d.length?void T(t,0,e,r):((l?function(n,r){for(var t=0;t<n.length;t++)if(n[t]!==r[t])return;return 1}(b,d):b===d)||T(t,2,e,d),void L(v,$,t,e+1));case 0:return void(n.a!==r.a&&T(t,3,e,r.a));case 1:return void ur(n,r,t,e,cr);case 2:return void ur(n,r,t,e,ir);case 3:if(n.h!==r.h)return void T(t,0,e,r);s=ar(n.d,r.d),s=(s&&T(t,4,e,s),r.i(n.g,r.g));s&&T(t,5,e,s)}}}function ur(n,r,t,e,u){var a;n.c!==r.c||n.f!==r.f?T(t,0,e,r):((a=ar(n.d,r.d))&&T(t,4,e,a),u(n,r,t,e))}function ar(n,r,t){var e,u,a,c,i;for(u in n)"a1"===u||"a0"===u||"a3"===u||"a4"===u?(a=ar(n[u],r[u]||{},u))&&((e=e||{})[u]=a):u in r?(a=n[u])===(c=r[u])&&"value"!==u&&"checked"!==u||"a0"===t&&function(n,r){return n.$==r.$&&wn(n.a,r.a)}(a,c)||((e=e||{})[u]=c):(e=e||{})[u]=t?"a1"===t?"":"a0"===t||"a3"===t?void 0:{f:n[u].f,o:void 0}:"string"==typeof n[u]?"":null;for(i in r)i in n||((e=e||{})[i]=r[i]);return e}function cr(n,r,t,e){var u=n.e,a=r.e,n=u.length,r=a.length;r<n?T(t,6,e,{v:r,i:n-r}):n<r&&T(t,7,e,{v:n,e:a});for(var c=n<r?n:r,i=0;i<c;i++){var o=u[i];L(o,a[i],t,++e),e+=o.b||0}}function ir(n,r,t,e){for(var u=[],a={},c=[],i=n.e,o=r.e,f=i.length,s=o.length,b=0,d=0,l=e;b<f&&d<s;){var v=i[b],$=o[d],h=v.a,p=$.a,g=v.b,m=$.b,w=void 0,k=void 0;if(h===p)L(g,m,u,++l),l+=g.b||0,b++,d++;else{var y,j,E,N,C=i[b+1],A=o[d+1];if(C&&(j=C.b,k=p===(y=C.a)),A&&(N=A.b,w=h===(E=A.a)),w&&k)L(g,N,u,++l),fr(a,u,h,m,d,c),l+=g.b||0,sr(a,u,h,j,++l),l+=j.b||0,b+=2,d+=2;else if(w)l++,fr(a,u,p,m,d,c),L(g,N,u,l),l+=g.b||0,b+=1,d+=2;else if(k)sr(a,u,h,g,++l),l+=g.b||0,L(j,m,u,++l),l+=j.b||0,b+=2,d+=1;else{if(!C||y!==E)break;sr(a,u,h,g,++l),fr(a,u,p,m,d,c),l+=g.b||0,L(j,N,u,++l),l+=j.b||0,b+=2,d+=2}}}for(;b<f;){g=(v=i[b]).b;sr(a,u,v.a,g,++l),l+=g.b||0,b++}for(;d<s;){var _=_||[];fr(a,u,($=o[d]).a,$.b,void 0,_),d++}(0<u.length||0<c.length||_)&&T(t,8,e,{w:u,x:c,y:_})}var or="_elmW6BL";function fr(n,r,t,e,u,a){var c,i=n[t];i?1===i.c?(a.push({r:u,A:i}),i.c=2,L(i.z,e,c=[],i.r),i.r=u,i.s.s={w:c,A:i}):fr(n,r,t+or,e,u,a):(a.push({r:u,A:i={c:0,z:e,r:u,s:void 0}}),n[t]=i)}function sr(n,r,t,e,u){var a,c=n[t];c?0===c.c?(c.c=2,L(e,c.z,a=[],u),T(r,9,u,{w:a,A:c})):sr(n,r,t+or,e,u):(a=T(r,9,u,void 0),n[t]={c:1,z:e,r:u,s:a})}function br(n,r,t,e){!function n(r,t,e,u,a,c,i){var o=e[u];var f=o.r;for(;f===a;){var s,b=o.$;if(1===b?br(r,t.k,o.s,i):8===b?(o.t=r,o.u=i,0<(s=o.s.w).length&&n(r,t,s,0,a,c,i)):9===b?(o.t=r,o.u=i,(b=o.s)&&(b.A.s=r,0<(s=b.w).length)&&n(r,t,s,0,a,c,i)):(o.t=r,o.u=i),!(o=e[++u])||(f=o.r)>c)return u}var d=t.$;if(4===d){for(var l=t.k;4===l.$;)l=l.k;return n(r,l,e,u,a+1,c,r.elm_event_node_ref)}var v=t.e;var $=r.childNodes;for(var h=0;h<v.length;h++){var p=1===d?v[h]:v[h].b,g=++a+(p.b||0);if(a<=f&&f<=g&&(u=n($[h],p,e,u,a,g,i),!(o=e[u])||(f=o.r)>c))return u;a=g}return u}(n,r,t,0,0,r.b,e)}function dr(n,r,t,e){return 0===t.length?n:(br(n,r,t,e),lr(n,t))}function lr(n,r){for(var t=0;t<r.length;t++){var e=r[t],u=e.t,e=function(n,r){switch(r.$){case 0:return function(n,r,t){var e=n.parentNode,r=rr(r,t);r.elm_event_node_ref||(r.elm_event_node_ref=n.elm_event_node_ref);e&&r!==n&&e.replaceChild(r,n);return r}(n,r.s,r.u);case 4:return tr(n,r.u,r.s),n;case 3:return n.replaceData(0,n.length,r.s),n;case 1:return lr(n,r.s);case 2:return n.elm_event_node_ref?n.elm_event_node_ref.j=r.s:n.elm_event_node_ref={j:r.s,p:r.u},n;case 6:for(var t=r.s,e=0;e<t.i;e++)n.removeChild(n.childNodes[t.v]);return n;case 7:for(var u=(t=r.s).e,e=t.v,a=n.childNodes[e];e<u.length;e++)n.insertBefore(rr(u[e],r.u),a);return n;case 9:var c;return(t=r.s)?(void 0!==(c=t.A).r&&n.parentNode.removeChild(n),c.s=lr(n,t.w)):n.parentNode.removeChild(n),n;case 8:return function(n,r){for(var t=r.s,e=function(n,r){if(n){for(var t=Pn.createDocumentFragment(),e=0;e<n.length;e++){var u=n[e].A;t.appendChild(2===u.c?u.s:rr(u.z,r.u))}return t}}(t.y,r),u=(n=lr(n,t.w),t.x),a=0;a<u.length;a++){var c=u[a],i=c.A,i=2===i.c?i.s:rr(i.z,r.u);n.insertBefore(i,n.childNodes[c.r])}e&&n.appendChild(e);return n}(n,r);case 5:return r.s(n);default:U(10)}}(u,e);u===n&&(n=e)}return n}function vr(n){if(3===n.nodeType)return{$:0,a:n.textContent};if(1!==n.nodeType)return{$:0,a:""};for(var r=v,t=n.attributes,e=t.length;e--;)var u=t[e],r={$:1,a:b(In,u.name,u.value),b:r};for(var a=n.tagName.toLowerCase(),c=v,i=n.childNodes,e=i.length;e--;)c={$:1,a:vr(i[e]),b:c};return d(g,a,r,c)}var $r=n(function(r,n,t,c){return Sn(n,c,r.d$,r.eh,r.ec,function(t,n){var e=r.ei,u=c.node,a=vr(u);return pr(n,function(n){var n=e(n),r=er(a,n);u=dr(u,a,r,t),a=n})})}),hr="undefined"!=typeof requestAnimationFrame?requestAnimationFrame:function(n){return setTimeout(n,1e3/60)};function pr(t,e){e(t);var u=0;function a(){u=1===u?0:(hr(a),e(t),1)}return function(n,r){t=n,r?(e(t),2===u&&(u=1)):(0===u&&hr(a),u=2)}}var gr=r(function(e,u,a){return{$:2,b:function(r){function t(n){r(u(a.dV.a(n)))}var n=new XMLHttpRequest;n.addEventListener("error",function(){t(Be)}),n.addEventListener("timeout",function(){t(Ke)}),n.addEventListener("load",function(){t(function(n,r){return b(200<=r.status&&r.status<300?Me:Se,function(n){return{N:n.responseURL,ea:n.status,eb:n.statusText,cX:function(n){if(!n)return Vt;for(var r=Vt,t=n.split("\r\n"),e=t.length;e--;){var u,a,c=t[e],i=c.indexOf(": ");0<i&&(u=c.substring(0,i),a=c.substring(2+i),r=d(Ue,u,function(n){return y(Ve(n)?a+", "+n.a:a)},r))}return r}(n.getAllResponseHeaders())}}(r),n(r.response))}(a.dV.b,n))}),Ve(a.dF)&&function(r,t,e){t.upload.addEventListener("progress",function(n){t.c||An(b(Je,r,{a:e,b:qe({d9:n.loaded,dw:n.total})}))}),t.addEventListener("progress",function(n){t.c||An(b(Je,r,{a:e,b:He({d6:n.loaded,dw:n.lengthComputable?y(n.total):j})}))})}(e,n,a.dF.a);try{n.open(a.d2,a.N,!0)}catch(n){return t(Fe(a.N))}return function(n,r){for(var t=r.cX;t.b;t=t.b)n.setRequestHeader(t.a.a,t.a.b);n.timeout=r.ee.a||0,n.responseType=r.dV.d,n.withCredentials=r.dK}(n,a),a.dM.a&&n.setRequestHeader("Content-Type",a.dM.a),n.send(a.dM.b),function(){n.c=!0,n.abort()}},c:null}});var mr=r(function(n,r,t){return{$:0,d:n,b:r,a:t}}),wr=o(function(r,t){return{$:0,d:t.d,b:t.b,a:function(n){return r(t.a(n))}}});function kr(n){return d(Fr,r(function(n,r,t){return b(m,n,t)}),v,n)}function yr(n){return b(N,"\n    ",b(Pr,"\n",n))}function jr(n){return d(Xr,o(function(n,r){return r+1}),0,n)}function Er(n){return 97<=(n=Yr(n))&&n<=122}function Nr(n){return(n=Yr(n))<=90&&65<=n}function Cr(n){return Er(n)||Nr(n)||function(n){n=Yr(n);return n<=57&&48<=n}(n)}function Ar(n){return n}function _r(n){return d(Rt,Ft(m),Lt(v),n)}function Tr(n){return{$:1,a:n}}function Lr(f){return function(o){return function(i){return function(c){return function(a){return function(u){return function(e){return function(t){return function(r){return function(n){return{aZ:a,dS:c,bi:f,c2:e,_:i,c8:n,cu:r,r:t,B:u,s:o}}}}}}}}}}}function xr(n){return Zt($([b(mt,y,n),kt(j)]))}var Rr=1,Or=2,Sr=0,m=D,Fr=r(function(n,r,t){for(;;){if(-2===t.$)return r;var e=t.d,u=n,a=d(n,t.b,t.c,d(Fr,n,r,t.e));n=u,r=a,t=e}}),Mr=function(n){return d(Fr,r(function(n,r,t){return b(m,{a:n,b:r},t)}),v,n)},w=function(n){return{$:1,a:n}},Br=o(function(n,r){return{$:3,a:n,b:r}}),Hr=o(function(n,r){return{$:0,a:n,b:r}}),qr=o(function(n,r){return{$:1,a:n,b:r}}),k=function(n){return{$:0,a:n}},Kr=function(n){return{$:2,a:n}},y=function(n){return{$:0,a:n}},j={$:1},Vr=an,Jr=yn,E=function(n){return n+""},N=o(function(n,r){return b(en,n,W(r))}),Pr=o(function(n,r){return $(b(tn,n,r))}),Xr=r(function(n,r,t){for(;;){if(!t.b)return r;var e=t.b,u=n,a=b(n,t.a,r);n=u,r=a,t=e}}),zr=G,Dr=r(function(n,r,t){for(;;){if(1<=f(n,r))return t;var e=n,u=r-1,a=b(m,r,t);n=e,r=u,t=a}}),Wr=o(function(n,r){return d(Dr,n,r,v)}),Gr=o(function(n,r){return d(zr,n,b(Wr,0,jr(r)-1),r)}),Yr=function(n){var r=n.charCodeAt(0);return r<55296||56319<r?r:1024*(r-55296)+n.charCodeAt(1)-56320+65536},C=function(n){return d(Xr,m,v,n)},Ir=function(n){var r=n.charCodeAt(0);return r?y(r<55296||56319<r?{a:n[0],b:n.slice(1)}:{a:n[0]+n[1],b:n.slice(2)}):j},Zr=o(function(n,r){return"\n\n("+E(n+1)+(") "+yr(Ur(r)))}),Ur=function(n){return b(Qr,n,v)},Qr=o(function(n,r){for(;;)switch(n.$){case 0:var t=n.a,e=n.b,u=(u=a=void 0,1!==(u=Ir(t)).$&&(a=(u=u.a).b,function(n){return Er(n)||Nr(n)}(u.a))&&b(Vr,Cr,a));n=e,r=b(m,u?"."+t:"['"+t+"']",r);continue;case 1:var e=n.b,a="["+E(n.a)+"]";n=e,r=b(m,a,r);continue;case 2:u=n.a;if(u.b){if(u.b.b)return c=(r.b?"The Json.Decode.oneOf at json"+b(N,"",C(r)):"Json.Decode.oneOf")+" failed in the following "+E(jr(u))+" ways:",b(N,"\n\n",b(m,c,b(Gr,Zr,u)));n=e=u.a,r=r;continue}return"Ran into a Json.Decode.oneOf with no possibilities"+(r.b?" at json"+b(N,"",C(r)):"!");default:var c,t=n.a,i=n.b;return(c=r.b?"Problem with the value at json"+b(N,"",C(r))+":\n\n    ":"Problem with the given value:\n\n")+(yr(b(Jr,4,i))+"\n\n")+t}var a,u}),nt=n(function(n,r,t,e){return{$:0,a:n,b:r,c:t,d:e}}),rt=[],tt=t,et=o(function(n,r){return nn(r)/nn(n)}),ut=tt(b(et,2,32)),at=l(nt,0,ut,rt,rt),ct=I,D=o(function(n,r){return r(n)}),it=J,ot=e,ft=function(n){return n.length},st=o(function(n,r){return 0<f(n,r)?n:r}),bt=Z,dt=o(function(n,r){for(;;){var t=b(bt,32,n),e=t.b,t=b(m,{$:0,a:t.a},r);if(!e.b)return C(t);n=e,r=t}}),lt=function(n){return n.a},vt=o(function(n,r){for(;;){var t=tt(r/32);if(1===t)return b(bt,32,n).a;n=b(dt,n,v),r=t}}),$t=o(function(n,r){var t,e;return r.e?(e=ot(b(et,32,(t=32*r.e)-1)),n=n?C(r.h):r.h,n=b(vt,n,r.e),l(nt,ft(r.g)+t,b(st,5,e*ut),n,r.g)):l(nt,ft(r.g),ut,rt,r.g)}),ht=H(function(n,r,t,e,u){for(;;){if(r<0)return b($t,!1,{h:e,e:t/32|0,g:u});var a={$:1,a:d(ct,32,r,n)};n=n,r=r-32,t=t,e=b(m,a,e),u=u}}),pt=o(function(n,r){var t;return 0<n?s(ht,r,n-(t=n%32)-32,n,v,d(ct,t,n-t,r)):at}),gt=function(n){return!n.$},mt=ln,wt=vn,kt=function(n){return{$:0,a:n}},yt=function(n){switch(n.$){case 0:return 0;case 1:return 1;case 2:return 2;default:return 3}},jt=function(n){return n},Et=cn,Nt=function(n){return n.length},Ct=un,At=o(function(n,r){return n<1?r:d(Ct,n,Nt(r),r)}),_t=on,Tt=o(function(n,r){return n<1?"":d(Ct,0,n,r)}),Lt=En,an=Lt(0),xt=n(function(n,r,t,e){var u,a,c,i;return e.b?(u=e.a,(e=e.b).b?(a=e.a,(e=e.b).b?(c=e.a,(e=e.b).b?(i=e.b,b(n,u,b(n,a,b(n,c,b(n,e.a,500<t?d(Xr,n,r,C(i)):l(xt,n,r,t+1,i)))))):b(n,u,b(n,a,b(n,c,r)))):b(n,u,b(n,a,r))):b(n,u,r)):r}),Rt=r(function(n,r,t){return l(xt,n,r,0,t)}),A=o(function(t,n){return d(Rt,o(function(n,r){return b(m,t(n),r)}),v,n)}),Ot=Nn,St=o(function(r,n){return b(Ot,function(n){return Lt(r(n))},n)}),Ft=r(function(t,n,e){return b(Ot,function(r){return b(Ot,function(n){return Lt(b(t,r,n))},e)},n)}),Mt=Mn,Bt=o(function(n,r){return _n(b(Ot,Mt(n),r))}),yn=r(function(n,r,t){return b(St,function(n){return 0},_r(b(A,Bt(n),r)))}),G=(Fn.Task={b:an,c:yn,d:r(function(n,r,t){return Lt(0)}),e:o(function(n,r){return b(St,n,r)}),f:void 0},Hn("Task"),$r),Ht={$:0},qt={$:1},Kt={$:-2},Vt=Kt,Jt=Vt,Pt=o(function(n,r){return{$:0,a:n,b:r}}),Xt={ap:Ht,W:0,as:!0,ck:Jt,ab:qt,ae:"",bR:v,bY:b(Pt,"Modified",!0),aE:"",E:1},t=wt(D),zt=534751,u=r(function(n,r,t){return n(r(t))}),_=dn,I=fn,Dt="kcpedia",Wt=o(function(n,r){for(;;){if(!r.b)return!1;var t=r.b;if(n(r.a))return!0;n=n,r=t}}),Gt=o(function(r,n){return b(Wt,function(n){return i(n,r)},n)}),Yt=b(u,Gt("KonCon Lectorate"),function(n){return n._}),It=b(u,Gt("Research by teachers of the Royal Conservatoire"),function(n){return n._}),J=function(n){return{$:3,b:n}},Zt=function(n){return{$:11,g:n}},e=bn,Z=b(mt,b(u,function(n){return It(n)?c(n,{B:0}):Yt(n)?c(n,{B:2}):c(n,b(Gt,Dt,n._)?{B:3}:{B:1})},function(n){return c(n,{r:function(n){return n.r?!(n=n.c2).$&&i(n.a,zt)?2:1:0}(n)})}),b(t,b(mt,y,b(_,"last-modified",e)),b(t,xr(b(_,"published",e)),b(t,b(mt,Ut,b(_,"status",e)),b(t,xr(b(_,"issue",b(_,"id",I))),b(t,kt(4),b(t,b(_,"author",b(_,"name",e)),b(t,b(_,"created",e),b(t,b(_,"keywords",J(e)),b(t,b(_,"title",e),b(t,b(_,"id",I),kt(Lr))))))))))));function Ut(n){switch(n){case"published":return 1;case"progress":return 0;default:return 3}}function Qt(n){var r,t,e,u,a,c,i,o;return-1===n.$&&-1===n.d.$&&-1===n.e.$?-1!==n.e.d.$||n.e.d.a?(e=(o=n.e).b,u=o.c,a=o.d,o=o.e,s(x,1,n.b,n.c,s(x,0,(r=n.d).b,r.c,r.d,r.e),s(x,0,e,u,a,o))):(e=(t=n.e).b,u=t.c,c=(a=t.d).d,i=a.e,o=t.e,s(x,0,a.b,a.c,s(x,1,n.b,n.c,s(x,0,(r=n.d).b,r.c,r.d,r.e),c),s(x,1,e,u,i,o))):n}function ne(n){var r,t,e,u,a,c,i,o,f;return-1===n.$&&-1===n.d.$&&-1===n.e.$?-1!==n.d.d.$||n.d.d.a?(c=(f=n.e).b,i=f.c,o=f.d,f=f.e,s(x,1,r=n.b,t=n.c,s(x,0,(u=n.d).b,u.c,u.d,u=u.e),s(x,0,c,i,o,f))):(r=n.b,t=n.c,u=(e=n.d).e,c=(a=n.e).b,i=a.c,o=a.d,f=a.e,s(x,0,e.b,e.c,s(x,1,(a=e.d).b,a.c,a.d,a.e),s(x,1,r,t,u,s(x,0,c,i,o,f)))):n}function re(n){var r,t,e,u,a,c;return-1===n.$&&-1===n.d.$?(r=n.a,t=n.b,e=n.c,c=(u=n.d).d,a=n.e,1===u.a?-1!==c.$||c.a?-1===(c=Qt(n)).$?(n=c.e,s(ze,c.a,c.b,c.c,re(c.d),n)):Kt:s(x,r,t,e,re(u),a):s(x,r,t,e,re(u),a)):Kt}function te(n){return{$:4,a:n}}function ee(n){var r=b(At,1,n);return b(gu,mu(b(Tt,1,n)),r)}function ue(n){return!n}function ae(n){var r=d(Xr,Vu,Du,n.cp),n=n.c7;return b(R,$([zu($([{a:"form-check",b:!r.m},{a:"form-check-inline",b:!r.m&&r.at},{a:"custom-control",b:r.m},{a:"custom-checkbox",b:r.m},{a:"custom-control-inline",b:r.at&&r.m}]))]),$([b(Gu,function(n){return a($([zu($([{a:"form-check-input",b:!n.m},{a:"custom-control-input",b:n.m}])),aa("checkbox"),Zu(n.a9),ua(n.f)]),a(b(bu,jt,$([b(Qu,ra,n.bw),b(Qu,Uu,n.bi)])),a((r=n.b6).$?v:$([F(ca(r.a))]),n.ak)));var r}(r),v),b(Yu,a(n.ak,a($([zu($([{a:"form-check-label",b:!r.m},{a:"custom-control-label",b:r.m}]))]),(r=r.bi).$?v:$([Wu(r.a)]))),n.am)]))}function ce(n){switch(n){case 0:return"primary";case 1:return"secondary";case 2:return"success";case 3:return"info";case 4:return"warning";case 5:return"danger";case 6:return"dark";case 7:return"light";default:return"link"}}function ie(n){switch(n){case 0:return j;case 1:return y("sm");case 2:return y("md");case 3:return y("lg");default:return y("xl")}}function oe(n){return{$:2,a:n}}function fe(n){return{a:n,b:!0}}function se(n){return b(Sa,"input",b(mt,fe,b(mt,n,Fa)))}function be(n){return b(S,"href",/^javascript:/i.test((n=n).replace(/\s/g,""))?"":n)}function de(n){for(;;)switch(n){case 0:return"0";case 1:return"1";case 2:return"2";case 3:return"3";case 4:return"4";case 5:return"5";case 6:return"6";case 7:return"7";case 8:return"8";case 9:return"9";case 10:return"a";case 11:return"b";case 12:return"c";case 13:return"d";case 14:return"e";case 15:return"f";default:n=n;continue}}function le(n){return Va(n<0?b(m,"-",b(Pa,v,-n)):b(Pa,v,n))}function ve(n){return n=b(m,"#",b(A,le,$([n.a,n.b,n.c]))),b(N,"",n)}function $e(r){function n(n){return jr(b(_t,n,r))}var t,e,u,a=o(function(n,r){return{a:n+r.a,b:n+r.b,c:n+r.c}}),c=o(function(n,r){return{a:r.a*n,b:r.b*n,c:r.c*n}}),i=o(function(n,r){var t=r.b,e=r.c;return{a:n(r.a),b:n(t),c:n(e)}});return t=n("i")+n("m"),e=n("a")+n("r"),u=n("e")+n("d"),d(Xa,(a=b(i,ot,b(a,32,b(c,64,b(i,Ar,{a:u,b:e,c:t}))))).a,a.b,a.c)}function he(n){return n.$?Da(n.a):b(Ia,n.a,n.b)}function pe(n){return Za(b(Ua,n,"#"+nc(n)))}function ge(n){return $(2===n.r?[F("local-publication")]:[F("global-publication")])}function me(n){var r=2===n.r?0:1,t=a(oc,E(n.bi));return b(ic,b(Ua,fc(n),t),r)}function we(n){switch(n){case 0:return"in progress";case 1:return"public";case 2:return"KonCon portal members only!";default:return"..."}}function ke(n){switch(n){case 0:return"Teacher";case 1:return"Student";case 2:return"Lectorate";case 3:return"KCPedia";default:return"Unknown"}}function ye(n){return b(cc,b(m,F("research-meta"),ge(n)),$([b(sc,$([F("research-meta-title")]),$([he(me(n))])),b(sc,$([F("research-meta-status"),Wa("publication status")]),$([O(we(n.r))])),b(sc,$([F("research-meta-author")]),$([O(n.aZ),b(uc,$([F("research-meta-type")]),$([O(" ("+ke(n.B)+")")]))]))]))}function je(n){return{$:3,a:n}}function Ee(n){return b(hc,v,$([O(n)]))}function Ne(n){var r=n.cy;return d($c,n.cm,b(u,Ee,n.cH),r)}function Ce(n){return{$:3,a:dc(n)}}function Ae(n){var r=n.a,t=n.b,n=n.c,e=function(){switch(t.$){case 0:return $([O(r)]);case 1:var n=t.a;return $([O(r),(n?mc:wc)("↓")]);default:return 1===t.a.$?$([O(r),wc("↕")]):(n=t.a.a,$([O(r),mc(n?"↑":"↓")]))}}();return b(kc,$([n]),e)}function _e(n){switch(n.r){case 0:return y("in progress");case 3:return y("unknown");default:return n.cu}}function Te(n){return n.c8}function Le(n){return n.a.s}function xe(n){return b(hc,v,$([he(n)]))}function Re(n){return zn(function(n){return"script"==n?"p":n}(n))}var ln=J(Z),Oe=$n,Se=o(function(n,r){return{$:3,a:n,b:r}}),Fe=function(n){return{$:0,a:n}},Me=o(function(n,r){return{$:4,a:n,b:r}}),Be={$:2},He=function(n){return{$:1,a:n}},qe=function(n){return{$:0,a:n}},Ke={$:1},Ve=function(n){return!n.$},Je=Bn,Pe=P,Xe=o(function(n,r){for(;;){if(-2===r.$)return j;var t=r.c,e=r.d,u=r.e;switch(b(Pe,n,r.b)){case 0:n=n,r=e;continue;case 1:return y(t);default:n=n,r=u;continue}}}),x=H(function(n,r,t,e,u){return{$:-1,a:n,b:r,c:t,d:e,e:u}}),ze=H(function(n,r,t,e,u){var a,c,i,o;return-1!==u.$||u.a?-1!==e.$||e.a||-1!==e.d.$||e.d.a?s(x,n,r,t,e,u):(a=e.d,o=e.e,s(x,0,e.b,e.c,s(x,1,a.b,a.c,a.d,a.e),s(x,1,r,t,o,u))):(a=u.b,c=u.c,i=u.d,u=u.e,-1!==e.$||e.a?s(x,n,a,c,s(x,0,r,t,e,i),u):s(x,0,r,t,s(x,1,e.b,e.c,e.d,o=e.e),s(x,1,a,c,i,u)))}),De=r(function(n,r,t){if(-2===t.$)return s(x,0,n,r,Kt,Kt);var e=t.a,u=t.b,a=t.c,c=t.d,i=t.e;switch(b(Pe,n,u)){case 0:return s(ze,e,u,a,d(De,n,r,c),i);case 1:return s(x,e,u,r,c,i);default:return s(ze,e,u,a,c,d(De,n,r,i))}}),We=r(function(n,r,t){n=d(De,n,r,t);return-1!==n.$||n.a?n:s(x,1,n.b,n.c,n.d,n.e)}),Ge=q(function(n,r,t,e,u,a,c){if(-1!==a.$||a.a){for(;;){if(-1!==c.$||1!==c.a)break;if(-1!==c.d.$)return ne(r);if(1===c.d.a)return ne(r);break}return r}return s(x,t,a.b,a.c,a.d,s(x,0,e,u,a.e,c))}),Ye=o(function(n,r){var t,e,u,a,c,i,o;return-2===r.$?Kt:(t=r.a,u=r.c,a=r.d,c=r.e,f(n,e=r.b)<0?-1===a.$&&1===a.a?-1!==(i=a.d).$||i.a?-1===(i=Qt(r)).$?(o=i.e,s(ze,i.a,i.b,i.c,b(Ye,n,i.d),o)):Kt:s(x,t,e,u,b(Ye,n,a),c):s(x,t,e,u,b(Ye,n,a),c):b(Ie,n,K(Ge,n,r,t,e,u,a,c)))}),Ie=o(function(n,r){var t,e,u,a,c;return-1===r.$?(t=r.a,e=r.c,u=r.d,a=r.e,i(n,r=r.b)?-1===(c=function(n){for(;;){if(-1!==n.$||-1!==n.d.$)return n;n=n.d}}(a)).$?s(ze,t,c.b,c.c,u,re(a)):Kt:s(ze,t,r,e,u,b(Ye,n,a))):Kt}),Ze=o(function(n,r){n=b(Ye,n,r);return-1!==n.$||n.a?n:s(x,1,n.b,n.c,n.d,n.e)}),Ue=r(function(n,r,t){r=r(b(Xe,n,t));return r.$?b(Ze,n,t):d(We,n,r.a,t)}),Qe=r(function(n,r,t){return r(n(t))}),nu=o(function(n,r){return d(mr,"",jt,b(Qe,r,n))}),ru=o(function(n,r){return r.$?w(n(r.a)):k(r.a)}),tu={$:2},eu={$:1},uu=o(function(n,r){switch(r.$){case 0:return w({$:0,a:r.a});case 1:return w(eu);case 2:return w(tu);case 3:return w({$:3,a:r.a.ea});default:return b(ru,te,n(r.b))}}),vn=o(function(n,r){return b(nu,n,uu(function(n){return b(ru,Ur,b(Oe,r,n))}))}),cn={$:0},au=function(n){return{$:1,a:n}},cu=o(function(n,r){return{dn:n,dy:r}}),un=Lt(b(cu,Vt,v)),iu=function(t){return{$:2,b:function(n){var r=t.f;2===r.$&&r.c&&r.c(),t.f=null,n({$:0,a:X})},c:null}},ou=_n,fu=r(function(t,n,e){for(;;){if(!n.b)return Lt(e);var u,r=n.a,a=n.b;if(r.$)return u=r.a,b(Ot,function(n){var r=u.dF;return d(fu,t,a,1===r.$?e:d(We,r.a,n,e))},ou(d(gr,t,Mt(t),u)));var c=r.a,r=b(Xe,c,e);if(1!==r.$)return b(Ot,function(n){return d(fu,t,a,b(Ze,c,e))},iu(r.a));t=t,n=a,e=e}}),on=n(function(n,r,t,e){return b(Ot,function(n){return Lt(b(cu,n,t))},d(fu,n,r,e.dn))}),su=r(function(n,r,t){n=n(r);return n.$?t:b(m,n.a,t)}),bu=o(function(n,r){return d(Rt,su(n),v,r)}),du=n(function(n,r,t,e){var u=e.b;return i(r,e.a)?y(b(Mt,n,u(t))):j}),Mn=r(function(n,r,t){return b(Ot,function(n){return Lt(t)},_r(b(bu,d(du,n,r.a,r.b),t.dy)))}),an=o(function(n,r){var t;return r.$?au({dK:(t=r.a).dK,dM:t.dM,dV:b(wr,n,t.dV),cX:t.cX,d2:t.d2,ee:t.ee,dF:t.dF,N:t.N}):{$:0,a:r.a}}),lu=o(function(n,r){return{$:0,a:n,b:r}}),vu=(Fn.Http={b:un,c:on,d:Mn,e:an,f:o(function(n,r){return b(lu,r.a,b(Qe,r.b,n))})},Hn("Http")),$u=(Hn("Http"),function(n){return vu(au({dK:!1,dM:n.dM,dV:n.dV,cX:n.cX,d2:n.d2,ee:n.ee,dF:n.dF,N:n.N}))}({dM:cn,dV:(yn={dV:b(vn,Tr,ln),N:"data/internal_research.json"}).dV,cX:v,d2:"GET",ee:j,dF:j,N:yn.N})),hu=qn(v),pu={$:2},gu=rn,mu=function(n){return n.toUpperCase()},wu=function(n){var t=r(function(n,r,t){var r=ee(r),e=b(Xe,r,t);return d(We,r,e.$?$([n]):b(m,n,e.a),t)});return d(Rt,o(function(n,r){return d(Rt,t(n),r,n._)}),Jt,n)},ku=qn(v),yu=Vt,ju=o(function(n,r){return d(We,n,0,r)}),Eu=o(function(n,r){return!b(Xe,n,r).$}),Nu=o(function(n,r){return b(Eu,n,r)}),Cu=n(function(n,r,t,e){for(;;){if(!t.b)return C(e);var u=t.a,a=t.b,c=n(u);e=b(Nu,c,r)?(n=n,r=r,t=a,e):(n=n,r=b(ju,c,r),t=a,b(m,u,e))}}),Au=o(function(n,r){return l(Cu,n,yu,r,v)}),$r=o(function(n,r){switch(n.$){case 0:return{a:c(r,{ab:qt}),b:$u};case 1:var t,e=n.a;return e.$?(t=e.a,a=function(){switch(t.$){case 0:return{$:0,a:"bad url"+t.a};case 1:return{$:0,a:"timeout"};case 2:return{$:0,a:"network error"};case 3:return{$:0,a:"bad status"+E(t.a)};default:return{$:0,a:"body of improper format"+t.a}}}(),{a:c(r,{ab:a}),b:ku}):(e=b(Au,function(n){return n.bi},a=e.a),{a:c(r,{ck:wu(a),ab:pu,bR:e}),b:ku});case 2:return{a:c(r,{ae:n.a}),b:ku};case 3:return{a:c(r,{aE:n.a}),b:ku};case 4:return{a:c(r,{bY:n.a}),b:ku};case 5:return{a:c(r,{ae:"",aE:"",E:n.a}),b:ku};case 6:var u=n.a,a=function(){n:for(;;){if(1!==u.$)break;switch(u.a){case 0:return 0;case 2:return 0;default:break n}}return r.E}();return{a:c(r,{ap:u,E:a}),b:ku};case 7:return{a:c(r,{W:n.a}),b:ku};default:return{a:c(r,{as:n.a}),b:ku}}}),_u={$:0},Tu=g("button"),R=g("div"),Lu=g("h1"),xu=Wn,Ru=o(function(n,r){return b(xu,n,{$:0,a:r})}),O=Xn,Ou=function(n){return{$:1,a:n}},Su=function(n){return{$:7,a:n}},Fu=function(n){return{$:6,a:n}},Mu=function(n){return{$:5,a:n}},Bu=function(n){return{$:8,a:n}},Hu=g("br"),qu=o(function(n,r){return{c7:r,cp:n}}),Ku=o(function(n,r){return{ak:n,am:r}}),Vu=o(function(n,r){switch(n.$){case 0:return c(r,{bi:y(n.a)});case 1:return c(r,{f:n.a});case 2:return c(r,{at:!0});case 3:return c(r,{bw:y(n.a)});case 4:return c(r,{m:!0});case 5:return c(r,{a9:n.a});case 6:return c(r,{b6:y(n.a)});default:return c(r,{ak:a(r.ak,n.a)})}}),Ju=jn,S=o(function(n,r){return b(Yn,n,Ju(r))}),F=S("className"),Pu=o(function(t,n){return d(Rt,o(function(n,r){return t(n)?b(m,n,r):r}),v,n)}),Xu=function(n){return n.b},zu=function(n){return F(b(N," ",b(A,lt,b(Pu,Xu,n))))},Du={ak:v,m:!1,a9:!1,bi:j,at:!1,bw:j,f:1,b6:j},Wu=S("htmlFor"),Gu=g("input"),Yu=g("label"),Iu=jn,D=o(function(n,r){return b(Yn,n,Iu(r))}),Zu=D("disabled"),Uu=S("id"),Qu=o(function(n,r){return r.$?j:y(n(r.a))}),dn=o(function(n,r){return d(Rt,_,r,n)}),fn=sn,na=b(dn,$(["target","checked"]),fn),ra=function(n){return b(Ru,"change",b(mt,n,na))},ta=o(function(n,r){return b(In,function(n){return/^(on|formAction$)/i.test(n)?"data-"+n:n}(n),Zn(r))}),ea=D("checked"),ua=function(n){switch(n){case 0:return ea(!0);case 1:return ea(!1);default:return b(ta,"indeterminate","true")}},aa=S("type"),ca=function(n){return n?"is-invalid":"is-valid"},ia=o(function(n,r){return ae(b(qu,n,b(Ku,v,$([O(r)]))))}),oa=function(n){return{$:1,a:n?0:1}},fa=o(function(n,r){return n.$?b(Pu,b(u,it(n.a),function(n){return n.B}),r):r}),sa=g("h4"),ba=function(n){return{$:0,a:n}},da=function(n){switch(n){case 1:case 2:return!0;default:return!1}},la={$:1,a:{$:0,a:7}},va=function(n){return{$:3,a:n}},$a=o(function(n,r){return b(xu,n,{$:2,a:r})}),ha=function(n){return{$:4,a:$([b($a,"click",kt({a:n,b:!0}))])}},pa={$:1,a:{$:0,a:0}},ga=o(function(n,r){return r.$?j:n(r.a)}),ma=o(function(n,r){switch(n.$){case 0:return c(r,{dw:y(n.a)});case 1:return c(r,{x:y(n.a)});case 2:return c(r,{a$:!0});case 3:return c(r,{a9:n.a});default:return c(r,{ak:a(r.ak,n.a)})}}),wa={ak:v,a$:!1,x:j,a9:!1,dw:j},ka=r(function(n,r,t){var e,u=b(ta,"data-toggle","button");return b(Yu,b(m,zu($([{a:"active",b:n}])),b(m,u,a($([zu($([{a:"btn",b:!0},{a:"btn-block",b:(u=d(Xr,ma,wa,u=r)).a$},{a:"disabled",b:u.a9}])),Zu(u.a9)]),a((e=b(ga,ie,u.dw)).$?v:$([F("btn-"+e.a)]),a((e=u.x).$?v:$(e.a.$?[F("btn-outline-"+ce(e.a.a))]:[F("btn-"+ce(e.a.a))]),u.ak))))),b(m,b(Gu,$([aa("radio"),ea(n),b(S,"autocomplete","off")]),v),t))}),ya=r(function(n,r,t){return d(ka,n,r,t)}),ja=o(function(n,r){switch(n.$){case 0:return c(r,{dw:y(n.a)});case 1:return c(r,{b7:!0});default:return c(r,{ak:a(r.ak,n.a)})}}),Ea={ak:v,dw:j,b7:!1},Na=o(function(n,r){r=d(Xr,ja,Ea,r);return a($([b(ta,"role","group"),zu($([{a:"btn-group",b:!0},{a:"btn-group-toggle",b:n},{a:"btn-group-vertical",b:r.b7}])),b(ta,"data-toggle","buttons")]),a((n=b(ga,ie,r.dw)).$?v:$([F("btn-group-"+n.a)]),r.ak))}),Ca=o(function(n,r){return b(R,b(Na,!0,n),b(A,function(n){return n},r))}),Aa=o(function(n,r){return b(Ca,n,r)}),bn=$(["Research by teachers of the Royal Conservatoire","KonCon Lectorate",Dt]),_a=Pu(b(u,ue,b(r(function(n,r,t){return b(n,t,r)}),Gt,bn))),Ta=g("form"),La=o(function(n,r){return b(Ta,n,r)}),xa=o(function(n,r){return c(r,{ak:a(r.ak,n)})}),Ra={ak:v},Oa=o(function(n,r){return b(R,function(n){n=d(Xr,xa,Ra,n);return a($([F("form-group")]),n.ak)}(n),r)}),Sa=o(function(n,r){return b(xu,n,{$:1,a:r})}),Fa=b(dn,$(["target","value"]),e),Ma=S("placeholder"),Ba=g("a"),Ha=o(function(n,r){return r.b?d(Rt,m,r,n):n}),qa=g("h5"),Ka=g("hr"),Va=function(n){return W(n).join("")},Ja=Q,Pa=o(function(n,r){for(;;){if(r<16)return b(m,de(r),n);n=b(m,de(b(Ja,16,r)),n),r=r/16|0}}),Xa=r(function(n,r,t){return{$:0,a:n,b:r,c:t}}),za=Gn,Da=function(n){return b(Ba,$([F("keyword"),be(n.N),b(za,"color",ve($e(n.s)))]),$([O(n.s)]))},t=g("img"),Wa=S("title"),Ga=b(t,$([F("key-icon"),b(S,"src","./key.svg"),b(In,"width",E(25)),b(In,"height",E(25)),Wa("this research is only accessible for students and staff")]),v),Ya=S("target"),Ia=o(function(n,r){return b(Ba,$([be(n.N),Ya("_blank")]),$(1===r?[O(n.s)]:[Ga,O(n.s)]))}),Za=function(n){return{$:1,a:n}},Ua=o(function(n,r){return{s:n,N:r}}),Qa=r(function(n,r,t){return b(N,r,b(Pr,n,t))}),nc=function(n){return d(Qa," ","-",n)},rc=g("h2"),tc=g("h3"),ec=r(function(n,r,t){switch(n){case 5:return b(Lu,r,$([t]));case 4:return b(rc,r,$([t]));case 3:return b(tc,r,$([t]));case 2:return b(sa,r,$([t]));case 1:return b(qa,r,$([t]));default:return b(Lu,r,$([t]))}}),uc=g("span"),ac=g("ul"),cc=g("li"),ic=o(function(n,r){return{$:0,a:n,b:r}}),oc="https://www.researchcatalogue.net/profile/show-exposition?exposition=",fc=function(n){return d(Qa,"&amp;","&",n.s)},sc=g("p"),bc=o(function(n,t){function r(n){return b(e,n,b(Xe,n,t))}var e=o(function(n,r){return r.$?b(uc,v,v):r.a.b?(r=r.a,b(R,$([Uu(nc(n))]),$([b(qa,$([F("keyword-header")]),$([O(n)])),b(Ba,$([F("back-to-top"),be("#top"),Wa("back to top")]),$([O("back to top")])),b(ac,$([F("research-for-keyword")]),b(A,ye,r))]))):b(uc,v,$([O("empty keyword")]))});return b(R,v,(n=$([b(A,function(n){var r=b(Xe,n,t),r=!r.$&&r.a.b?jr(r.a):0;return b(u,b(u,b(ec,r,$([F("keywordlink")])),he),pe)(n)},n),$([b(Ka,v,v)]),$([b(R,$([F("keyword-research-list")]),b(A,r,n))])]),d(Rt,Ha,v,n)))}),dc=Y,lc=function(n){return n.toLowerCase()},vc=o(function(n,r){var t=b(La,$([F("form-inline")]),$([b(Oa,v,$([b(Gu,$([F("form-control"),Ma("Search keywords"),se(oe),b(za,"margin",".5rem 0")]),v)]))])),n=lc(n),e=kr(r),n=b(Pu,b(u,Et(n),lc),e);return b(R,v,$([t,b(bc,_a(b(dc,jt,n)),r)]))}),$c=r(function(n,r,t){return{cm:n,cy:t,cH:r}}),hc=o(function(n,r){return{ak:n,am:r}}),pc=o(function(n,r){return r.$?n:r.a}),I=o(function(n,r){return Ne({cm:n,cy:Ce(b(Qe,r,function(n){return b(N,"/",C(b(Pr,"/",b(pc,"?",n))))})),cH:b(Qe,r,pc("no date"))})}),gc=Va($([function(n){return n<0||1114111<n?"�":65535<n?String.fromCharCode(55296+Math.floor((n-=65536)/1024),n%1024+56320):String.fromCharCode(n)}(160)])),mc=function(n){return b(uc,$([b(za,"color","#555")]),$([O(a(gc,n))]))},wc=function(n){return b(uc,$([b(za,"color","#ccc")]),$([O(a(gc,n))]))},kc=g("th"),J={cc:j,d8:function(n){return v},ed:v,cE:v,cF:j,cG:function(n){return b(hc,v,b(A,Ae,n))}},yc=jt,Z=o(function(n,r){return yc({cm:n,cy:Ce(b(u,Le,r)),cH:b(u,xe,r)})}),$n=o(function(n,r){return{cm:n,cy:Ce(r),cH:b(u,Ee,r)}}),jc=(Bn={dO:$([b(o(function(n,r){return Ne({cm:n,cy:Ce(b(u,ke,r)),cH:b(u,ke,r)})}),"Type",function(n){return n.B}),b(Z,"Title",me),b($n,"Author",function(n){return n.aZ}),b(I,"Published",_e),b(I,"Modified",Te),b($n,"Keywords",b(u,b(u,b(u,N(", "),A(ee)),_a),function(n){return n._})),b($n,"Visibility",b(u,we,function(n){return n.r}))]),dT:c(J,{d8:ge,ed:$([F("table")])}),ef:b(u,E,function(n){return n.bi}),eg:function(n){return{$:4,a:n}}},P=Bn.ef,un=Bn.eg,on=Bn.dT,{dO:b(A,function(n){return n},Bn.dO),dT:on,ef:P,eg:un}),Ec=F("d-inline"),Nc=F("m-1"),Cc=g("caption"),Ac=r(function(n,r,t){switch(r.$){case 0:return t;case 1:return(e=r.a)(t);case 2:return C((e=r.a)(t));case 3:var e=r.a;return n?C(e(t)):e(t);default:e=r.a;return n?e(t):C(e(t))}}),_c=o(function(n,r){for(;;){if(!r.b)return j;var t=r.a.cy,e=r.b;if(i(r.a.cm,n))return y(t);n=n,r=e}}),Tc=r(function(n,r,t){var e=n.b,n=b(_c,n.a,r);return 1===n.$?t:d(Ac,e,n.a,t)}),Lc=r(function(n,r,t){return d(Tc,r,n.dO,t)}),xc=g("table"),Rc=g("tfoot"),Oc=g("thead"),Sc={$:0},Fc=r(function(n,r,t){return b(Ru,"click",b(mt,t,d(wt,Pt,kt(n),kt(r))))}),Mc=r(function(n,r,t){var e=n.a,u=n.b,a=t.cm;switch(t.cy.$){case 0:return{a:a,b:Sc,c:d(Fc,e,u,r)};case 1:return{a:a,b:{$:1,a:!i(a,e)},c:d(Fc,a,!1,r)};case 2:return{a:a,b:{$:1,a:i(a,e)},c:d(Fc,a,!1,r)};case 3:return i(a,e)?{a:a,b:{$:2,a:y(!u)},c:d(Fc,a,!u,r)}:{a:a,b:{$:2,a:j},c:d(Fc,a,!1,r)};default:return i(a,e)?{a:a,b:{$:2,a:y(u)},c:d(Fc,a,!u,r)}:{a:a,b:{$:2,a:j},c:d(Fc,a,!1,r)}}}),Bc=g("tr"),Hc=Dn,qc=g("td"),Kc=o(function(n,r){r=(0,r.cH)(n);return b(qc,r.ak,r.am)}),Vc=r(function(n,r,t){return b(Bc,r(t),b(A,Kc(t),n))}),Jc=n(function(n,r,t,e){return{a:n(e),b:l(Hc,Vc,r,t,e)}}),Pc=r(function(n,r,t){var e=n.ef,u=n.dO,a=n.dT,c=a.cG(b(A,b(Mc,r,n.eg),u)),c=b(Oc,c.ak,$([b(Bc,v,c.am)])),n=d(Lc,n,r,t),r=d(Re,"tbody",a.cE,b(A,d(Jc,e,u,a.d8),n)),e=1===(t=a.cF).$?b(m,r,v):b(m,b(Rc,t.a.ak,t.a.am),b(m,r,v));return b(xc,a.ed,1===(u=a.cc).$?b(m,c,e):b(m,b(Cc,u.a.ak,u.a.am),b(m,c,e)))}),Xc=n(function(n,r,t,e){r=lc(r),t=lc(t),r=b(Pu,b(u,b(u,Et(r),lc),function(n){return n.s}),b(Pu,b(u,b(u,Et(t),lc),function(n){return n.aZ}),e)),t=E(jr(r))+" results";return $([b(La,$([F("form-inline")]),$([b(Oa,v,$([b(Gu,$([F("form-control"),Ma("Search by author"),se(oe),b(za,"margin",".5rem 0")]),v),b(Gu,$([Ec,F("form-control"),Nc,Ma("Search by title"),se(je),b(za,"margin",".5rem 0")]),v)]))])),b(sc,$([F("table-statistics")]),$([O(t)])),b(R,$([F("table-responsive")]),$([d(Pc,jc,n,r)]))])}),Mn=G({d$:function(n){return{a:Xt,b:$u}},ec:function(n){return hu},eh:$r,ei:function(n){var r=n.ab;switch(r.$){case 0:return b(R,v,$([O("Could not load the list -> "+r.a),b(Tu,$([b(Ru,"click",kt(_u))]),$([O("Try Again!")]))]));case 1:return b(Lu,v,$([O("Loading...")]));default:return function(n){var r=b(Yu,v,$([O("Switch view:"),b(R,$([F("mb-1")]),$([b(Aa,v,$([d(ya,!n.E,$([pa,ha(Mu(0))]),$([O("list view")])),d(ya,1===n.E,$([pa,ha(Mu(1))]),$([O("keyword view")]))]))]))])),t=($([F("ml-1")]),$([O("Include unpublished expositions: "),b(R,v,$([b(ia,$([ba("show-published-toggle"),va(Bu),oa(n.as)]),"include unpublished expositions")]))]),b(Yu,v,$([b(R,$([F("mb-1")]),$([b(ia,$([oa(!n.W),ba("internal-switch"),va(function(n){return Su(n?0:1)})]),"Show all research (including internal)")])),O(n.W?"":"internal works are visible to KC portal members only.")]))),e=b(fa,n.ap,n.bR),e=n.W?b(Pu,function(n){return 2!==n.r},e):e,u=n.as?e:b(Pu,function(n){return da(n.r)},e),a=(a=n.ap,b(Yu,v,$([O("Show research by:"),b(R,$([F("mb-1")]),$([b(Aa,v,$([d(ya,i(a,Ht),$([la,ha(Fu(Ht))]),$([O("All")])),d(ya,i(a,Ou(0)),$([la,ha(Fu(Ou(0)))]),$([O("Teachers")])),d(ya,i(a,Ou(1)),$([la,ha(Fu(Ou(1)))]),$([O("Students")])),d(ya,i(a,Ou(2)),$([la,ha(Fu(Ou(2)))]),$([O("The lectorate 'Music, Education and Society'")])),d(ya,i(a,Ou(3)),$([la,ha(Fu(Ou(3)))]),$([O("KCPedia")]))]))]))]))),e=n.E?(e=wu(e),b(R,$([Uu("keywords")]),$([b(vc,n.ae,e)]))):b(R,v,l(Xc,n.bY,n.aE,n.ae,u));return b(R,$([Uu("top"),F("container")]),$([b(R,$([F("headers")]),$([b(Lu,v,$([O("Research Results")])),b(sa,v,$([O("Royal Conservatoire in The Hague")]))])),a,b(Hu,v,v),t,b(Hu,v,v),r,e]))}(n)}}});an={Main:{init:Mn(kt(0))(0)}},M.Elm?function n(r,t){for(var e in t)e in r?"init"==e?U(6):n(r[e],t[e]):r[e]=t[e]}(M.Elm,an):M.Elm=an}(this);
+// elm-watch hot {"version":"1.1.2","targetName":"My target name","webSocketPort":58523}
+"use strict";
+(() => {
+  // node_modules/tiny-decoders/index.mjs
+  function boolean(value) {
+    if (typeof value !== "boolean") {
+      throw new DecoderError({ tag: "boolean", got: value });
+    }
+    return value;
+  }
+  function number(value) {
+    if (typeof value !== "number") {
+      throw new DecoderError({ tag: "number", got: value });
+    }
+    return value;
+  }
+  function string(value) {
+    if (typeof value !== "string") {
+      throw new DecoderError({ tag: "string", got: value });
+    }
+    return value;
+  }
+  function stringUnion(mapping) {
+    return function stringUnionDecoder(value) {
+      const str = string(value);
+      if (!Object.prototype.hasOwnProperty.call(mapping, str)) {
+        throw new DecoderError({
+          tag: "unknown stringUnion variant",
+          knownVariants: Object.keys(mapping),
+          got: str
+        });
+      }
+      return str;
+    };
+  }
+  function unknownArray(value) {
+    if (!Array.isArray(value)) {
+      throw new DecoderError({ tag: "array", got: value });
+    }
+    return value;
+  }
+  function unknownRecord(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new DecoderError({ tag: "object", got: value });
+    }
+    return value;
+  }
+  function array(decoder) {
+    return function arrayDecoder(value) {
+      const arr = unknownArray(value);
+      const result = [];
+      for (let index = 0; index < arr.length; index++) {
+        try {
+          result.push(decoder(arr[index]));
+        } catch (error) {
+          throw DecoderError.at(error, index);
+        }
+      }
+      return result;
+    };
+  }
+  function record(decoder) {
+    return function recordDecoder(value) {
+      const object = unknownRecord(value);
+      const keys = Object.keys(object);
+      const result = {};
+      for (const key of keys) {
+        if (key === "__proto__") {
+          continue;
+        }
+        try {
+          result[key] = decoder(object[key]);
+        } catch (error) {
+          throw DecoderError.at(error, key);
+        }
+      }
+      return result;
+    };
+  }
+  function fields(callback, { exact = "allow extra", allow = "object" } = {}) {
+    return function fieldsDecoder(value) {
+      const object = allow === "array" ? unknownArray(value) : unknownRecord(value);
+      const knownFields = /* @__PURE__ */ Object.create(null);
+      function field(key, decoder) {
+        try {
+          const result2 = decoder(object[key]);
+          knownFields[key] = null;
+          return result2;
+        } catch (error) {
+          throw DecoderError.at(error, key);
+        }
+      }
+      const result = callback(field, object);
+      if (exact !== "allow extra") {
+        const unknownFields = Object.keys(object).filter((key) => !Object.prototype.hasOwnProperty.call(knownFields, key));
+        if (unknownFields.length > 0) {
+          throw new DecoderError({
+            tag: "exact fields",
+            knownFields: Object.keys(knownFields),
+            got: unknownFields
+          });
+        }
+      }
+      return result;
+    };
+  }
+  function fieldsAuto(mapping, { exact = "allow extra" } = {}) {
+    return function fieldsAutoDecoder(value) {
+      const object = unknownRecord(value);
+      const keys = Object.keys(mapping);
+      const result = {};
+      for (const key of keys) {
+        if (key === "__proto__") {
+          continue;
+        }
+        const decoder = mapping[key];
+        try {
+          result[key] = decoder(object[key]);
+        } catch (error) {
+          throw DecoderError.at(error, key);
+        }
+      }
+      if (exact !== "allow extra") {
+        const unknownFields = Object.keys(object).filter((key) => !Object.prototype.hasOwnProperty.call(mapping, key));
+        if (unknownFields.length > 0) {
+          throw new DecoderError({
+            tag: "exact fields",
+            knownFields: keys,
+            got: unknownFields
+          });
+        }
+      }
+      return result;
+    };
+  }
+  function fieldsUnion(key, mapping) {
+    return fields(function fieldsUnionFields(field, object) {
+      const tag = field(key, string);
+      if (Object.prototype.hasOwnProperty.call(mapping, tag)) {
+        const decoder = mapping[tag];
+        return decoder(object);
+      }
+      throw new DecoderError({
+        tag: "unknown fieldsUnion tag",
+        knownTags: Object.keys(mapping),
+        got: tag,
+        key
+      });
+    });
+  }
+  function multi(mapping) {
+    return function multiDecoder(value) {
+      if (value === void 0) {
+        if (mapping.undefined !== void 0) {
+          return mapping.undefined(value);
+        }
+      } else if (value === null) {
+        if (mapping.null !== void 0) {
+          return mapping.null(value);
+        }
+      } else if (typeof value === "boolean") {
+        if (mapping.boolean !== void 0) {
+          return mapping.boolean(value);
+        }
+      } else if (typeof value === "number") {
+        if (mapping.number !== void 0) {
+          return mapping.number(value);
+        }
+      } else if (typeof value === "string") {
+        if (mapping.string !== void 0) {
+          return mapping.string(value);
+        }
+      } else if (Array.isArray(value)) {
+        if (mapping.array !== void 0) {
+          return mapping.array(value);
+        }
+      } else {
+        if (mapping.object !== void 0) {
+          return mapping.object(value);
+        }
+      }
+      throw new DecoderError({
+        tag: "unknown multi type",
+        knownTypes: Object.keys(mapping),
+        got: value
+      });
+    };
+  }
+  function optional(decoder, defaultValue) {
+    return function optionalDecoder(value) {
+      if (value === void 0) {
+        return defaultValue;
+      }
+      try {
+        return decoder(value);
+      } catch (error) {
+        const newError = DecoderError.at(error);
+        if (newError.path.length === 0) {
+          newError.optional = true;
+        }
+        throw newError;
+      }
+    };
+  }
+  function chain(decoder, next) {
+    return function chainDecoder(value) {
+      return next(decoder(value));
+    };
+  }
+  function formatDecoderErrorVariant(variant, options) {
+    const formatGot = (value) => {
+      const formatted = repr(value, options);
+      return (options === null || options === void 0 ? void 0 : options.sensitive) === true ? `${formatted}
+(Actual values are hidden in sensitive mode.)` : formatted;
+    };
+    const stringList = (strings) => strings.length === 0 ? "(none)" : strings.map((s) => JSON.stringify(s)).join(", ");
+    const got = (message, value) => value === DecoderError.MISSING_VALUE ? message : `${message}
+Got: ${formatGot(value)}`;
+    switch (variant.tag) {
+      case "boolean":
+      case "number":
+      case "string":
+        return got(`Expected a ${variant.tag}`, variant.got);
+      case "array":
+      case "object":
+        return got(`Expected an ${variant.tag}`, variant.got);
+      case "unknown multi type":
+        return `Expected one of these types: ${variant.knownTypes.length === 0 ? "never" : variant.knownTypes.join(", ")}
+Got: ${formatGot(variant.got)}`;
+      case "unknown fieldsUnion tag":
+        return `Expected one of these tags: ${stringList(variant.knownTags)}
+Got: ${formatGot(variant.got)}`;
+      case "unknown stringUnion variant":
+        return `Expected one of these variants: ${stringList(variant.knownVariants)}
+Got: ${formatGot(variant.got)}`;
+      case "exact fields":
+        return `Expected only these fields: ${stringList(variant.knownFields)}
+Found extra fields: ${formatGot(variant.got).replace(/^\[|\]$/g, "")}`;
+      case "tuple size":
+        return `Expected ${variant.expected} items
+Got: ${variant.got}`;
+      case "custom":
+        return got(variant.message, variant.got);
+    }
+  }
+  var DecoderError = class extends TypeError {
+    constructor({ key, ...params }) {
+      const variant = "tag" in params ? params : { tag: "custom", message: params.message, got: params.value };
+      super(`${formatDecoderErrorVariant(
+        variant,
+        { sensitive: true }
+      )}
+
+For better error messages, see https://github.com/lydell/tiny-decoders#error-messages`);
+      this.path = key === void 0 ? [] : [key];
+      this.variant = variant;
+      this.nullable = false;
+      this.optional = false;
+    }
+    static at(error, key) {
+      if (error instanceof DecoderError) {
+        if (key !== void 0) {
+          error.path.unshift(key);
+        }
+        return error;
+      }
+      return new DecoderError({
+        tag: "custom",
+        message: error instanceof Error ? error.message : String(error),
+        got: DecoderError.MISSING_VALUE,
+        key
+      });
+    }
+    format(options) {
+      const path = this.path.map((part) => `[${JSON.stringify(part)}]`).join("");
+      const nullableString = this.nullable ? " (nullable)" : "";
+      const optionalString = this.optional ? " (optional)" : "";
+      const variant = formatDecoderErrorVariant(this.variant, options);
+      return `At root${path}${nullableString}${optionalString}:
+${variant}`;
+    }
+  };
+  DecoderError.MISSING_VALUE = Symbol("DecoderError.MISSING_VALUE");
+  function repr(value, { recurse = true, maxArrayChildren = 5, maxObjectChildren = 3, maxLength = 100, recurseMaxLength = 20, sensitive = false } = {}) {
+    const type = typeof value;
+    const toStringType = Object.prototype.toString.call(value).replace(/^\[object\s+(.+)\]$/, "$1");
+    try {
+      if (value == null || type === "number" || type === "boolean" || type === "symbol" || toStringType === "RegExp") {
+        return sensitive ? toStringType.toLowerCase() : truncate(String(value), maxLength);
+      }
+      if (type === "string") {
+        return sensitive ? type : truncate(JSON.stringify(value), maxLength);
+      }
+      if (typeof value === "function") {
+        return `function ${truncate(JSON.stringify(value.name), maxLength)}`;
+      }
+      if (Array.isArray(value)) {
+        const arr = value;
+        if (!recurse && arr.length > 0) {
+          return `${toStringType}(${arr.length})`;
+        }
+        const lastIndex = arr.length - 1;
+        const items = [];
+        const end = Math.min(maxArrayChildren - 1, lastIndex);
+        for (let index = 0; index <= end; index++) {
+          const item = index in arr ? repr(arr[index], {
+            recurse: false,
+            maxLength: recurseMaxLength,
+            sensitive
+          }) : "<empty>";
+          items.push(item);
+        }
+        if (end < lastIndex) {
+          items.push(`(${lastIndex - end} more)`);
+        }
+        return `[${items.join(", ")}]`;
+      }
+      if (toStringType === "Object") {
+        const object = value;
+        const keys = Object.keys(object);
+        const { name } = object.constructor;
+        if (!recurse && keys.length > 0) {
+          return `${name}(${keys.length})`;
+        }
+        const numHidden = Math.max(0, keys.length - maxObjectChildren);
+        const items = keys.slice(0, maxObjectChildren).map((key2) => `${truncate(JSON.stringify(key2), recurseMaxLength)}: ${repr(object[key2], {
+          recurse: false,
+          maxLength: recurseMaxLength,
+          sensitive
+        })}`).concat(numHidden > 0 ? `(${numHidden} more)` : []);
+        const prefix = name === "Object" ? "" : `${name} `;
+        return `${prefix}{${items.join(", ")}}`;
+      }
+      return toStringType;
+    } catch (_error) {
+      return toStringType;
+    }
+  }
+  function truncate(str, maxLength) {
+    const half = Math.floor(maxLength / 2);
+    return str.length <= maxLength ? str : `${str.slice(0, half)}\u2026${str.slice(-half)}`;
+  }
+
+  // src/Helpers.ts
+  function join(array2, separator) {
+    return array2.join(separator);
+  }
+  function pad(number2) {
+    return number2.toString().padStart(2, "0");
+  }
+  function formatDate(date) {
+    return join(
+      [pad(date.getFullYear()), pad(date.getMonth() + 1), pad(date.getDate())],
+      "-"
+    );
+  }
+  function formatTime(date) {
+    return join(
+      [pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())],
+      ":"
+    );
+  }
+
+  // src/TeaProgram.ts
+  async function runTeaProgram(options) {
+    return new Promise((resolve, reject) => {
+      const [initialModel, initialCmds] = options.init;
+      let model = initialModel;
+      const msgQueue = [];
+      let killed = false;
+      const dispatch = (dispatchedMsg) => {
+        if (killed) {
+          return;
+        }
+        const alreadyRunning = msgQueue.length > 0;
+        msgQueue.push(dispatchedMsg);
+        if (alreadyRunning) {
+          return;
+        }
+        for (const msg of msgQueue) {
+          const [newModel, cmds] = options.update(msg, model);
+          model = newModel;
+          runCmds(cmds);
+        }
+        msgQueue.length = 0;
+      };
+      const runCmds = (cmds) => {
+        for (const cmd of cmds) {
+          options.runCmd(
+            cmd,
+            mutable,
+            dispatch,
+            (result) => {
+              cmds.length = 0;
+              killed = true;
+              resolve(result);
+            },
+            (error) => {
+              cmds.length = 0;
+              killed = true;
+              reject(error);
+            }
+          );
+          if (killed) {
+            break;
+          }
+        }
+      };
+      const mutable = options.initMutable(
+        dispatch,
+        (result) => {
+          killed = true;
+          resolve(result);
+        },
+        (error) => {
+          killed = true;
+          reject(error);
+        }
+      );
+      runCmds(initialCmds);
+    });
+  }
+
+  // src/Types.ts
+  var AbsolutePath = fieldsAuto({
+    tag: () => "AbsolutePath",
+    absolutePath: string
+  });
+  var CompilationMode = stringUnion({
+    debug: null,
+    standard: null,
+    optimize: null
+  });
+  var BrowserUiPosition = stringUnion({
+    TopLeft: null,
+    TopRight: null,
+    BottomLeft: null,
+    BottomRight: null
+  });
+
+  // client/WebSocketMessages.ts
+  var FocusedTabAcknowledged = fieldsAuto({
+    tag: () => "FocusedTabAcknowledged"
+  });
+  var OpenEditorError = fieldsUnion("tag", {
+    EnvNotSet: fieldsAuto({
+      tag: () => "EnvNotSet"
+    }),
+    CommandFailed: fieldsAuto({
+      tag: () => "CommandFailed",
+      message: string
+    })
+  });
+  var OpenEditorFailed = fieldsAuto({
+    tag: () => "OpenEditorFailed",
+    error: OpenEditorError
+  });
+  var ErrorLocation = fieldsUnion("tag", {
+    FileOnly: fieldsAuto({
+      tag: () => "FileOnly",
+      file: AbsolutePath
+    }),
+    FileWithLineAndColumn: fieldsAuto({
+      tag: () => "FileWithLineAndColumn",
+      file: AbsolutePath,
+      line: number,
+      column: number
+    }),
+    Target: fieldsAuto({
+      tag: () => "Target",
+      targetName: string
+    })
+  });
+  var CompileError = fieldsAuto({
+    title: string,
+    location: optional(ErrorLocation),
+    htmlContent: string
+  });
+  var StatusChanged = fieldsAuto({
+    tag: () => "StatusChanged",
+    status: fieldsUnion("tag", {
+      AlreadyUpToDate: fieldsAuto({
+        tag: () => "AlreadyUpToDate",
+        compilationMode: CompilationMode,
+        browserUiPosition: BrowserUiPosition
+      }),
+      Busy: fieldsAuto({
+        tag: () => "Busy",
+        compilationMode: CompilationMode,
+        browserUiPosition: BrowserUiPosition
+      }),
+      CompileError: fieldsAuto({
+        tag: () => "CompileError",
+        compilationMode: CompilationMode,
+        browserUiPosition: BrowserUiPosition,
+        openErrorOverlay: boolean,
+        errors: array(CompileError),
+        foregroundColor: string,
+        backgroundColor: string
+      }),
+      ElmJsonError: fieldsAuto({
+        tag: () => "ElmJsonError",
+        error: string
+      }),
+      ClientError: fieldsAuto({
+        tag: () => "ClientError",
+        message: string
+      })
+    })
+  });
+  var SuccessfullyCompiled = fieldsAuto({
+    tag: () => "SuccessfullyCompiled",
+    code: string,
+    elmCompiledTimestamp: number,
+    compilationMode: CompilationMode,
+    browserUiPosition: BrowserUiPosition
+  });
+  var SuccessfullyCompiledButRecordFieldsChanged = fieldsAuto({
+    tag: () => "SuccessfullyCompiledButRecordFieldsChanged"
+  });
+  var WebSocketToClientMessage = fieldsUnion("tag", {
+    FocusedTabAcknowledged,
+    OpenEditorFailed,
+    StatusChanged,
+    SuccessfullyCompiled,
+    SuccessfullyCompiledButRecordFieldsChanged
+  });
+  var WebSocketToServerMessage = fieldsUnion("tag", {
+    ChangedCompilationMode: fieldsAuto({
+      tag: () => "ChangedCompilationMode",
+      compilationMode: CompilationMode
+    }),
+    ChangedBrowserUiPosition: fieldsAuto({
+      tag: () => "ChangedBrowserUiPosition",
+      browserUiPosition: BrowserUiPosition
+    }),
+    ChangedOpenErrorOverlay: fieldsAuto({
+      tag: () => "ChangedOpenErrorOverlay",
+      openErrorOverlay: boolean
+    }),
+    FocusedTab: fieldsAuto({
+      tag: () => "FocusedTab"
+    }),
+    PressedOpenEditor: fieldsAuto({
+      tag: () => "PressedOpenEditor",
+      file: AbsolutePath,
+      line: number,
+      column: number
+    })
+  });
+  function decodeWebSocketToClientMessage(message) {
+    if (message.startsWith("//")) {
+      const newlineIndexRaw = message.indexOf("\n");
+      const newlineIndex = newlineIndexRaw === -1 ? message.length : newlineIndexRaw;
+      const jsonString = message.slice(2, newlineIndex);
+      const parsed = SuccessfullyCompiled(JSON.parse(jsonString));
+      return { ...parsed, code: message };
+    } else {
+      return WebSocketToClientMessage(JSON.parse(message));
+    }
+  }
+
+  // client/client.ts
+  var window = globalThis;
+  var IS_WEB_WORKER = window.window === void 0;
+  var { __ELM_WATCH } = window;
+  if (typeof __ELM_WATCH !== "object" || __ELM_WATCH === null) {
+    __ELM_WATCH = {};
+    Object.defineProperty(window, "__ELM_WATCH", { value: __ELM_WATCH });
+  }
+  __ELM_WATCH.MOCKED_TIMINGS ?? (__ELM_WATCH.MOCKED_TIMINGS = false);
+  __ELM_WATCH.WEBSOCKET_TIMEOUT ?? (__ELM_WATCH.WEBSOCKET_TIMEOUT = 1e3);
+  __ELM_WATCH.ON_INIT ?? (__ELM_WATCH.ON_INIT = () => {
+  });
+  __ELM_WATCH.ON_RENDER ?? (__ELM_WATCH.ON_RENDER = () => {
+  });
+  __ELM_WATCH.ON_REACHED_IDLE_STATE ?? (__ELM_WATCH.ON_REACHED_IDLE_STATE = () => {
+  });
+  __ELM_WATCH.RELOAD_STATUSES ?? (__ELM_WATCH.RELOAD_STATUSES = {});
+  var RELOAD_MESSAGE_KEY = "__elmWatchReloadMessage";
+  var RELOAD_TARGET_NAME_KEY_PREFIX = "__elmWatchReloadTarget__";
+  __ELM_WATCH.RELOAD_PAGE ?? (__ELM_WATCH.RELOAD_PAGE = (message) => {
+    if (message !== void 0) {
+      try {
+        window.sessionStorage.setItem(RELOAD_MESSAGE_KEY, message);
+      } catch {
+      }
+    }
+    if (IS_WEB_WORKER) {
+      if (message !== void 0) {
+        console.info(message);
+      }
+      console.error(
+        message === void 0 ? "elm-watch: You need to reload the page! I seem to be running in a Web Worker, so I can\u2019t do it for you." : `elm-watch: You need to reload the page! I seem to be running in a Web Worker, so I couldn\u2019t actually reload the page (see above).`
+      );
+    } else {
+      window.location.reload();
+    }
+  });
+  __ELM_WATCH.KILL_MATCHING ?? (__ELM_WATCH.KILL_MATCHING = () => Promise.resolve());
+  __ELM_WATCH.DISCONNECT ?? (__ELM_WATCH.DISCONNECT = () => {
+  });
+  __ELM_WATCH.LOG_DEBUG ?? (__ELM_WATCH.LOG_DEBUG = console.debug);
+  var VERSION = "1.1.2";
+  var TARGET_NAME = "My target name";
+  var INITIAL_ELM_COMPILED_TIMESTAMP = Number(
+    "1710504428009"
+  );
+  var ORIGINAL_COMPILATION_MODE = "proxy";
+  var ORIGINAL_BROWSER_UI_POSITION = "BottomLeft";
+  var WEBSOCKET_PORT = "58523";
+  var CONTAINER_ID = "elm-watch";
+  var DEBUG = String("false") === "true";
+  var BROWSER_UI_MOVED_EVENT = "BROWSER_UI_MOVED_EVENT";
+  var CLOSE_ALL_ERROR_OVERLAYS_EVENT = "CLOSE_ALL_ERROR_OVERLAYS_EVENT";
+  var JUST_CHANGED_BROWSER_UI_POSITION_TIMEOUT = 2e3;
+  var SEND_KEY_DO_NOT_USE_ALL_THE_TIME = Symbol(
+    "This value is supposed to only be obtained via `Status`."
+  );
+  function logDebug(...args) {
+    if (DEBUG) {
+      __ELM_WATCH.LOG_DEBUG(...args);
+    }
+  }
+  function parseBrowseUiPositionWithFallback(value) {
+    try {
+      return BrowserUiPosition(value);
+    } catch {
+      return ORIGINAL_BROWSER_UI_POSITION;
+    }
+  }
+  function run() {
+    let elmCompiledTimestampBeforeReload = void 0;
+    try {
+      const message = window.sessionStorage.getItem(RELOAD_MESSAGE_KEY);
+      if (message !== null) {
+        console.info(message);
+        window.sessionStorage.removeItem(RELOAD_MESSAGE_KEY);
+      }
+      const key = RELOAD_TARGET_NAME_KEY_PREFIX + TARGET_NAME;
+      const previous = window.sessionStorage.getItem(key);
+      if (previous !== null) {
+        const number2 = Number(previous);
+        if (Number.isFinite(number2)) {
+          elmCompiledTimestampBeforeReload = number2;
+        }
+        window.sessionStorage.removeItem(key);
+      }
+    } catch {
+    }
+    const elements = IS_WEB_WORKER ? void 0 : getOrCreateTargetRoot();
+    const browserUiPosition = elements === void 0 ? ORIGINAL_BROWSER_UI_POSITION : parseBrowseUiPositionWithFallback(elements.container.dataset.position);
+    const getNow = () => new Date();
+    runTeaProgram({
+      initMutable: initMutable(getNow, elements),
+      init: init(getNow(), browserUiPosition, elmCompiledTimestampBeforeReload),
+      update: (msg, model) => {
+        const [updatedModel, cmds] = update(msg, model);
+        const modelChanged = updatedModel !== model;
+        const reloadTrouble = model.status.tag !== updatedModel.status.tag && updatedModel.status.tag === "WaitingForReload" && updatedModel.elmCompiledTimestamp === updatedModel.elmCompiledTimestampBeforeReload;
+        const newModel = modelChanged ? {
+          ...updatedModel,
+          previousStatusTag: model.status.tag,
+          uiExpanded: reloadTrouble ? true : updatedModel.uiExpanded
+        } : model;
+        const oldErrorOverlay = getErrorOverlay(model.status);
+        const newErrorOverlay = getErrorOverlay(newModel.status);
+        const allCmds = modelChanged ? [
+          ...cmds,
+          {
+            tag: "UpdateGlobalStatus",
+            reloadStatus: statusToReloadStatus(newModel),
+            elmCompiledTimestamp: newModel.elmCompiledTimestamp
+          },
+          newModel.status.tag === newModel.previousStatusTag && oldErrorOverlay?.openErrorOverlay === newErrorOverlay?.openErrorOverlay ? { tag: "NoCmd" } : {
+            tag: "UpdateErrorOverlay",
+            errors: newErrorOverlay === void 0 || !newErrorOverlay.openErrorOverlay ? /* @__PURE__ */ new Map() : newErrorOverlay.errors,
+            sendKey: statusToSpecialCaseSendKey(newModel.status)
+          },
+          {
+            tag: "Render",
+            model: newModel,
+            manageFocus: msg.tag === "UiMsg"
+          },
+          model.browserUiPosition === newModel.browserUiPosition ? { tag: "NoCmd" } : {
+            tag: "SetBrowserUiPosition",
+            browserUiPosition: newModel.browserUiPosition
+          },
+          reloadTrouble ? { tag: "TriggerReachedIdleState", reason: "ReloadTrouble" } : { tag: "NoCmd" }
+        ] : cmds;
+        logDebug(`${msg.tag} (${TARGET_NAME})`, msg, newModel, allCmds);
+        return [newModel, allCmds];
+      },
+      runCmd: runCmd(getNow, elements)
+    }).catch((error) => {
+      console.error("elm-watch: Unexpectedly exited with error:", error);
+    });
+  }
+  function getErrorOverlay(status) {
+    return "errorOverlay" in status ? status.errorOverlay : void 0;
+  }
+  function statusToReloadStatus(model) {
+    switch (model.status.tag) {
+      case "Busy":
+      case "Connecting":
+        return { tag: "MightWantToReload" };
+      case "CompileError":
+      case "ElmJsonError":
+      case "EvalError":
+      case "Idle":
+      case "SleepingBeforeReconnect":
+      case "UnexpectedError":
+        return { tag: "NoReloadWanted" };
+      case "WaitingForReload":
+        return model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? { tag: "NoReloadWanted" } : { tag: "ReloadRequested", reasons: model.status.reasons };
+    }
+  }
+  function statusToStatusType(statusTag) {
+    switch (statusTag) {
+      case "Idle":
+        return "Success";
+      case "Busy":
+      case "Connecting":
+      case "SleepingBeforeReconnect":
+      case "WaitingForReload":
+        return "Waiting";
+      case "CompileError":
+      case "ElmJsonError":
+      case "EvalError":
+      case "UnexpectedError":
+        return "Error";
+    }
+  }
+  function statusToSpecialCaseSendKey(status) {
+    switch (status.tag) {
+      case "CompileError":
+      case "Idle":
+        return status.sendKey;
+      case "Busy":
+        return SEND_KEY_DO_NOT_USE_ALL_THE_TIME;
+      case "Connecting":
+      case "SleepingBeforeReconnect":
+      case "WaitingForReload":
+      case "ElmJsonError":
+      case "EvalError":
+      case "UnexpectedError":
+        return void 0;
+    }
+  }
+  function getOrCreateContainer() {
+    const existing = document.getElementById(CONTAINER_ID);
+    if (existing !== null) {
+      return existing;
+    }
+    const container = h(HTMLDivElement, { id: CONTAINER_ID });
+    container.style.all = "unset";
+    container.style.position = "fixed";
+    container.style.zIndex = "2147483647";
+    const shadowRoot = container.attachShadow({ mode: "open" });
+    shadowRoot.append(h(HTMLStyleElement, {}, CSS));
+    document.documentElement.append(container);
+    return container;
+  }
+  function getOrCreateTargetRoot() {
+    const container = getOrCreateContainer();
+    const { shadowRoot } = container;
+    if (shadowRoot === null) {
+      throw new Error(
+        `elm-watch: Cannot set up hot reload, because an element with ID ${CONTAINER_ID} exists, but \`.shadowRoot\` is null!`
+      );
+    }
+    let overlay = shadowRoot.querySelector(`.${CLASS.overlay}`);
+    if (overlay === null) {
+      overlay = h(HTMLDivElement, {
+        className: CLASS.overlay,
+        attrs: { "data-test-id": "Overlay" }
+      });
+      shadowRoot.append(overlay);
+    }
+    let overlayCloseButton = shadowRoot.querySelector(
+      `.${CLASS.overlayCloseButton}`
+    );
+    if (overlayCloseButton === null) {
+      const closeAllErrorOverlays = () => {
+        shadowRoot.dispatchEvent(new CustomEvent(CLOSE_ALL_ERROR_OVERLAYS_EVENT));
+      };
+      overlayCloseButton = h(HTMLButtonElement, {
+        className: CLASS.overlayCloseButton,
+        attrs: {
+          "aria-label": "Close error overlay",
+          "data-test-id": "OverlayCloseButton"
+        },
+        onclick: closeAllErrorOverlays
+      });
+      shadowRoot.append(overlayCloseButton);
+      const overlayNonNull = overlay;
+      window.addEventListener(
+        "keydown",
+        (event) => {
+          if (overlayNonNull.hasChildNodes() && event.key === "Escape") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closeAllErrorOverlays();
+          }
+        },
+        true
+      );
+    }
+    let root = shadowRoot.querySelector(`.${CLASS.root}`);
+    if (root === null) {
+      root = h(HTMLDivElement, { className: CLASS.root });
+      shadowRoot.append(root);
+    }
+    const targetRoot = createTargetRoot(TARGET_NAME);
+    root.append(targetRoot);
+    const elements = {
+      container,
+      shadowRoot,
+      overlay,
+      overlayCloseButton,
+      root,
+      targetRoot
+    };
+    setBrowserUiPosition(ORIGINAL_BROWSER_UI_POSITION, elements);
+    return elements;
+  }
+  function createTargetRoot(targetName) {
+    return h(HTMLDivElement, {
+      className: CLASS.targetRoot,
+      attrs: { "data-target": targetName }
+    });
+  }
+  function browserUiPositionToCss(browserUiPosition) {
+    switch (browserUiPosition) {
+      case "TopLeft":
+        return { top: "-1px", bottom: "auto", left: "-1px", right: "auto" };
+      case "TopRight":
+        return { top: "-1px", bottom: "auto", left: "auto", right: "-1px" };
+      case "BottomLeft":
+        return { top: "auto", bottom: "-1px", left: "-1px", right: "auto" };
+      case "BottomRight":
+        return { top: "auto", bottom: "-1px", left: "auto", right: "-1px" };
+    }
+  }
+  function browserUiPositionToCssForChooser(browserUiPosition) {
+    switch (browserUiPosition) {
+      case "TopLeft":
+        return { top: "auto", bottom: "0", left: "auto", right: "0" };
+      case "TopRight":
+        return { top: "auto", bottom: "0", left: "0", right: "auto" };
+      case "BottomLeft":
+        return { top: "0", bottom: "auto", left: "auto", right: "0" };
+      case "BottomRight":
+        return { top: "0", bottom: "auto", left: "0", right: "auto" };
+    }
+  }
+  function setBrowserUiPosition(browserUiPosition, elements) {
+    const isFirstTargetRoot = elements.targetRoot.previousElementSibling === null;
+    if (!isFirstTargetRoot) {
+      return;
+    }
+    elements.container.dataset.position = browserUiPosition;
+    for (const [key, value] of Object.entries(
+      browserUiPositionToCss(browserUiPosition)
+    )) {
+      elements.container.style.setProperty(key, value);
+    }
+    const isInBottomHalf = browserUiPosition === "BottomLeft" || browserUiPosition === "BottomRight";
+    elements.root.classList.toggle(CLASS.rootBottomHalf, isInBottomHalf);
+    elements.shadowRoot.dispatchEvent(
+      new CustomEvent(BROWSER_UI_MOVED_EVENT, { detail: browserUiPosition })
+    );
+  }
+  var initMutable = (getNow, elements) => (dispatch, resolvePromise) => {
+    let removeListeners = [];
+    const mutable = {
+      removeListeners: () => {
+        for (const removeListener of removeListeners) {
+          removeListener();
+        }
+      },
+      webSocket: initWebSocket(
+        getNow,
+        INITIAL_ELM_COMPILED_TIMESTAMP,
+        dispatch
+      ),
+      webSocketTimeoutId: void 0
+    };
+    mutable.webSocket.addEventListener(
+      "open",
+      () => {
+        removeListeners = [
+          addEventListener(window, "focus", (event) => {
+            if (event instanceof CustomEvent && event.detail !== TARGET_NAME) {
+              return;
+            }
+            dispatch({ tag: "FocusedTab" });
+          }),
+          addEventListener(window, "visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+              dispatch({
+                tag: "PageVisibilityChangedToVisible",
+                date: getNow()
+              });
+            }
+          }),
+          ...elements === void 0 ? [] : [
+            addEventListener(
+              elements.shadowRoot,
+              BROWSER_UI_MOVED_EVENT,
+              (event) => {
+                dispatch({
+                  tag: "BrowserUiMoved",
+                  browserUiPosition: fields(
+                    (field) => field("detail", parseBrowseUiPositionWithFallback)
+                  )(event)
+                });
+              }
+            ),
+            addEventListener(
+              elements.shadowRoot,
+              CLOSE_ALL_ERROR_OVERLAYS_EVENT,
+              () => {
+                dispatch({
+                  tag: "UiMsg",
+                  date: getNow(),
+                  msg: {
+                    tag: "ChangedOpenErrorOverlay",
+                    openErrorOverlay: false
+                  }
+                });
+              }
+            )
+          ]
+        ];
+      },
+      { once: true }
+    );
+    __ELM_WATCH.RELOAD_STATUSES[TARGET_NAME] = {
+      tag: "MightWantToReload"
+    };
+    const originalOnInit = __ELM_WATCH.ON_INIT;
+    __ELM_WATCH.ON_INIT = () => {
+      dispatch({ tag: "AppInit" });
+      originalOnInit();
+    };
+    const originalKillMatching = __ELM_WATCH.KILL_MATCHING;
+    __ELM_WATCH.KILL_MATCHING = (targetName) => new Promise((resolve, reject) => {
+      if (targetName.test(TARGET_NAME) && mutable.webSocket.readyState !== WebSocket.CLOSED) {
+        mutable.webSocket.addEventListener("close", () => {
+          originalKillMatching(targetName).then(resolve).catch(reject);
+        });
+        mutable.removeListeners();
+        mutable.webSocket.close();
+        if (mutable.webSocketTimeoutId !== void 0) {
+          clearTimeout(mutable.webSocketTimeoutId);
+          mutable.webSocketTimeoutId = void 0;
+        }
+        elements?.targetRoot.remove();
+        resolvePromise(void 0);
+      } else {
+        originalKillMatching(targetName).then(resolve).catch(reject);
+      }
+    });
+    const originalDisconnect = __ELM_WATCH.DISCONNECT;
+    __ELM_WATCH.DISCONNECT = (targetName) => {
+      if (targetName.test(TARGET_NAME) && mutable.webSocket.readyState !== WebSocket.CLOSED) {
+        mutable.webSocket.close();
+      } else {
+        originalDisconnect(targetName);
+      }
+    };
+    return mutable;
+  };
+  function addEventListener(target, eventName, listener) {
+    target.addEventListener(eventName, listener);
+    return () => {
+      target.removeEventListener(eventName, listener);
+    };
+  }
+  function initWebSocket(getNow, elmCompiledTimestamp, dispatch) {
+    const hostname = window.location.hostname === "" ? "localhost" : window.location.hostname;
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = new URL(`${protocol}://${hostname}:${WEBSOCKET_PORT}/elm-watch`);
+    url.searchParams.set("elmWatchVersion", VERSION);
+    url.searchParams.set("targetName", TARGET_NAME);
+    url.searchParams.set("elmCompiledTimestamp", elmCompiledTimestamp.toString());
+    const webSocket = new WebSocket(url);
+    webSocket.addEventListener("open", () => {
+      dispatch({ tag: "WebSocketConnected", date: getNow() });
+    });
+    webSocket.addEventListener("close", () => {
+      dispatch({
+        tag: "WebSocketClosed",
+        date: getNow()
+      });
+    });
+    webSocket.addEventListener("message", (event) => {
+      dispatch({
+        tag: "WebSocketMessageReceived",
+        date: getNow(),
+        data: event.data
+      });
+    });
+    return webSocket;
+  }
+  var init = (date, browserUiPosition, elmCompiledTimestampBeforeReload) => {
+    const model = {
+      status: { tag: "Connecting", date, attemptNumber: 1 },
+      previousStatusTag: "Idle",
+      compilationMode: ORIGINAL_COMPILATION_MODE,
+      browserUiPosition,
+      lastBrowserUiPositionChangeDate: void 0,
+      elmCompiledTimestamp: INITIAL_ELM_COMPILED_TIMESTAMP,
+      elmCompiledTimestampBeforeReload,
+      uiExpanded: false
+    };
+    return [model, [{ tag: "Render", model, manageFocus: false }]];
+  };
+  function update(msg, model) {
+    switch (msg.tag) {
+      case "AppInit":
+        return [{ ...model }, []];
+      case "BrowserUiMoved":
+        return [{ ...model, browserUiPosition: msg.browserUiPosition }, []];
+      case "EvalErrored":
+        return [
+          {
+            ...model,
+            status: { tag: "EvalError", date: msg.date },
+            uiExpanded: true
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "EvalErrored"
+            }
+          ]
+        ];
+      case "EvalNeedsReload":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "WaitingForReload",
+              date: msg.date,
+              reasons: msg.reasons
+            }
+          },
+          []
+        ];
+      case "EvalSucceeded":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "Idle",
+              date: msg.date,
+              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
+            }
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "EvalSucceeded"
+            }
+          ]
+        ];
+      case "FocusedTab":
+        return [
+          statusToStatusType(model.status.tag) === "Error" ? { ...model } : model,
+          [
+            {
+              tag: "SendMessage",
+              message: { tag: "FocusedTab" },
+              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
+            },
+            {
+              tag: "WebSocketTimeoutBegin"
+            }
+          ]
+        ];
+      case "PageVisibilityChangedToVisible":
+        return reconnect(model, msg.date, { force: true });
+      case "SleepBeforeReconnectDone":
+        return reconnect(model, msg.date, { force: false });
+      case "UiMsg":
+        return onUiMsg(msg.date, msg.msg, model);
+      case "WebSocketClosed": {
+        const attemptNumber = "attemptNumber" in model.status ? model.status.attemptNumber + 1 : 1;
+        return [
+          {
+            ...model,
+            status: {
+              tag: "SleepingBeforeReconnect",
+              date: msg.date,
+              attemptNumber
+            }
+          },
+          [{ tag: "SleepBeforeReconnect", attemptNumber }]
+        ];
+      }
+      case "WebSocketConnected":
+        return [
+          {
+            ...model,
+            status: { tag: "Busy", date: msg.date, errorOverlay: void 0 }
+          },
+          []
+        ];
+      case "WebSocketMessageReceived": {
+        const result = parseWebSocketMessageData(msg.data);
+        switch (result.tag) {
+          case "Success":
+            return onWebSocketToClientMessage(msg.date, result.message, model);
+          case "Error":
+            return [
+              {
+                ...model,
+                status: {
+                  tag: "UnexpectedError",
+                  date: msg.date,
+                  message: result.message
+                },
+                uiExpanded: true
+              },
+              []
+            ];
+        }
+      }
+    }
+  }
+  function onUiMsg(date, msg, model) {
+    switch (msg.tag) {
+      case "ChangedBrowserUiPosition":
+        return [
+          {
+            ...model,
+            browserUiPosition: msg.browserUiPosition,
+            lastBrowserUiPositionChangeDate: date
+          },
+          [
+            {
+              tag: "SendMessage",
+              message: {
+                tag: "ChangedBrowserUiPosition",
+                browserUiPosition: msg.browserUiPosition
+              },
+              sendKey: msg.sendKey
+            }
+          ]
+        ];
+      case "ChangedCompilationMode":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "Busy",
+              date,
+              errorOverlay: getErrorOverlay(model.status)
+            },
+            compilationMode: msg.compilationMode
+          },
+          [
+            {
+              tag: "SendMessage",
+              message: {
+                tag: "ChangedCompilationMode",
+                compilationMode: msg.compilationMode
+              },
+              sendKey: msg.sendKey
+            }
+          ]
+        ];
+      case "ChangedOpenErrorOverlay":
+        return "errorOverlay" in model.status && model.status.errorOverlay !== void 0 ? [
+          {
+            ...model,
+            status: {
+              ...model.status,
+              errorOverlay: {
+                ...model.status.errorOverlay,
+                openErrorOverlay: msg.openErrorOverlay
+              }
+            },
+            uiExpanded: false
+          },
+          [
+            {
+              tag: "SendMessage",
+              message: {
+                tag: "ChangedOpenErrorOverlay",
+                openErrorOverlay: msg.openErrorOverlay
+              },
+              sendKey: model.status.tag === "Busy" ? SEND_KEY_DO_NOT_USE_ALL_THE_TIME : model.status.sendKey
+            }
+          ]
+        ] : [model, []];
+      case "PressedChevron":
+        return [{ ...model, uiExpanded: !model.uiExpanded }, []];
+      case "PressedOpenEditor":
+        return [
+          model,
+          [
+            {
+              tag: "SendMessage",
+              message: {
+                tag: "PressedOpenEditor",
+                file: msg.file,
+                line: msg.line,
+                column: msg.column
+              },
+              sendKey: msg.sendKey
+            }
+          ]
+        ];
+      case "PressedReconnectNow":
+        return reconnect(model, date, { force: true });
+    }
+  }
+  function onWebSocketToClientMessage(date, msg, model) {
+    switch (msg.tag) {
+      case "FocusedTabAcknowledged":
+        return [model, [{ tag: "WebSocketTimeoutClear" }]];
+      case "OpenEditorFailed":
+        return [
+          model.status.tag === "CompileError" ? {
+            ...model,
+            status: { ...model.status, openEditorError: msg.error },
+            uiExpanded: true
+          } : model,
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "OpenEditorFailed"
+            }
+          ]
+        ];
+      case "StatusChanged":
+        return statusChanged(date, msg, model);
+      case "SuccessfullyCompiled": {
+        const justChangedBrowserUiPosition = model.lastBrowserUiPositionChangeDate !== void 0 && date.getTime() - model.lastBrowserUiPositionChangeDate.getTime() < JUST_CHANGED_BROWSER_UI_POSITION_TIMEOUT;
+        return msg.compilationMode !== ORIGINAL_COMPILATION_MODE ? [
+          {
+            ...model,
+            status: {
+              tag: "WaitingForReload",
+              date,
+              reasons: ORIGINAL_COMPILATION_MODE === "proxy" ? [] : [
+                `compilation mode changed from ${ORIGINAL_COMPILATION_MODE} to ${msg.compilationMode}.`
+              ]
+            },
+            compilationMode: msg.compilationMode
+          },
+          []
+        ] : [
+          {
+            ...model,
+            compilationMode: msg.compilationMode,
+            elmCompiledTimestamp: msg.elmCompiledTimestamp,
+            browserUiPosition: msg.browserUiPosition,
+            lastBrowserUiPositionChangeDate: void 0
+          },
+          [
+            { tag: "Eval", code: msg.code },
+            justChangedBrowserUiPosition ? {
+              tag: "SetBrowserUiPosition",
+              browserUiPosition: msg.browserUiPosition
+            } : { tag: "NoCmd" }
+          ]
+        ];
+      }
+      case "SuccessfullyCompiledButRecordFieldsChanged":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "WaitingForReload",
+              date,
+              reasons: [
+                `record field mangling in optimize mode was different than last time.`
+              ]
+            }
+          },
+          []
+        ];
+    }
+  }
+  function statusChanged(date, { status }, model) {
+    switch (status.tag) {
+      case "AlreadyUpToDate":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "Idle",
+              date,
+              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME
+            },
+            compilationMode: status.compilationMode,
+            browserUiPosition: status.browserUiPosition
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "AlreadyUpToDate"
+            }
+          ]
+        ];
+      case "Busy":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "Busy",
+              date,
+              errorOverlay: getErrorOverlay(model.status)
+            },
+            compilationMode: status.compilationMode,
+            browserUiPosition: status.browserUiPosition
+          },
+          []
+        ];
+      case "ClientError":
+        return [
+          {
+            ...model,
+            status: { tag: "UnexpectedError", date, message: status.message },
+            uiExpanded: true
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "ClientError"
+            }
+          ]
+        ];
+      case "CompileError":
+        return [
+          {
+            ...model,
+            status: {
+              tag: "CompileError",
+              date,
+              sendKey: SEND_KEY_DO_NOT_USE_ALL_THE_TIME,
+              errorOverlay: {
+                errors: new Map(
+                  status.errors.map((error) => {
+                    const overlayError = {
+                      title: error.title,
+                      location: error.location,
+                      htmlContent: error.htmlContent,
+                      foregroundColor: status.foregroundColor,
+                      backgroundColor: status.backgroundColor
+                    };
+                    const id = JSON.stringify(overlayError);
+                    return [id, overlayError];
+                  })
+                ),
+                openErrorOverlay: status.openErrorOverlay
+              },
+              openEditorError: void 0
+            },
+            compilationMode: status.compilationMode,
+            browserUiPosition: status.browserUiPosition
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "CompileError"
+            }
+          ]
+        ];
+      case "ElmJsonError":
+        return [
+          {
+            ...model,
+            status: { tag: "ElmJsonError", date, error: status.error }
+          },
+          [
+            {
+              tag: "TriggerReachedIdleState",
+              reason: "ElmJsonError"
+            }
+          ]
+        ];
+    }
+  }
+  function reconnect(model, date, { force }) {
+    return model.status.tag === "SleepingBeforeReconnect" && (date.getTime() - model.status.date.getTime() >= retryWaitMs(model.status.attemptNumber) || force) ? [
+      {
+        ...model,
+        status: {
+          tag: "Connecting",
+          date,
+          attemptNumber: model.status.attemptNumber
+        }
+      },
+      [
+        {
+          tag: "Reconnect",
+          elmCompiledTimestamp: model.elmCompiledTimestamp
+        }
+      ]
+    ] : [model, []];
+  }
+  function retryWaitMs(attemptNumber) {
+    return Math.min(1e3 + 10 * attemptNumber ** 2, 1e3 * 60);
+  }
+  function printRetryWaitMs(attemptNumber) {
+    return `${retryWaitMs(attemptNumber) / 1e3} seconds`;
+  }
+  var runCmd = (getNow, elements) => (cmd, mutable, dispatch, _resolvePromise, rejectPromise) => {
+    switch (cmd.tag) {
+      case "Eval": {
+        try {
+          const f = new Function(cmd.code);
+          f();
+          dispatch({ tag: "EvalSucceeded", date: getNow() });
+        } catch (unknownError) {
+          if (unknownError instanceof Error && unknownError.message.startsWith("ELM_WATCH_RELOAD_NEEDED")) {
+            dispatch({
+              tag: "EvalNeedsReload",
+              date: getNow(),
+              reasons: unknownError.message.split("\n\n---\n\n").slice(1)
+            });
+          } else {
+            void Promise.reject(unknownError);
+            dispatch({ tag: "EvalErrored", date: getNow() });
+          }
+        }
+        return;
+      }
+      case "NoCmd":
+        return;
+      case "Reconnect":
+        mutable.webSocket = initWebSocket(
+          getNow,
+          cmd.elmCompiledTimestamp,
+          dispatch
+        );
+        return;
+      case "Render": {
+        const { model } = cmd;
+        const info = {
+          version: VERSION,
+          webSocketUrl: new URL(mutable.webSocket.url),
+          targetName: TARGET_NAME,
+          originalCompilationMode: ORIGINAL_COMPILATION_MODE,
+          initializedElmAppsStatus: checkInitializedElmAppsStatus(),
+          errorOverlayVisible: elements !== void 0 && !elements.overlay.hidden
+        };
+        if (elements === void 0) {
+          if (model.status.tag !== model.previousStatusTag) {
+            const isError = statusToStatusType(model.status.tag) === "Error";
+            const consoleMethod = isError ? console.error : console.info;
+            consoleMethod(renderWebWorker(model, info));
+          }
+        } else {
+          const { targetRoot } = elements;
+          render(getNow, targetRoot, dispatch, model, info, cmd.manageFocus);
+        }
+        return;
+      }
+      case "SendMessage": {
+        const json = JSON.stringify(cmd.message);
+        try {
+          mutable.webSocket.send(json);
+        } catch (error) {
+          console.error("elm-watch: Failed to send WebSocket message:", error);
+        }
+        return;
+      }
+      case "SetBrowserUiPosition":
+        if (elements !== void 0) {
+          setBrowserUiPosition(cmd.browserUiPosition, elements);
+        }
+        return;
+      case "SleepBeforeReconnect":
+        setTimeout(() => {
+          if (typeof document === "undefined" || document.visibilityState === "visible") {
+            dispatch({ tag: "SleepBeforeReconnectDone", date: getNow() });
+          }
+        }, retryWaitMs(cmd.attemptNumber));
+        return;
+      case "TriggerReachedIdleState":
+        Promise.resolve().then(() => {
+          __ELM_WATCH.ON_REACHED_IDLE_STATE(cmd.reason);
+        }).catch(rejectPromise);
+        return;
+      case "UpdateErrorOverlay":
+        if (elements !== void 0) {
+          updateErrorOverlay(
+            TARGET_NAME,
+            (msg) => {
+              dispatch({ tag: "UiMsg", date: getNow(), msg });
+            },
+            cmd.sendKey,
+            cmd.errors,
+            elements.overlay,
+            elements.overlayCloseButton
+          );
+        }
+        return;
+      case "UpdateGlobalStatus":
+        __ELM_WATCH.RELOAD_STATUSES[TARGET_NAME] = cmd.reloadStatus;
+        switch (cmd.reloadStatus.tag) {
+          case "NoReloadWanted":
+          case "MightWantToReload":
+            break;
+          case "ReloadRequested":
+            try {
+              window.sessionStorage.setItem(
+                RELOAD_TARGET_NAME_KEY_PREFIX + TARGET_NAME,
+                cmd.elmCompiledTimestamp.toString()
+              );
+            } catch {
+            }
+        }
+        reloadPageIfNeeded();
+        return;
+      case "WebSocketTimeoutBegin":
+        if (mutable.webSocketTimeoutId === void 0) {
+          mutable.webSocketTimeoutId = setTimeout(() => {
+            mutable.webSocketTimeoutId = void 0;
+            mutable.webSocket.close();
+            dispatch({
+              tag: "WebSocketClosed",
+              date: getNow()
+            });
+          }, __ELM_WATCH.WEBSOCKET_TIMEOUT);
+        }
+        return;
+      case "WebSocketTimeoutClear":
+        if (mutable.webSocketTimeoutId !== void 0) {
+          clearTimeout(mutable.webSocketTimeoutId);
+          mutable.webSocketTimeoutId = void 0;
+        }
+        return;
+    }
+  };
+  function parseWebSocketMessageData(data) {
+    try {
+      return {
+        tag: "Success",
+        message: decodeWebSocketToClientMessage(string(data))
+      };
+    } catch (unknownError) {
+      return {
+        tag: "Error",
+        message: `Failed to decode web socket message sent from the server:
+${possiblyDecodeErrorToString(
+          unknownError
+        )}`
+      };
+    }
+  }
+  function possiblyDecodeErrorToString(unknownError) {
+    return unknownError instanceof DecoderError ? unknownError.format() : unknownError instanceof Error ? unknownError.message : repr(unknownError);
+  }
+  function functionToNull(value) {
+    return typeof value === "function" ? null : value;
+  }
+  var ProgramType = stringUnion({
+    "Platform.worker": null,
+    "Browser.sandbox": null,
+    "Browser.element": null,
+    "Browser.document": null,
+    "Browser.application": null,
+    Html: null
+  });
+  var ElmModule = chain(
+    record(
+      chain(
+        functionToNull,
+        multi({
+          null: () => [],
+          array: array(
+            fields((field) => field("__elmWatchProgramType", ProgramType))
+          ),
+          object: (value) => ElmModule(value)
+        })
+      )
+    ),
+    (record2) => Object.values(record2).flat()
+  );
+  var ProgramTypes = fields((field) => field("Elm", ElmModule));
+  function checkInitializedElmAppsStatus() {
+    if (window.Elm !== void 0 && "__elmWatchProxy" in window.Elm) {
+      return {
+        tag: "DebuggerModeStatus",
+        status: {
+          tag: "Disabled",
+          reason: noDebuggerYetReason
+        }
+      };
+    }
+    if (window.Elm === void 0) {
+      return { tag: "MissingWindowElm" };
+    }
+    let programTypes;
+    try {
+      programTypes = ProgramTypes(window);
+    } catch (unknownError) {
+      return {
+        tag: "DecodeError",
+        message: possiblyDecodeErrorToString(unknownError)
+      };
+    }
+    if (programTypes.length === 0) {
+      return { tag: "NoProgramsAtAll" };
+    }
+    const noDebugger = programTypes.filter((programType) => {
+      switch (programType) {
+        case "Platform.worker":
+        case "Html":
+          return true;
+        case "Browser.sandbox":
+        case "Browser.element":
+        case "Browser.document":
+        case "Browser.application":
+          return false;
+      }
+    });
+    return {
+      tag: "DebuggerModeStatus",
+      status: noDebugger.length === programTypes.length ? {
+        tag: "Disabled",
+        reason: noDebuggerReason(new Set(noDebugger))
+      } : { tag: "Enabled" }
+    };
+  }
+  function reloadPageIfNeeded() {
+    let shouldReload = false;
+    const reasons = [];
+    for (const [targetName, reloadStatus] of Object.entries(
+      __ELM_WATCH.RELOAD_STATUSES
+    )) {
+      switch (reloadStatus.tag) {
+        case "MightWantToReload":
+          return;
+        case "NoReloadWanted":
+          break;
+        case "ReloadRequested":
+          shouldReload = true;
+          if (reloadStatus.reasons.length > 0) {
+            reasons.push([targetName, reloadStatus.reasons]);
+          }
+          break;
+      }
+    }
+    if (!shouldReload) {
+      return;
+    }
+    const first = reasons[0];
+    const [separator, reasonString] = reasons.length === 1 && first !== void 0 && first[1].length === 1 ? [" ", `${first[1].join("")}
+(target: ${first[0]})`] : [
+      ":\n\n",
+      reasons.map(
+        ([targetName, subReasons]) => [
+          targetName,
+          ...subReasons.map((subReason) => `- ${subReason}`)
+        ].join("\n")
+      ).join("\n\n")
+    ];
+    const message = reasons.length === 0 ? void 0 : `elm-watch: I did a full page reload because${separator}${reasonString}`;
+    __ELM_WATCH.RELOAD_STATUSES = {};
+    __ELM_WATCH.RELOAD_PAGE(message);
+  }
+  function h(t, {
+    attrs,
+    style,
+    localName,
+    ...props
+  }, ...children) {
+    const element = document.createElement(
+      localName ?? t.name.replace(/^HTML(\w+)Element$/, "$1").replace("Anchor", "a").replace("Paragraph", "p").replace(/^([DOU])List$/, "$1l").toLowerCase()
+    );
+    Object.assign(element, props);
+    if (attrs !== void 0) {
+      for (const [key, value] of Object.entries(attrs)) {
+        element.setAttribute(key, value);
+      }
+    }
+    if (style !== void 0) {
+      for (const [key, value] of Object.entries(style)) {
+        element.style[key] = value;
+      }
+    }
+    for (const child of children) {
+      if (child !== void 0) {
+        element.append(
+          typeof child === "string" ? document.createTextNode(child) : child
+        );
+      }
+    }
+    return element;
+  }
+  function renderWebWorker(model, info) {
+    const statusData = statusIconAndText(model, info);
+    return `${statusData.icon} elm-watch: ${statusData.status} ${formatTime(
+      model.status.date
+    )} (${info.targetName})`;
+  }
+  function render(getNow, targetRoot, dispatch, model, info, manageFocus) {
+    targetRoot.replaceChildren(
+      view(
+        (msg) => {
+          dispatch({ tag: "UiMsg", date: getNow(), msg });
+        },
+        model,
+        info,
+        manageFocus
+      )
+    );
+    const firstFocusableElement = targetRoot.querySelector(`button, [tabindex]`);
+    if (manageFocus && firstFocusableElement instanceof HTMLElement) {
+      firstFocusableElement.focus();
+    }
+    __ELM_WATCH.ON_RENDER(TARGET_NAME);
+  }
+  var CLASS = {
+    browserUiPositionButton: "browserUiPositionButton",
+    browserUiPositionChooser: "browserUiPositionChooser",
+    chevronButton: "chevronButton",
+    compilationModeWithIcon: "compilationModeWithIcon",
+    container: "container",
+    debugModeIcon: "debugModeIcon",
+    envNotSet: "envNotSet",
+    errorLocationButton: "errorLocationButton",
+    errorTitle: "errorTitle",
+    expandedUiContainer: "expandedUiContainer",
+    flashError: "flashError",
+    flashSuccess: "flashSuccess",
+    overlay: "overlay",
+    overlayCloseButton: "overlayCloseButton",
+    root: "root",
+    rootBottomHalf: "rootBottomHalf",
+    shortStatusContainer: "shortStatusContainer",
+    targetName: "targetName",
+    targetRoot: "targetRoot"
+  };
+  function getStatusClass({
+    statusType,
+    statusTypeChanged,
+    hasReceivedHotReload,
+    uiRelatedUpdate,
+    errorOverlayVisible
+  }) {
+    switch (statusType) {
+      case "Success":
+        return statusTypeChanged && hasReceivedHotReload ? CLASS.flashSuccess : void 0;
+      case "Error":
+        return errorOverlayVisible ? statusTypeChanged && hasReceivedHotReload ? CLASS.flashError : void 0 : uiRelatedUpdate ? void 0 : CLASS.flashError;
+      case "Waiting":
+        return void 0;
+    }
+  }
+  var CHEVRON_UP = "\u25B2";
+  var CHEVRON_DOWN = "\u25BC";
+  var CSS = `
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+fieldset {
+  display: grid;
+  gap: 0.25em;
+  margin: 0;
+  border: 1px solid var(--grey);
+  padding: 0.25em 0.75em 0.5em;
+}
+
+fieldset:disabled {
+  color: var(--grey);
+}
+
+p,
+dd {
+  margin: 0;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.25em 1em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+dt {
+  text-align: right;
+  color: var(--grey);
+}
+
+time {
+  display: inline-grid;
+  overflow: hidden;
+}
+
+time::after {
+  content: attr(data-format);
+  visibility: hidden;
+  height: 0;
+}
+
+.${CLASS.overlay} {
+  position: fixed;
+  z-index: -2;
+  inset: 0;
+  overflow-y: auto;
+  padding: 2ch 0;
+}
+
+.${CLASS.overlayCloseButton} {
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  appearance: none;
+  padding: 1em;
+  border: none;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 1.25em;
+  filter: drop-shadow(0 0 0.125em var(--backgroundColor));
+}
+
+.${CLASS.overlayCloseButton}::before,
+.${CLASS.overlayCloseButton}::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.125em;
+  height: 1em;
+  background-color: var(--foregroundColor);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.${CLASS.overlayCloseButton}::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.${CLASS.overlay},
+.${CLASS.overlay} pre {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+}
+
+.${CLASS.overlay} details {
+  --border-thickness: 0.125em;
+  border-top: var(--border-thickness) solid;
+  margin: 2ch 0;
+}
+
+.${CLASS.overlay} summary {
+  cursor: pointer;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 2ch;
+  word-break: break-word;
+}
+
+.${CLASS.overlay} summary::-webkit-details-marker {
+  display: none;
+}
+
+.${CLASS.overlay} summary::marker {
+  content: none;
+}
+
+.${CLASS.overlay} summary > * {
+  pointer-events: auto;
+}
+
+.${CLASS.errorTitle} {
+  display: inline-block;
+  font-weight: bold;
+  --padding: 1ch;
+  padding: 0 var(--padding);
+  transform: translate(calc(var(--padding) * -1), calc(-50% - var(--border-thickness) / 2));
+}
+
+.${CLASS.errorTitle}::before {
+  content: "${CHEVRON_DOWN}";
+  display: inline-block;
+  margin-right: 1ch;
+  transform: translateY(-0.0625em);
+}
+
+details[open] > summary > .${CLASS.errorTitle}::before {
+  content: "${CHEVRON_UP}";
+}
+
+.${CLASS.errorLocationButton} {
+  appearance: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.${CLASS.overlay} pre {
+  margin: 0;
+  padding: 2ch;
+  overflow-x: auto;
+}
+
+.${CLASS.root} {
+  --grey: #767676;
+  display: flex;
+  align-items: start;
+  overflow: auto;
+  max-height: 100vh;
+  max-width: 100vw;
+  color: black;
+  font-family: system-ui;
+}
+
+.${CLASS.rootBottomHalf} {
+  align-items: end;
+}
+
+.${CLASS.targetRoot} + .${CLASS.targetRoot} {
+  margin-left: -1px;
+}
+
+.${CLASS.targetRoot}:only-of-type .${CLASS.debugModeIcon},
+.${CLASS.targetRoot}:only-of-type .${CLASS.targetName} {
+  display: none;
+}
+
+.${CLASS.container} {
+  display: flex;
+  flex-direction: column-reverse;
+  background-color: white;
+  border: 1px solid var(--grey);
+}
+
+.${CLASS.rootBottomHalf} .${CLASS.container} {
+  flex-direction: column;
+}
+
+.${CLASS.envNotSet} {
+  display: grid;
+  gap: 0.75em;
+  margin: 2em 0;
+}
+
+.${CLASS.envNotSet},
+.${CLASS.root} pre {
+  border-left: 0.25em solid var(--grey);
+  padding-left: 0.5em;
+}
+
+.${CLASS.root} pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.${CLASS.expandedUiContainer} {
+  padding: 1em;
+  padding-top: 0.75em;
+  display: grid;
+  gap: 0.75em;
+  outline: none;
+  contain: paint;
+}
+
+.${CLASS.rootBottomHalf} .${CLASS.expandedUiContainer} {
+  padding-bottom: 0.75em;
+}
+
+.${CLASS.expandedUiContainer}:is(.length0, .length1) {
+  grid-template-columns: min-content;
+}
+
+.${CLASS.expandedUiContainer} > dl {
+  justify-self: start;
+}
+
+.${CLASS.expandedUiContainer} label {
+  display: grid;
+  grid-template-columns: min-content auto;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.${CLASS.expandedUiContainer} label.Disabled {
+  color: var(--grey);
+}
+
+.${CLASS.expandedUiContainer} label > small {
+  grid-column: 2;
+}
+
+.${CLASS.compilationModeWithIcon} {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.${CLASS.browserUiPositionChooser} {
+  position: absolute;
+  display: grid;
+  grid-template-columns: min-content min-content;
+  pointer-events: none;
+}
+
+.${CLASS.browserUiPositionButton} {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: none;
+  pointer-events: auto;
+  width: 1em;
+  height: 1em;
+  text-align: center;
+  line-height: 1em;
+}
+
+.${CLASS.browserUiPositionButton}:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.${CLASS.targetRoot}:not(:first-child) .${CLASS.browserUiPositionChooser} {
+  display: none;
+}
+
+.${CLASS.shortStatusContainer} {
+  line-height: 1;
+  padding: 0.25em;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.${CLASS.flashError}::before,
+.${CLASS.flashSuccess}::before {
+  content: "";
+  position: absolute;
+  margin-top: 0.5em;
+  margin-left: 0.5em;
+  --size: min(500px, 100vmin);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  animation: flash 0.7s 0.05s ease-out both;
+  pointer-events: none;
+}
+
+.${CLASS.flashError}::before {
+  background-color: #eb0000;
+}
+
+.${CLASS.flashSuccess}::before {
+  background-color: #00b600;
+}
+
+@keyframes flash {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.9;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes nudge {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .${CLASS.flashError}::before,
+  .${CLASS.flashSuccess}::before {
+    transform: translate(-50%, -50%);
+    width: 2em;
+    height: 2em;
+    animation: nudge 0.25s ease-in-out 4 alternate forwards;
+  }
+}
+
+.${CLASS.chevronButton} {
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+`;
+  function view(dispatch, passedModel, info, manageFocus) {
+    const model = __ELM_WATCH.MOCKED_TIMINGS ? {
+      ...passedModel,
+      status: {
+        ...passedModel.status,
+        date: new Date("2022-02-05T13:10:05Z")
+      }
+    } : passedModel;
+    const statusData = {
+      ...statusIconAndText(model, info),
+      ...viewStatus(dispatch, model, info)
+    };
+    const statusType = statusToStatusType(model.status.tag);
+    const statusTypeChanged = statusType !== statusToStatusType(model.previousStatusTag);
+    const statusClass = getStatusClass({
+      statusType,
+      statusTypeChanged,
+      hasReceivedHotReload: model.elmCompiledTimestamp !== INITIAL_ELM_COMPILED_TIMESTAMP,
+      uiRelatedUpdate: manageFocus,
+      errorOverlayVisible: info.errorOverlayVisible
+    });
+    return h(
+      HTMLDivElement,
+      { className: CLASS.container },
+      model.uiExpanded ? viewExpandedUi(
+        model.status,
+        statusData,
+        info,
+        model.browserUiPosition,
+        dispatch
+      ) : void 0,
+      h(
+        HTMLDivElement,
+        {
+          className: CLASS.shortStatusContainer,
+          onclick: () => {
+            dispatch({ tag: "PressedChevron" });
+          }
+        },
+        h(
+          HTMLButtonElement,
+          {
+            className: CLASS.chevronButton,
+            attrs: { "aria-expanded": model.uiExpanded.toString() }
+          },
+          icon(
+            model.uiExpanded ? CHEVRON_UP : CHEVRON_DOWN,
+            model.uiExpanded ? "Collapse elm-watch" : "Expand elm-watch"
+          )
+        ),
+        compilationModeIcon(model.compilationMode),
+        icon(
+          statusData.icon,
+          statusData.status,
+          statusClass === void 0 ? {} : {
+            className: statusClass,
+            onanimationend: (event) => {
+              if (event.currentTarget instanceof HTMLElement) {
+                event.currentTarget.classList.remove(statusClass);
+              }
+            }
+          }
+        ),
+        h(
+          HTMLTimeElement,
+          { dateTime: model.status.date.toISOString() },
+          formatTime(model.status.date)
+        ),
+        h(HTMLSpanElement, { className: CLASS.targetName }, TARGET_NAME)
+      )
+    );
+  }
+  function icon(emoji, alt, props) {
+    return h(
+      HTMLSpanElement,
+      { attrs: { "aria-label": alt }, ...props },
+      h(HTMLSpanElement, { attrs: { "aria-hidden": "true" } }, emoji)
+    );
+  }
+  function viewExpandedUi(status, statusData, info, browserUiPosition, dispatch) {
+    const items = [
+      ["target", info.targetName],
+      ["elm-watch", info.version],
+      ["web socket", printWebSocketUrl(info.webSocketUrl)],
+      [
+        "updated",
+        h(
+          HTMLTimeElement,
+          {
+            dateTime: status.date.toISOString(),
+            attrs: { "data-format": "2044-04-30 04:44:44" }
+          },
+          `${formatDate(status.date)} ${formatTime(status.date)}`
+        )
+      ],
+      ["status", statusData.status],
+      ...statusData.dl
+    ];
+    const browserUiPositionSendKey = statusToSpecialCaseSendKey(status);
+    return h(
+      HTMLDivElement,
+      {
+        className: `${CLASS.expandedUiContainer} length${statusData.content.length}`,
+        attrs: {
+          tabindex: "-1"
+        }
+      },
+      h(
+        HTMLDListElement,
+        {},
+        ...items.flatMap(([key, value]) => [
+          h(HTMLElement, { localName: "dt" }, key),
+          h(HTMLElement, { localName: "dd" }, value)
+        ])
+      ),
+      ...statusData.content,
+      browserUiPositionSendKey === void 0 ? void 0 : viewBrowserUiPositionChooser(
+        browserUiPosition,
+        dispatch,
+        browserUiPositionSendKey
+      )
+    );
+  }
+  var allBrowserUiPositionsInOrder = [
+    "TopLeft",
+    "TopRight",
+    "BottomLeft",
+    "BottomRight"
+  ];
+  function viewBrowserUiPositionChooser(currentPosition, dispatch, sendKey) {
+    const arrows = getBrowserUiPositionArrows(currentPosition);
+    return h(
+      HTMLDivElement,
+      {
+        className: CLASS.browserUiPositionChooser,
+        style: browserUiPositionToCssForChooser(currentPosition)
+      },
+      ...allBrowserUiPositionsInOrder.map((position) => {
+        const arrow = arrows[position];
+        return arrow === void 0 ? h(HTMLDivElement, { style: { visibility: "hidden" } }, "\xB7") : h(
+          HTMLButtonElement,
+          {
+            className: CLASS.browserUiPositionButton,
+            attrs: { "data-position": position },
+            onclick: () => {
+              dispatch({
+                tag: "ChangedBrowserUiPosition",
+                browserUiPosition: position,
+                sendKey
+              });
+            }
+          },
+          arrow
+        );
+      })
+    );
+  }
+  var ARROW_UP = "\u2191";
+  var ARROW_DOWN = "\u2193";
+  var ARROW_LEFT = "\u2190";
+  var ARROW_RIGHT = "\u2192";
+  var ARROW_UP_LEFT = "\u2196";
+  var ARROW_UP_RIGHT = "\u2197";
+  var ARROW_DOWN_LEFT = "\u2199";
+  var ARROW_DOWN_RIGHT = "\u2198";
+  function getBrowserUiPositionArrows(browserUiPosition) {
+    switch (browserUiPosition) {
+      case "TopLeft":
+        return {
+          TopLeft: void 0,
+          TopRight: ARROW_RIGHT,
+          BottomLeft: ARROW_DOWN,
+          BottomRight: ARROW_DOWN_RIGHT
+        };
+      case "TopRight":
+        return {
+          TopLeft: ARROW_LEFT,
+          TopRight: void 0,
+          BottomLeft: ARROW_DOWN_LEFT,
+          BottomRight: ARROW_DOWN
+        };
+      case "BottomLeft":
+        return {
+          TopLeft: ARROW_UP,
+          TopRight: ARROW_UP_RIGHT,
+          BottomLeft: void 0,
+          BottomRight: ARROW_RIGHT
+        };
+      case "BottomRight":
+        return {
+          TopLeft: ARROW_UP_LEFT,
+          TopRight: ARROW_UP,
+          BottomLeft: ARROW_LEFT,
+          BottomRight: void 0
+        };
+    }
+  }
+  function statusIconAndText(model, info) {
+    switch (model.status.tag) {
+      case "Busy":
+        return {
+          icon: "\u23F3",
+          status: "Waiting for compilation"
+        };
+      case "CompileError":
+        return {
+          icon: "\u{1F6A8}",
+          status: "Compilation error"
+        };
+      case "Connecting":
+        return {
+          icon: "\u{1F50C}",
+          status: "Connecting"
+        };
+      case "ElmJsonError":
+        return {
+          icon: "\u{1F6A8}",
+          status: "elm.json or inputs error"
+        };
+      case "EvalError":
+        return {
+          icon: "\u26D4\uFE0F",
+          status: "Eval error"
+        };
+      case "Idle":
+        return {
+          icon: idleIcon(info.initializedElmAppsStatus),
+          status: "Successfully compiled"
+        };
+      case "SleepingBeforeReconnect":
+        return {
+          icon: "\u{1F50C}",
+          status: "Sleeping"
+        };
+      case "UnexpectedError":
+        return {
+          icon: "\u274C",
+          status: "Unexpected error"
+        };
+      case "WaitingForReload":
+        return model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? {
+          icon: "\u274C",
+          status: "Reload trouble"
+        } : {
+          icon: "\u23F3",
+          status: "Waiting for reload"
+        };
+    }
+  }
+  function viewStatus(dispatch, model, info) {
+    const { status, compilationMode } = model;
+    switch (status.tag) {
+      case "Busy":
+        return {
+          dl: [],
+          content: [
+            ...viewCompilationModeChooser({
+              dispatch,
+              sendKey: void 0,
+              compilationMode,
+              warnAboutCompilationModeMismatch: false,
+              info
+            }),
+            ...status.errorOverlay === void 0 ? [] : [viewErrorOverlayToggleButton(dispatch, status.errorOverlay)]
+          ]
+        };
+      case "CompileError":
+        return {
+          dl: [],
+          content: [
+            ...viewCompilationModeChooser({
+              dispatch,
+              sendKey: status.sendKey,
+              compilationMode,
+              warnAboutCompilationModeMismatch: true,
+              info
+            }),
+            viewErrorOverlayToggleButton(dispatch, status.errorOverlay),
+            ...status.openEditorError === void 0 ? [] : viewOpenEditorError(status.openEditorError)
+          ]
+        };
+      case "Connecting":
+        return {
+          dl: [
+            ["attempt", status.attemptNumber.toString()],
+            ["sleep", printRetryWaitMs(status.attemptNumber)]
+          ],
+          content: [
+            ...viewHttpsInfo(info.webSocketUrl),
+            h(HTMLButtonElement, { disabled: true }, "Connecting web socket\u2026")
+          ]
+        };
+      case "ElmJsonError":
+        return {
+          dl: [],
+          content: [
+            h(HTMLPreElement, { style: { minWidth: "80ch" } }, status.error)
+          ]
+        };
+      case "EvalError":
+        return {
+          dl: [],
+          content: [
+            h(
+              HTMLParagraphElement,
+              {},
+              "Check the console in the browser developer tools to see errors!"
+            )
+          ]
+        };
+      case "Idle":
+        return {
+          dl: [],
+          content: viewCompilationModeChooser({
+            dispatch,
+            sendKey: status.sendKey,
+            compilationMode,
+            warnAboutCompilationModeMismatch: true,
+            info
+          })
+        };
+      case "SleepingBeforeReconnect":
+        return {
+          dl: [
+            ["attempt", status.attemptNumber.toString()],
+            ["sleep", printRetryWaitMs(status.attemptNumber)]
+          ],
+          content: [
+            ...viewHttpsInfo(info.webSocketUrl),
+            h(
+              HTMLButtonElement,
+              {
+                onclick: () => {
+                  dispatch({ tag: "PressedReconnectNow" });
+                }
+              },
+              "Reconnect web socket now"
+            )
+          ]
+        };
+      case "UnexpectedError":
+        return {
+          dl: [],
+          content: [
+            h(
+              HTMLParagraphElement,
+              {},
+              "I ran into an unexpected error! This is the error message:"
+            ),
+            h(HTMLPreElement, {}, status.message)
+          ]
+        };
+      case "WaitingForReload":
+        return {
+          dl: [],
+          content: model.elmCompiledTimestamp === model.elmCompiledTimestampBeforeReload ? [
+            "A while ago I reloaded the page to get new compiled JavaScript.",
+            "But it looks like after the last page reload I got the same JavaScript as before, instead of new stuff!",
+            `The old JavaScript was compiled ${new Date(
+              model.elmCompiledTimestamp
+            ).toLocaleString()}, and so was the JavaScript currently running.`,
+            "I currently need to reload the page again, but fear a reload loop if I try.",
+            "Do you have accidental HTTP caching enabled maybe?",
+            "Try hard refreshing the page and see if that helps, and consider disabling HTTP caching during development."
+          ].map((text) => h(HTMLParagraphElement, {}, text)) : [h(HTMLParagraphElement, {}, "Waiting for other targets\u2026")]
+        };
+    }
+  }
+  function viewErrorOverlayToggleButton(dispatch, errorOverlay) {
+    return h(
+      HTMLButtonElement,
+      {
+        attrs: {
+          "data-test-id": errorOverlay.openErrorOverlay ? "HideErrorOverlayButton" : "ShowErrorOverlayButton"
+        },
+        onclick: () => {
+          dispatch({
+            tag: "ChangedOpenErrorOverlay",
+            openErrorOverlay: !errorOverlay.openErrorOverlay
+          });
+        }
+      },
+      errorOverlay.openErrorOverlay ? "Hide errors" : "Show errors"
+    );
+  }
+  function viewOpenEditorError(error) {
+    switch (error.tag) {
+      case "EnvNotSet":
+        return [
+          h(
+            HTMLDivElement,
+            { className: CLASS.envNotSet },
+            h(
+              HTMLParagraphElement,
+              {},
+              "\u2139\uFE0F Clicking error locations only works if you set it up."
+            ),
+            h(
+              HTMLParagraphElement,
+              {},
+              "Check this out: ",
+              h(
+                HTMLAnchorElement,
+                {
+                  href: "https://lydell.github.io/elm-watch/browser-ui/#clickable-error-locations",
+                  target: "_blank",
+                  rel: "noreferrer"
+                },
+                h(
+                  HTMLElement,
+                  { localName: "strong" },
+                  "Clickable error locations"
+                )
+              )
+            )
+          )
+        ];
+      case "CommandFailed":
+        return [
+          h(
+            HTMLParagraphElement,
+            {},
+            h(
+              HTMLElement,
+              { localName: "strong" },
+              "Opening the location in your editor failed!"
+            )
+          ),
+          h(HTMLPreElement, {}, error.message)
+        ];
+    }
+  }
+  function idleIcon(status) {
+    switch (status.tag) {
+      case "DecodeError":
+      case "MissingWindowElm":
+        return "\u274C";
+      case "NoProgramsAtAll":
+        return "\u2753";
+      case "DebuggerModeStatus":
+        return "\u2705";
+    }
+  }
+  function compilationModeIcon(compilationMode) {
+    switch (compilationMode) {
+      case "proxy":
+        return void 0;
+      case "debug":
+        return icon("\u{1F41B}", "Debug mode", { className: CLASS.debugModeIcon });
+      case "standard":
+        return void 0;
+      case "optimize":
+        return icon("\u{1F680}", "Optimize mode");
+    }
+  }
+  function printWebSocketUrl(url) {
+    const hostname = url.hostname.endsWith(".localhost") ? "localhost" : url.hostname;
+    return `${url.protocol}//${hostname}:${url.port}`;
+  }
+  function viewHttpsInfo(webSocketUrl) {
+    return webSocketUrl.protocol === "wss:" ? [
+      h(
+        HTMLParagraphElement,
+        {},
+        h(HTMLElement, { localName: "strong" }, "Having trouble connecting?")
+      ),
+      h(
+        HTMLParagraphElement,
+        {},
+        " You might need to ",
+        h(
+          HTMLAnchorElement,
+          { href: new URL(`https://${webSocketUrl.host}/accept`).href },
+          "accept elm-watch\u2019s self-signed certificate"
+        ),
+        ". "
+      ),
+      h(
+        HTMLParagraphElement,
+        {},
+        h(
+          HTMLAnchorElement,
+          {
+            href: "https://lydell.github.io/elm-watch/https/",
+            target: "_blank",
+            rel: "noreferrer"
+          },
+          "More information"
+        ),
+        "."
+      )
+    ] : [];
+  }
+  var noDebuggerYetReason = "The Elm debugger isn't available at this point.";
+  function noDebuggerReason(noDebuggerProgramTypes) {
+    return `The Elm debugger isn't supported by ${humanList(
+      Array.from(noDebuggerProgramTypes, (programType) => `\`${programType}\``),
+      "and"
+    )} programs.`;
+  }
+  function humanList(list, joinWord) {
+    const { length } = list;
+    return length <= 1 ? list.join("") : length === 2 ? list.join(` ${joinWord} `) : `${list.slice(0, length - 2).join(", ")}, ${list.slice(-2).join(` ${joinWord} `)}`;
+  }
+  function viewCompilationModeChooser({
+    dispatch,
+    sendKey,
+    compilationMode: selectedMode,
+    warnAboutCompilationModeMismatch,
+    info
+  }) {
+    switch (info.initializedElmAppsStatus.tag) {
+      case "DecodeError":
+        return [
+          h(
+            HTMLParagraphElement,
+            {},
+            "window.Elm does not look like expected! This is the error message:"
+          ),
+          h(HTMLPreElement, {}, info.initializedElmAppsStatus.message)
+        ];
+      case "MissingWindowElm":
+        return [
+          h(
+            HTMLParagraphElement,
+            {},
+            "elm-watch requires ",
+            h(
+              HTMLAnchorElement,
+              {
+                href: "https://lydell.github.io/elm-watch/window.Elm/",
+                target: "_blank",
+                rel: "noreferrer"
+              },
+              "window.Elm"
+            ),
+            " to exist, but it is undefined!"
+          )
+        ];
+      case "NoProgramsAtAll":
+        return [
+          h(
+            HTMLParagraphElement,
+            {},
+            "It looks like no Elm apps were initialized by elm-watch. Check the console in the browser developer tools to see potential errors!"
+          )
+        ];
+      case "DebuggerModeStatus": {
+        const compilationModes = [
+          {
+            mode: "debug",
+            name: "Debug",
+            status: info.initializedElmAppsStatus.status
+          },
+          { mode: "standard", name: "Standard", status: { tag: "Enabled" } },
+          { mode: "optimize", name: "Optimize", status: { tag: "Enabled" } }
+        ];
+        return [
+          h(
+            HTMLFieldSetElement,
+            { disabled: sendKey === void 0 },
+            h(HTMLLegendElement, {}, "Compilation mode"),
+            ...compilationModes.map(({ mode, name, status }) => {
+              const nameWithIcon = h(
+                HTMLSpanElement,
+                { className: CLASS.compilationModeWithIcon },
+                name,
+                mode === selectedMode ? compilationModeIcon(mode) : void 0
+              );
+              return h(
+                HTMLLabelElement,
+                { className: status.tag },
+                h(HTMLInputElement, {
+                  type: "radio",
+                  name: `CompilationMode-${info.targetName}`,
+                  value: mode,
+                  checked: mode === selectedMode,
+                  disabled: sendKey === void 0 || status.tag === "Disabled",
+                  onchange: sendKey === void 0 ? void 0 : () => {
+                    dispatch({
+                      tag: "ChangedCompilationMode",
+                      compilationMode: mode,
+                      sendKey
+                    });
+                  }
+                }),
+                ...status.tag === "Enabled" ? [
+                  nameWithIcon,
+                  warnAboutCompilationModeMismatch && mode === selectedMode && selectedMode !== info.originalCompilationMode && info.originalCompilationMode !== "proxy" ? h(
+                    HTMLElement,
+                    { localName: "small" },
+                    `Note: The code currently running is in ${ORIGINAL_COMPILATION_MODE} mode.`
+                  ) : void 0
+                ] : [
+                  nameWithIcon,
+                  h(HTMLElement, { localName: "small" }, status.reason)
+                ]
+              );
+            })
+          )
+        ];
+      }
+    }
+  }
+  var DATA_TARGET_NAMES = "data-target-names";
+  function updateErrorOverlay(targetName, dispatch, sendKey, errors, overlay, overlayCloseButton) {
+    const existingErrorElements = new Map(
+      Array.from(overlay.children, (element) => [
+        element.id,
+        {
+          targetNames: new Set(
+            (element.getAttribute(DATA_TARGET_NAMES) ?? "").split("\n")
+          ),
+          element
+        }
+      ])
+    );
+    for (const [id, { targetNames, element }] of existingErrorElements) {
+      if (targetNames.has(targetName) && !errors.has(id)) {
+        targetNames.delete(targetName);
+        if (targetNames.size === 0) {
+          element.remove();
+        } else {
+          element.setAttribute(DATA_TARGET_NAMES, [...targetNames].join("\n"));
+        }
+      }
+    }
+    let previousElement = void 0;
+    for (const [id, error] of errors) {
+      const maybeExisting = existingErrorElements.get(id);
+      if (maybeExisting === void 0) {
+        const element = viewOverlayError(
+          targetName,
+          dispatch,
+          sendKey,
+          id,
+          error
+        );
+        if (previousElement === void 0) {
+          overlay.prepend(element);
+        } else {
+          previousElement.after(element);
+        }
+        overlay.style.backgroundColor = error.backgroundColor;
+        overlayCloseButton.style.setProperty(
+          "--foregroundColor",
+          error.foregroundColor
+        );
+        overlayCloseButton.style.setProperty(
+          "--backgroundColor",
+          error.backgroundColor
+        );
+        previousElement = element;
+      } else {
+        if (!maybeExisting.targetNames.has(targetName)) {
+          maybeExisting.element.setAttribute(
+            DATA_TARGET_NAMES,
+            [...maybeExisting.targetNames, targetName].join("\n")
+          );
+        }
+        previousElement = maybeExisting.element;
+      }
+    }
+    const hidden = !overlay.hasChildNodes();
+    overlay.hidden = hidden;
+    overlayCloseButton.hidden = hidden;
+    overlayCloseButton.style.right = `${overlay.offsetWidth - overlay.clientWidth}px`;
+  }
+  function viewOverlayError(targetName, dispatch, sendKey, id, error) {
+    return h(
+      HTMLDetailsElement,
+      {
+        open: true,
+        id,
+        style: {
+          backgroundColor: error.backgroundColor,
+          color: error.foregroundColor
+        },
+        attrs: {
+          [DATA_TARGET_NAMES]: targetName
+        }
+      },
+      h(
+        HTMLElement,
+        { localName: "summary" },
+        h(
+          HTMLSpanElement,
+          {
+            className: CLASS.errorTitle,
+            style: {
+              backgroundColor: error.backgroundColor
+            }
+          },
+          error.title
+        ),
+        error.location === void 0 ? void 0 : h(
+          HTMLParagraphElement,
+          {},
+          viewErrorLocation(dispatch, sendKey, error.location)
+        )
+      ),
+      h(HTMLPreElement, { innerHTML: error.htmlContent })
+    );
+  }
+  function viewErrorLocation(dispatch, sendKey, location) {
+    switch (location.tag) {
+      case "FileOnly":
+        return viewErrorLocationButton(
+          dispatch,
+          sendKey,
+          {
+            file: location.file,
+            line: 1,
+            column: 1
+          },
+          location.file.absolutePath
+        );
+      case "FileWithLineAndColumn": {
+        return viewErrorLocationButton(
+          dispatch,
+          sendKey,
+          location,
+          `${location.file.absolutePath}:${location.line}:${location.column}`
+        );
+      }
+      case "Target":
+        return `Target: ${location.targetName}`;
+    }
+  }
+  function viewErrorLocationButton(dispatch, sendKey, location, text) {
+    return sendKey === void 0 ? text : h(
+      HTMLButtonElement,
+      {
+        className: CLASS.errorLocationButton,
+        onclick: () => {
+          dispatch({
+            tag: "PressedOpenEditor",
+            file: location.file,
+            line: location.line,
+            column: location.column,
+            sendKey
+          });
+        }
+      },
+      text
+    );
+  }
+  if (typeof WebSocket !== "undefined") {
+    run();
+  }
+})();
+
+"use strict";
+(() => {
+  // client/proxy.ts
+  var window = globalThis;
+  var error = new Error(
+    `
+Certain parts of \`window.Elm\` aren't available yet! That's fine though!
+
+\`elm-watch\` has generated a stub file in place of Elm's compiled JS. This is
+because until just now, there was no need to spend time on generating JS!
+
+This stub file is now connecting to \`elm-watch\` via WebSocket, letting it know
+that it's time to start generating real JS. Once that's done the page should be
+automatically reloaded. But if you get compilation errors you'll need to fix
+them first.
+  `.trim()
+  );
+  error.elmWatchProxy = true;
+  var existing = window.Elm;
+  var existingObject = typeof existing === "object" && existing !== null ? existing : void 0;
+  var elmProxy = new Proxy(existingObject ?? {}, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (value !== void 0 || property.toString().startsWith("_")) {
+        return value;
+      }
+      throw error;
+    },
+    getOwnPropertyDescriptor(target, property) {
+      const descriptor = Reflect.getOwnPropertyDescriptor(target, property);
+      if (descriptor !== void 0) {
+        return descriptor;
+      }
+      throw error;
+    },
+    has(target, property) {
+      if (property === "__elmWatchProxy") {
+        return true;
+      }
+      const has = Reflect.has(target, property);
+      if (has) {
+        return true;
+      }
+      throw error;
+    },
+    ownKeys() {
+      throw error;
+    }
+  });
+  window.Elm = elmProxy;
+})();
