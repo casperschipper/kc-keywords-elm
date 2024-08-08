@@ -1,12 +1,14 @@
-module Main exposing (Model, Msg(..), Research, main)
+module Main exposing (Msg(..), Research, main)
 
 import Bootstrap.Button as Button
 import Bootstrap.ButtonGroup as ButtonGroup
+import Bootstrap.Dropdown as Dropdown
 import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
+import Bootstrap.Grid
 import Bootstrap.Utilities.Display as Display
 import Bootstrap.Utilities.Spacing as Spacing
-import Browser
+import Browser exposing (UrlRequest(..))
 import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -14,10 +16,13 @@ import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (Decoder, field, int, list, maybe, string, succeed)
 import Json.Decode.Extra as JDE
+import List exposing (any)
 import List.Extra as L
+import Set
+import Set.Any exposing (AnySet(..))
 import Table exposing (Column, defaultCustomizations)
+import Time exposing (Posix)
 import Util exposing (hexColor, parenthesize, stringToColor)
-import Browser exposing (UrlRequest(..))
 
 
 
@@ -71,6 +76,7 @@ type alias Research =
     , issueId : Maybe Int
     , publicationStatus : PublicationStatus -- should be string?
     , publication : Maybe String
+    , lastChanged : Maybe Posix
     }
 
 
@@ -80,16 +86,49 @@ type alias LinkInfo =
     }
 
 
+
+-- There are internal and public expositions in the RC, internal means only portal members can see it.
+
+
+type LinkVisibility
+    = InternalLink
+    | PublicLink
+
+
 type Link
-    = ResearchLink LinkInfo
+    = ResearchLink LinkInfo LinkVisibility
     | KeywordLink LinkInfo
+
+
+
+-- Research categories:
 
 
 type ResearchType
     = Teacher
     | Student
     | Lectorate
+    | Kcpedia
     | Unknown
+
+
+toString : ResearchType -> String
+toString rtype =
+    case rtype of
+        Teacher ->
+            "teacher"
+
+        Student ->
+            "student"
+
+        Lectorate ->
+            "lectorate"
+
+        Kcpedia ->
+            "kcpedia"
+
+        Unknown ->
+            "unkown"
 
 
 type PublicationStatus
@@ -100,8 +139,29 @@ type PublicationStatus
 
 
 type Filter
-    = All
-    | Only ResearchType
+    = Filter (AnySet String ResearchType)
+
+
+toggleType : ResearchType -> Filter -> Filter
+toggleType rtype (Filter f) =
+    if Set.Any.member rtype f then
+        Filter (Set.Any.remove rtype f)
+
+    else
+        Filter (Set.Any.insert rtype f)
+
+
+isEnabled : ResearchType -> Filter -> Bool
+isEnabled rtype (Filter f) =
+    Set.Any.member rtype f
+
+
+allFilter =
+    Filter (Set.Any.fromList toString [ Student, Teacher, Lectorate, Kcpedia, Unknown ])
+
+
+defaultFilter =
+    Filter (Set.Any.fromList toString [ Student, Teacher, Lectorate ])
 
 
 
@@ -133,8 +193,14 @@ type ViewType
     | KeywordView
 
 
+type DateFilter
+    = Year Int
+    | AnyYear
+
+
 type alias Model =
     { researchList : List Research
+    , years : Set.Set Year
     , keywordDict : KeywordDict
     , viewType : ViewType
     , tableState : Table.State
@@ -142,8 +208,11 @@ type alias Model =
     , titleQuery : String
     , loadingStatus : LoadingStatus
     , filter : Filter
+    , dateFilter : DateFilter
     , includeInternalResearch : ScopeFilter
     , includeUnpublishedResearch : Bool
+    , includeKCPedia : Bool
+    , dropdown : Dropdown.State
     }
 
 
@@ -156,13 +225,17 @@ emptyModel =
     { researchList = []
     , keywordDict = emptyKeywords
     , viewType = KeywordView
-    , tableState = Table.initialSort "title"
+    , years = Set.empty
+    , tableState = Table.sortBy "Modified" True
     , query = ""
     , titleQuery = ""
     , loadingStatus = Loading
-    , filter = All
+    , filter = defaultFilter
+    , dateFilter = AnyYear
     , includeInternalResearch = ShowInternal
     , includeUnpublishedResearch = True
+    , includeKCPedia = False
+    , dropdown = Dropdown.initialState
     }
 
 
@@ -175,9 +248,14 @@ init _ =
 -- helper funcs
 
 
+kcpediaTag : String
+kcpediaTag =
+    "kcpedia"
+
+
 allTags : List String
 allTags =
-    [ teacherTag, lectorateTag ]
+    [ teacherTag, lectorateTag, kcpediaTag ]
 
 
 isTag : String -> Bool
@@ -195,9 +273,19 @@ isTeacherResearch =
     List.member teacherTag << .keywords
 
 
+isMusicResearch : Research -> Bool
+isMusicResearch research =
+    research.keywords |> List.member "music"
+
+
 isLectorateResearch : Research -> Bool
 isLectorateResearch =
     List.member lectorateTag << .keywords
+
+
+isKcpediaResearch : Research -> Bool
+isKcpediaResearch research =
+    research |> .keywords |> List.member kcpediaTag
 
 
 isPublished : PublicationStatus -> Bool
@@ -263,20 +351,29 @@ statusToString status =
 hyperlink : Link -> Html Msg
 hyperlink link =
     case link of
-        ResearchLink l ->
-            viewResearchLink l
+        ResearchLink l status ->
+            viewResearchLink l status
 
         KeywordLink l ->
             viewKeywordLink l
 
 
-viewResearchLink : LinkInfo -> Html Msg
-viewResearchLink link =
-    a
-        [ href link.url
-        , target "_blank"
-        ]
-        [ text link.title ]
+viewResearchLink : LinkInfo -> LinkVisibility -> Html Msg
+viewResearchLink link vis =
+    case vis of
+        PublicLink ->
+            a
+                [ href link.url
+                , target "_blank"
+                ]
+                [ text link.title ]
+
+        InternalLink ->
+            a
+                [ href link.url
+                , target "_blank"
+                ]
+                [ keyIcon, text link.title ]
 
 
 viewKeywordLink : LinkInfo -> Html Msg
@@ -319,6 +416,9 @@ entry =
             else if isLectorateResearch research then
                 { research | researchType = Lectorate }
 
+            else if isKcpediaResearch research then
+                { research | researchType = Kcpedia }
+
             else
                 -- there is no tag for students
                 { research | researchType = Student }
@@ -351,11 +451,75 @@ entry =
             |> JDE.andMap (maybe (field "issue" <| field "id" int))
             |> JDE.andMap (Json.Decode.map statusFromString (field "status" string))
             |> JDE.andMap (maybe (field "published" string))
+            |> JDE.andMap (field "last-modified" decodePosix |> Json.Decode.map Just)
         )
+
+
+decodePosix : Decoder Time.Posix
+decodePosix =
+    int |> Json.Decode.map (\x -> x * 1000 |> Time.millisToPosix)
+
+
+posixToString : Time.Posix -> String
+posixToString posix =
+    let
+        year =
+            posix |> Time.toYear Time.utc
+
+        month =
+            posix
+                |> Time.toMonth Time.utc
+                |> (\m ->
+                        case m of
+                            Time.Jan ->
+                                1
+
+                            Time.Feb ->
+                                2
+
+                            Time.Mar ->
+                                3
+
+                            Time.Apr ->
+                                4
+
+                            Time.May ->
+                                5
+
+                            Time.Jun ->
+                                6
+
+                            Time.Jul ->
+                                7
+
+                            Time.Aug ->
+                                8
+
+                            Time.Sep ->
+                                9
+
+                            Time.Oct ->
+                                10
+
+                            Time.Nov ->
+                                11
+
+                            Time.Dec ->
+                                12
+                   )
+
+        day =
+            posix |> Time.toDay Time.utc
+    in
+    [ day, month, year ] |> List.map String.fromInt |> String.join "/"
 
 
 
 -- UPDATE
+
+
+type alias Year =
+    Int
 
 
 type Msg
@@ -365,9 +529,12 @@ type Msg
     | SetTitleQuery String
     | SetTableState Table.State
     | SetViewType ViewType
-    | SetFilter Filter
+    | SetFilter ResearchType
     | ScopeFilter ScopeFilter
     | TogglePublishedFilter Bool
+    | ToggleKCPedia Bool
+    | DropdownMsg Dropdown.State
+    | SetYearFilter Year
 
 
 type ScopeFilter
@@ -397,6 +564,7 @@ update msg model =
                         | loadingStatus = Success
                         , researchList = unique
                         , keywordDict = fillKeywordsDict list
+                        , years = allYears list
                       }
                     , Cmd.none
                     )
@@ -434,20 +602,19 @@ update msg model =
         SetViewType newType ->
             ( { model | viewType = newType, query = "", titleQuery = "" }, Cmd.none )
 
-        SetFilter filter ->
+        SetFilter rtype ->
             let
                 newView =
-                    case filter of
-                        Only Teacher ->
-                            TableView
+                    TableView
 
-                        Only Lectorate ->
-                            TableView
-
-                        _ ->
-                            model.viewType
+                --TODO, maybe smart view switch again
             in
-            ( { model | filter = filter, viewType = newView }, Cmd.none )
+            ( { model
+                | filter = toggleType rtype model.filter
+                , viewType = newView
+              }
+            , Cmd.none
+            )
 
         ScopeFilter state ->
             ( { model | includeInternalResearch = state }, Cmd.none )
@@ -455,20 +622,53 @@ update msg model =
         TogglePublishedFilter includeUnpublished ->
             ( { model | includeUnpublishedResearch = includeUnpublished }, Cmd.none )
 
+        ToggleKCPedia include ->
+            ( { model | includeKCPedia = include }, Cmd.none )
+
+        DropdownMsg newstate ->
+            ( { model | dropdown = newstate }
+            , Cmd.none
+            )
+
+        SetYearFilter year ->
+            ( { model
+                | dateFilter =
+                    if year == -1 then
+                        AnyYear
+
+                    else
+                        Year year
+              }
+            , Cmd.none
+            )
+
 
 makeLink : Research -> Link
 makeLink research =
     let
         link =
             baseExpoUrl ++ String.fromInt (.id research)
+
+        vis =
+            case research.publicationStatus of
+                LocalPublication ->
+                    InternalLink
+
+                _ ->
+                    PublicLink
     in
-    ResearchLink <| LinkInfo (.title research) link
+    ResearchLink (LinkInfo (displayTitle research) link) vis
+
+
+displayTitle : Research -> String
+displayTitle research =
+    research.title |> String.replace "&amp;" "&"
 
 
 linkToUrl : Link -> String
 linkToUrl link =
     case link of
-        ResearchLink info ->
+        ResearchLink info _ ->
             info.url
 
         KeywordLink info ->
@@ -484,21 +684,26 @@ attrsFromResearch research =
         _ ->
             [ class "global-publication" ]
 
-getDate : Research -> Maybe String 
+
+getDate : Research -> Maybe String
 getDate research =
     case research.publicationStatus of
-         InProgress -> 
-            Just research.created
+        InProgress ->
+            Just "in progress"
 
-         Undecided -> 
-            Just research.created
+        Undecided ->
+            Just "unknown"
 
-         Published ->
-            research.publication
-         
-         LocalPublication ->
+        Published ->
             research.publication
 
+        LocalPublication ->
+            research.publication
+
+
+getModified : Research -> Maybe String
+getModified =
+    .lastChanged >> Maybe.map posixToString
 
 
 config : Table.Config Research Msg
@@ -510,7 +715,8 @@ config =
             [ typeColumn "Type" .researchType
             , linkColumn "Title" makeLink
             , Table.stringColumn "Author" .author
-            , dateColumn "Published" getDate
+            , dateColumn "Status" getDate
+            , dateColumn "Modified" getModified
             , Table.stringColumn "Keywords" (String.join ", " << List.map capitalize << excludeTags << .keywords)
             , Table.stringColumn "Visibility" (statusToString << .publicationStatus)
             ]
@@ -519,8 +725,8 @@ config =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    Dropdown.subscriptions model.dropdown DropdownMsg
 
 
 
@@ -544,13 +750,22 @@ view model =
 
 
 filterResearch : Filter -> List Research -> List Research
-filterResearch filter list =
-    case filter of
-        All ->
-            list
+filterResearch (Filter filter) list =
+    list |> List.filter (\r -> Set.Any.member r.researchType filter)
 
-        Only filterType ->
-            List.filter ((==) filterType << .researchType) list
+
+filterByYear : Year -> List Research -> List Research
+filterByYear year research =
+    List.filter
+        (\rs ->
+            case getYear rs.created of
+                Just y ->
+                    y == year
+
+                Nothing ->
+                    False
+        )
+        research
 
 
 viewResearch : Model -> Html Msg
@@ -575,19 +790,27 @@ viewResearch model =
 
         publicInternalSwitch2 =
             label []
-                [ text "Filter by access:"
-                , div [ class "mb-1" ]
-                    [ ButtonGroup.radioButtonGroup []
-                        [ ButtonGroup.radioButton
-                            (model.includeInternalResearch == ShowInternal)
-                            [ Button.light, Button.onClick <| ScopeFilter ShowInternal ]
-                            [ text "Include internal results" ]
-                        , ButtonGroup.radioButton
-                            (model.includeInternalResearch == HideInternal)
-                            [ Button.light, Button.onClick <| ScopeFilter HideInternal ]
-                            [ text "Show only public accessible work" ]
+                [ div [ class "mb-1" ]
+                    [ Checkbox.checkbox
+                        [ Checkbox.checked (model.includeInternalResearch == ShowInternal)
+                        , Checkbox.id "internal-switch"
+                        , Checkbox.onCheck
+                            (\checked ->
+                                if checked then
+                                    ScopeFilter ShowInternal
+
+                                else
+                                    ScopeFilter HideInternal
+                            )
                         ]
+                        "Show all research (including internal)"
                     ]
+                , case model.includeInternalResearch of
+                    ShowInternal ->
+                        text "internal works are visible to KC portal members only."
+
+                    HideInternal ->
+                        text ""
                 ]
 
         publishedSwitch =
@@ -603,32 +826,95 @@ viewResearch model =
                     ]
                 ]
 
-        filterSwitch =
+        -- filterSwitch =
+        --     let
+        --         current =
+        --             model.filter
+        --     in
+        --     label []
+        --         [ text "Show research by:"
+        --         , div [ class "mb-1" ]
+        --             [ ButtonGroup.checkboxButtonGroup
+        --                 [ ButtonGroup.small ]
+        --                 [ ButtonGroup.checkboxButton
+        --                     (isEnabled Teacher current)
+        --                     [ Button.light, Button.onClick <| SetFilter Teacher ]
+        --                     [ text "Teachers" ]
+        --                 , Button.checkboxButton
+        --                     (isEnabled Student current)
+        --                     [ Button.light, Button.onClick <| SetFilter Student ]
+        --                     [ text "Students" ]
+        --                 , Button.checkboxButton
+        --                     (isEnabled Lectorate current)
+        --                     [ Button.light, Button.onClick <| SetFilter Lectorate ]
+        --                     [ text "The lectorate 'Music, Education and Society'" ]
+        --                 , Button.checkboxButton
+        --                     (isEnabled Kcpedia current)
+        --                     [ Button.light, Button.onClick <| SetFilter Kcpedia ]
+        --                     [ text "KCPedia" ]
+        --                 , Button.checkboxButton
+        --                     (isEnabled Music current)
+        --                     [ Button.light, Button.onClick <| SetFilter Music ]
+        --                     [ text "Music" ]
+        --                 ]
+        --             ]
+        --         ]
+        filterSwitchToggles : Html Msg
+        filterSwitchToggles =
             let
                 current =
                     model.filter
             in
-            label []
+            div []
                 [ text "Show research by:"
+                , div []
+                    [ Button.checkboxButton
+                        (isEnabled Teacher current)
+                        [ Button.onClick <| SetFilter Teacher ]
+                        [ text "Teachers" ]
+                    , Button.checkboxButton
+                        (isEnabled Student current)
+                        [ Button.onClick <| SetFilter Student ]
+                        [ text "Students" ]
+                    , Button.checkboxButton
+                        (isEnabled Lectorate current)
+                        [ Button.onClick <| SetFilter Lectorate ]
+                        [ text "The lectorate 'Music, Education and Society'" ]
+                    , Button.checkboxButton
+                        (isEnabled Kcpedia current)
+                        [ Button.onClick <| SetFilter Kcpedia ]
+                        [ text "KCPedia" ]
+                    ]
+                ]
+
+        dateFilterToString dateFilterState =
+            case dateFilterState of
+                AnyYear ->
+                    "any"
+
+                Year x ->
+                    String.fromInt x
+
+        years =
+            model.years |> Set.toList
+
+        yearOption y =
+            Dropdown.buttonItem [ onClick (SetYearFilter y) ] [ text <| String.fromInt y ]
+
+        yearFilter =
+            label []
+                [ text "filter by year"
                 , div [ class "mb-1" ]
-                    [ ButtonGroup.radioButtonGroup []
-                        [ ButtonGroup.radioButton
-                            (current == All)
-                            [ Button.light, Button.onClick <| SetFilter All ]
-                            [ text "All" ]
-                        , ButtonGroup.radioButton
-                            (current == Only Teacher)
-                            [ Button.light, Button.onClick <| SetFilter (Only Teacher) ]
-                            [ text "Teachers" ]
-                        , ButtonGroup.radioButton
-                            (current == Only Student)
-                            [ Button.light, Button.onClick <| SetFilter (Only Student) ]
-                            [ text "Students" ]
-                        , ButtonGroup.radioButton
-                            (current == Only Lectorate)
-                            [ Button.light, Button.onClick <| SetFilter (Only Lectorate) ]
-                            [ text "The lectorate 'Music, Education and Society'" ]
-                        ]
+                    [ Dropdown.dropdown
+                        model.dropdown
+                        { options = [ Dropdown.alignMenuRight ]
+                        , toggleMsg = DropdownMsg
+                        , toggleButton =
+                            Dropdown.toggle [] [ text (model.dateFilter |> dateFilterToString) ]
+                        , items =
+                            Dropdown.buttonItem [ onClick (SetYearFilter -1) ] [ text "Any year" ]
+                                :: (List.map yearOption years |> List.reverse)
+                        }
                     ]
                 ]
 
@@ -636,11 +922,19 @@ viewResearch model =
             -- Student/Teacher etc..
             filterResearch model.filter model.researchList
 
+        filteredByYear =
+            case model.dateFilter of
+                AnyYear ->
+                    filtered
+
+                Year y ->
+                    filterByYear y filtered
+
         filteredOnStatus =
             -- publication status
             case model.includeInternalResearch of
-                ShowInternal ->    
-                    filtered
+                ShowInternal ->
+                    filteredByYear
 
                 HideInternal ->
                     List.filter
@@ -652,11 +946,12 @@ viewResearch model =
                                 _ ->
                                     True
                         )
-                        filtered
+                        filteredByYear
 
-        filteredOnPublication = 
+        filteredOnPublication =
             if model.includeUnpublishedResearch then
                 filteredOnStatus
+
             else
                 filteredOnStatus |> List.filter (\r -> isPublished r.publicationStatus)
 
@@ -675,16 +970,16 @@ viewResearch model =
                     div [ id "keywords" ]
                         [ renderKeywords model.query filteredDict ]
     in
-    div [ id "top", class "container" ]
+    Bootstrap.Grid.container [ id "top" ]
         [ div [ class "headers" ]
             [ h1 [] [ text "Research Results" ]
             , h4 [] [ text "Royal Conservatoire in The Hague" ]
             ]
-        , filterSwitch
+        , filterSwitchToggles
+        , br [] []
+        , yearFilter
         , br [] []
         , publicInternalSwitch2
-        , br [] []
-        , publishedSwitch
         , br [] []
         , radioSwitchView
         , content
@@ -739,9 +1034,7 @@ viewShortMeta : Research -> Html Msg
 viewShortMeta research =
     li (class "research-meta" :: attrsFromResearch research)
         [ p [ class "research-meta-title" ]
-            [ a
-                [ href <| (linkToUrl << makeLink) research, target "_blank" ]
-                [ text <| research.title ]
+            [ hyperlink (makeLink research)
             ]
         , p
             [ class "research-meta-status", title "publication status" ]
@@ -765,8 +1058,10 @@ dateColumn name toCreated =
     in
     Table.customColumn
         { name = name
-        , viewData = getDate >> Maybe.withDefault "no date"
-        , sorter = Table.increasingOrDecreasingBy <| sortableDateString << toCreated
+        , viewData = toCreated >> Maybe.withDefault "no date"
+        , sorter =
+            Table.increasingOrDecreasingBy <|
+                (toCreated >> sortableDateString)
         }
 
 
@@ -791,6 +1086,9 @@ typeToString researchType =
         Lectorate ->
             "Lectorate"
 
+        Kcpedia ->
+            "KCPedia"
+
         Unknown ->
             "Unknown"
 
@@ -798,7 +1096,7 @@ typeToString researchType =
 getTitle : Link -> String
 getTitle l =
     case l of
-        ResearchLink i ->
+        ResearchLink i _ ->
             i.title
 
         KeywordLink i ->
@@ -1000,3 +1298,38 @@ fillKeywordsDict research =
                 res.keywords
     in
     List.foldr updateDict emptyKeywords research
+
+
+keyIcon : Html Msg
+keyIcon =
+    Html.img
+        [ class "key-icon"
+        , src "./key.svg"
+        , width 25
+        , height 25
+        , title "this research is only accessible for students and staff"
+        ]
+        []
+
+
+getYear : String -> Maybe Year
+getYear str =
+    str
+        |> String.split "/"
+        |> (\ls ->
+                case ls of
+                    _ :: _ :: y :: _ ->
+                        String.toInt y
+
+                    _ ->
+                        Nothing
+           )
+
+
+allYears : List Research -> Set.Set Year
+allYears lst =
+    let
+        years =
+            lst |> List.map (\r -> r.created |> getYear) |> List.filterMap identity
+    in
+    List.foldl Set.insert Set.empty years

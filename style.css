@@ -137,4 +137,6 @@ h1.keywordlink a {
     font-family: sans-serif;
 }
 
-
+.key-icon {
+    padding-right: 0.22em;
+}
