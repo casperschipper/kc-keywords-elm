@@ -5,7 +5,9 @@ import Bootstrap.ButtonGroup as ButtonGroup
 import Bootstrap.Dropdown as Dropdown
 import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
-import Bootstrap.Grid
+import Bootstrap.Grid as Grid
+import Bootstrap.Grid.Col as Col
+import Bootstrap.Grid.Row as Row
 import Bootstrap.Utilities.Display as Display
 import Bootstrap.Utilities.Spacing as Spacing
 import Browser exposing (UrlRequest(..))
@@ -774,7 +776,7 @@ viewResearch model =
         radioSwitchView =
             label []
                 [ text "Switch view:"
-                , div [ class "mb-1" ]
+                , div [ class "sm-1" ]
                     [ ButtonGroup.radioButtonGroup []
                         [ ButtonGroup.radioButton
                             (model.viewType == TableView)
@@ -790,7 +792,7 @@ viewResearch model =
 
         publicInternalSwitch2 =
             label []
-                [ div [ class "mb-1" ]
+                [ div [ class "sm-1" ]
                     [ Checkbox.checkbox
                         [ Checkbox.checked (model.includeInternalResearch == ShowInternal)
                         , Checkbox.id "internal-switch"
@@ -814,7 +816,7 @@ viewResearch model =
                 ]
 
         publishedSwitch =
-            label [ class "ml-1" ]
+            label [ class "sm-3" ]
                 [ text "Include unpublished expositions: "
                 , div []
                     [ Checkbox.checkbox
@@ -867,7 +869,7 @@ viewResearch model =
             in
             div []
                 [ text "Show research by:"
-                , div []
+                , div [ class "sm-1" ]
                     [ Button.checkboxButton
                         (isEnabled Teacher current)
                         [ Button.onClick <| SetFilter Teacher ]
@@ -904,7 +906,7 @@ viewResearch model =
         yearFilter =
             label []
                 [ text "filter by year"
-                , div [ class "mb-1" ]
+                , div [ class "sm-1" ]
                     [ Dropdown.dropdown
                         model.dropdown
                         { options = [ Dropdown.alignMenuRight ]
@@ -969,19 +971,17 @@ viewResearch model =
                     in
                     div [ id "keywords" ]
                         [ renderKeywords model.query filteredDict ]
+
+        headers =
+            div [ class "headers" ]
+                [ h1 [] [ text "Research Results" ]
+                , h4 [] [ text "Royal Conservatoire in The Hague" ]
+                ]
     in
-    Bootstrap.Grid.container [ id "top" ]
-        [ div [ class "headers" ]
-            [ h1 [] [ text "Research Results" ]
-            , h4 [] [ text "Royal Conservatoire in The Hague" ]
-            ]
-        , filterSwitchToggles
-        , br [] []
-        , yearFilter
-        , br [] []
-        , publicInternalSwitch2
-        , br [] []
-        , radioSwitchView
+    Grid.container [ id "top" ]
+        [ headers
+        , Grid.row [] <| List.map (\elem -> Grid.col [ Col.attrs <| [ Spacing.m2 ] ] [ elem ]) [ filterSwitchToggles, yearFilter, publicInternalSwitch2 ]
+        , Grid.row [] <| List.map (\elem -> Grid.col [ Col.attrs <| [ Spacing.m2 ] ] [ elem ]) [ radioSwitchView, publishedSwitch ]
         , content
         ]
 
