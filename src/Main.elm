@@ -7,6 +7,7 @@ import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
+import Bootstrap.Utilities.Border
 import Bootstrap.Grid.Row as Row
 import Bootstrap.Utilities.Display as Display
 import Bootstrap.Utilities.Spacing as Spacing
@@ -25,6 +26,7 @@ import Set.Any exposing (AnySet(..))
 import Table exposing (Column, defaultCustomizations)
 import Time exposing (Posix)
 import Util exposing (hexColor, parenthesize, stringToColor)
+import Bootstrap.Utilities.Border as Border
 
 
 
@@ -805,11 +807,14 @@ viewResearch model =
                                     ScopeFilter HideInternal
                             )
                         ]
-                        "Show all research (including internal)"
+                        (case model.includeInternalResearch of
+                            ShowInternal -> "Show internal"
+                            
+                            HideInternal -> "Show internal")
                     ]
                 , case model.includeInternalResearch of
                     ShowInternal ->
-                        text "internal works are visible to KC portal members only."
+                        text ""
 
                     HideInternal ->
                         text ""
@@ -817,14 +822,13 @@ viewResearch model =
 
         publishedSwitch =
             label [ class "sm-3" ]
-                [ text "Include unpublished expositions: "
-                , div []
+                [  div []
                     [ Checkbox.checkbox
                         [ Checkbox.id "show-published-toggle"
                         , Checkbox.onCheck TogglePublishedFilter
                         , Checkbox.checked model.includeUnpublishedResearch
                         ]
-                        "include unpublished expositions"
+                        "Include work in progress"
                     ]
                 ]
 
@@ -980,8 +984,13 @@ viewResearch model =
     in
     Grid.container [ id "top" ]
         [ headers
-        , Grid.row [] <| List.map (\elem -> Grid.col [ Col.attrs <| [ Spacing.m2 ] ] [ elem ]) [ filterSwitchToggles, yearFilter, publicInternalSwitch2 ]
-        , Grid.row [] <| List.map (\elem -> Grid.col [ Col.attrs <| [ Spacing.m2 ] ] [ elem ]) [ radioSwitchView, publishedSwitch ]
+        , Grid.row [] [ 
+            Grid.col [Col.xs8, Col.attrs [Bootstrap.Utilities.Border.all, Spacing.p2, Bootstrap.Utilities.Border.rounded]] [filterSwitchToggles]
+            ,Grid.col [ Col.xs3, Col.attrs [Bootstrap.Utilities.Border.all, Spacing.p2, Bootstrap.Utilities.Border.rounded]] [publishedSwitch, publicInternalSwitch2]]
+        , Grid.row [] [
+            Grid.col [] [radioSwitchView]
+        ]
+        
         , content
         ]
 
