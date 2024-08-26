@@ -7,8 +7,8 @@ import Bootstrap.Form as Form
 import Bootstrap.Form.Checkbox as Checkbox
 import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
-import Bootstrap.Utilities.Border
 import Bootstrap.Grid.Row as Row
+import Bootstrap.Utilities.Border as Border
 import Bootstrap.Utilities.Display as Display
 import Bootstrap.Utilities.Spacing as Spacing
 import Browser exposing (UrlRequest(..))
@@ -26,7 +26,6 @@ import Set.Any exposing (AnySet(..))
 import Table exposing (Column, defaultCustomizations)
 import Time exposing (Posix)
 import Util exposing (hexColor, parenthesize, stringToColor)
-import Bootstrap.Utilities.Border as Border
 
 
 
@@ -808,9 +807,12 @@ viewResearch model =
                             )
                         ]
                         (case model.includeInternalResearch of
-                            ShowInternal -> "Show internal"
-                            
-                            HideInternal -> "Show internal")
+                            ShowInternal ->
+                                "Show internal"
+
+                            HideInternal ->
+                                "Show internal"
+                        )
                     ]
                 , case model.includeInternalResearch of
                     ShowInternal ->
@@ -822,7 +824,7 @@ viewResearch model =
 
         publishedSwitch =
             label [ class "sm-3" ]
-                [  div []
+                [ div []
                     [ Checkbox.checkbox
                         [ Checkbox.id "show-published-toggle"
                         , Checkbox.onCheck TogglePublishedFilter
@@ -984,13 +986,13 @@ viewResearch model =
     in
     Grid.container [ id "top" ]
         [ headers
-        , Grid.row [] [ 
-            Grid.col [Col.xs8, Col.attrs [Bootstrap.Utilities.Border.all, Spacing.p2, Bootstrap.Utilities.Border.rounded]] [filterSwitchToggles]
-            ,Grid.col [ Col.xs3, Col.attrs [Bootstrap.Utilities.Border.all, Spacing.p2, Bootstrap.Utilities.Border.rounded]] [publishedSwitch, publicInternalSwitch2]]
-        , Grid.row [] [
-            Grid.col [] [radioSwitchView]
-        ]
-        
+        , Grid.row [  ]
+            [ Grid.col [ Col.xs8, Col.attrs [ Border.all, Spacing.p2, Border.rounded, Spacing.mr2 ] ] [ filterSwitchToggles ]
+            , Grid.col [ Col.xs3, Col.attrs [ Border.all, Spacing.p2, Border.rounded ] ] [ publishedSwitch, publicInternalSwitch2 ]
+            ]
+        , Grid.row []
+            [ Grid.col [] [ radioSwitchView ]
+            ]
         , content
         ]
 

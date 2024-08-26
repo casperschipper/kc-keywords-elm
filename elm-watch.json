@@ -1,6 +1,6 @@
 {
     "targets": {
-        "KC keywords": {
+        "My target name": {
             "inputs": [
                 "src/Main.elm"
             ],
